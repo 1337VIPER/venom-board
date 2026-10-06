@@ -1,8 +1,8 @@
 {
   "name": "venom-board",
   "productName": "Venom Board",
-  "version": "1.0.0",
-  "description": "The reference board and roadmap planner for game developers: infinite canvas, dependency-aware task cards, milestones and an always-on-top overlay mode.",
+  "version": "1.1.0",
+  "description": "The reference board and roadmap planner for game developers: infinite canvas, dependency-aware task cards, milestones, live team projects and an always-on-top overlay mode.",
   "author": "1337VIPER",
   "license": "MIT",
   "homepage": "https://github.com/1337VIPER/venom-board",
@@ -28,10 +28,60 @@
   "private": true,
   "scripts": {
     "start": "electron .",
-    "package": "electron-packager . VenomBoard --platform=win32 --arch=x64 --out=dist --overwrite --asar --icon=assets/icon.ico --executable-name=VenomBoard --app-copyright=\"Copyright (c) 2026 1337VIPER\" --win32metadata.CompanyName=1337VIPER --win32metadata.ProductName=\"Venom Board\" --win32metadata.FileDescription=\"Venom Board\" --ignore=^/docs --ignore=^/dist --ignore=^/release --ignore=^/electron/dev/screenshots\\.js --ignore=^/\\.github --ignore=^/\\.gitignore --ignore=^/node_modules --ignore=\\.lnk$ --ignore=\\.bat$ --ignore=^/\\.gitattributes"
+    "dist": "electron-builder --win nsis --x64 --publish never"
   },
   "devDependencies": {
-    "@electron/packager": "^20.3.0",
-    "electron": "^44.5.1"
+    "electron": "^44.5.1",
+    "electron-builder": "^26.15.3"
+  },
+  "dependencies": {
+    "electron-updater": "^6.8.9"
+  },
+  "build": {
+    "appId": "com.venomboard.app",
+    "productName": "Venom Board",
+    "copyright": "Copyright (c) 2026 1337VIPER",
+    "directories": {
+      "output": "dist",
+      "buildResources": "assets"
+    },
+    "files": [
+      "index.html",
+      "electron/**/*",
+      "!electron/dev{,/**/*}",
+      "assets/icon.ico",
+      "assets/icon.png",
+      "package.json"
+    ],
+    "asar": true,
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "assets/icon.ico",
+      "executableName": "VenomBoard"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "artifactName": "VenomBoard-Setup-${version}.${ext}",
+      "shortcutName": "Venom Board",
+      "uninstallDisplayName": "Venom Board",
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "deleteAppDataOnUninstall": false
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "1337VIPER",
+        "repo": "venom-board"
+      }
+    ]
   }
 }

@@ -1,5 +1,5 @@
 // Venom Board desktop shell: frameless window, pin on top, opacity, window lock,
-// click-through with a global "turn it off" shortcut, and native file dialogs.
+// click-through with a global "turn it off" shortcut, native file dialogs and automatic updates.
 const { app, BrowserWindow, ipcMain, dialog, shell, globalShortcut, Tray, Menu } = require('electron');
 const path = require('path');
 const fs = require('fs');
@@ -246,6 +246,47 @@ ipcMain.handle('vb:open-external', (e, url) => {
   if (typeof url === 'string' && /^https?:/i.test(url)) shell.openExternal(url);
 });
 
+// Updates. The installed app checks the GitHub releases for a newer version when it starts and every few
+// hours, downloads it in the background (checked against the release's SHA-512 before it's used) and
+// installs it on restart. The page offers "Restart to update"; otherwise it installs when the app closes.
+let updater = null;
+let update = { state: 'idle' };
+function setUpdate(u) {
+  update = u;
+  if (win && !win.isDestroyed()) win.webContents.send('vb:update', update);
+}
+function startUpdates() {
+  if (!app.isPackaged || DEV) return;
+  try { updater = require('electron-updater').autoUpdater; } catch (e) { return; }
+  updater.autoDownload = true;
+  updater.autoInstallOnAppQuit = true;
+  updater.logger = null;
+  updater.on('checking-for-update', () => { if (update.state !== 'downloading' && update.state !== 'ready') setUpdate({ state: 'checking' }); });
+  updater.on('update-not-available', () => setUpdate({ state: 'current' }));
+  updater.on('update-available', i => setUpdate({ state: 'downloading', version: i.version, percent: 0 }));
+  updater.on('download-progress', p => setUpdate({ ...update, state: 'downloading', percent: Math.floor(p.percent || 0) }));
+  updater.on('update-downloaded', i => {
+    setUpdate({ state: 'ready', version: i.version });
+    if (process.env.VB_UPDATE_AUTOINSTALL === '1') updater.quitAndInstall(true, true);  // used by the update test
+  });
+  updater.on('error', e => setUpdate({ state: 'error', message: String((e && e.message) || e).slice(0, 200) }));
+  const check = () => { if (update.state !== 'downloading' && update.state !== 'ready') updater.checkForUpdates().catch(() => {}); };
+  setTimeout(check, 4000);
+  setInterval(check, 4 * 3600000);
+}
+ipcMain.handle('vb:get-update', () => ({ ...update, current: app.getVersion(), enabled: !!updater }));
+ipcMain.handle('vb:check-update', () => {
+  if (!updater) return false;
+  if (update.state === 'ready' || update.state === 'downloading') setUpdate(update);
+  else updater.checkForUpdates().catch(() => {});
+  return true;
+});
+ipcMain.handle('vb:install-update', () => {
+  if (!updater || update.state !== 'ready') return false;
+  setImmediate(() => updater.quitAndInstall(true, true));  // installs quietly, then opens the new version
+  return true;
+});
+
 if (!app.requestSingleInstanceLock()) {
   app.quit();
 } else {
@@ -255,7 +296,7 @@ if (!app.requestSingleInstanceLock()) {
     if (win.isMinimized()) win.restore();
     win.focus();
   });
-  app.whenReady().then(createWindow);
+  app.whenReady().then(() => { createWindow(); startUpdates(); });
   app.on('will-quit', () => { globalShortcut.unregisterAll(); hideTray(); });
   app.on('window-all-closed', () => app.quit());
 }

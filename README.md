@@ -34,10 +34,12 @@ Solo boards need no account, no subscription and no telemetry. They work offline
 
 | | |
 |---|---|
-| **Windows desktop app** | Download `VenomBoard-1.0.0-win-x64.zip` from the [latest release](https://github.com/1337VIPER/venom-board/releases/latest), unzip it anywhere and run `VenomBoard.exe`. Nothing to install. |
-| **Browser version** | Download `VenomBoard-1.0.0-web.zip`, unzip it and open `index.html` in Chrome, Edge or Firefox. Pin on top, click-through and window opacity need the desktop app. |
+| **Windows desktop app** | Download `VenomBoard-Setup-1.1.0.exe` from the [latest release](https://github.com/1337VIPER/venom-board/releases/latest) and run it. It installs for your Windows account in a few seconds (no admin rights needed) and adds Start menu and desktop shortcuts. **It keeps itself up to date**: new versions download in the background and install when you restart. |
+| **Browser version** | Download `VenomBoard-1.1.0-web.zip`, unzip it and open `index.html` in Chrome, Edge or Firefox, or use the web app at [venomboard.com/app](https://venomboard.com/app). Pin on top, click-through and window opacity need the desktop app. |
 
-> **Windows SmartScreen:** the app isn't code-signed yet, so the first launch may show *"Windows protected your PC"*. Click **More info → Run anyway**.
+> **Windows SmartScreen:** the installer isn't code-signed yet, so Windows may show *"Windows protected your PC"* the first time. Click **More info → Run anyway**. Updates after that install without the warning.
+>
+> **Coming from 1.0.0?** The 1.0.0 zip version can't update itself. Install 1.1.0 once and you'll get every update after that automatically. Your boards carry over.
 
 ## Features
 
@@ -73,6 +75,7 @@ Solo boards need no account, no subscription and no telemetry. They work offline
 - **Pin on top** and an **opacity slider** in the top bar
 - **Click-through**: clicks pass straight through the board to the app underneath. Turn it off from anywhere with a global shortcut (default `Ctrl+Shift+X`, customisable) or the tray icon
 - **Lock window in place**, **hide the top bar**, or hide the whole interface with `\`
+- **Automatic updates**: the app checks for new versions when it starts, downloads them in the background and installs them when you restart. *Restart to update* appears in the top bar when one is ready, and **Check for updates** is in the Window menu
 - Right-click anywhere for the Window menu
 - Two skins: **Venom** (dark) and **Anti-Venom** (light)
 
@@ -127,10 +130,10 @@ npm install
 npm start
 ```
 
-The first `npm start` downloads the Electron runtime. To build the Windows release folder in `dist/`:
+The first `npm start` downloads the Electron runtime. To build the Windows installer in `dist/`:
 
 ```bash
-npm run package
+npm run dist
 ```
 
 ### Project layout

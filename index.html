@@ -386,6 +386,9 @@ html.ui-off #top,html.ui-off #dock,html.ui-off #ctx,html.ui-off #hud,html.ui-off
 .peers .av{margin-left:-7px;box-shadow:0 0 0 2px var(--hide)}
 .av{width:26px;height:26px;border-radius:50%;display:inline-grid;place-items:center;flex:none;background:var(--c,var(--bone-faint));color:#0b0b10;font:800 10.5px var(--font-ui);letter-spacing:.02em}
 .av.more{background:var(--hide-3);color:var(--bone)}
+.updchip{flex:none;height:28px;padding:0 11px;border-radius:99px;border:1px solid var(--line-2);background:none;color:var(--bone-dim);font:700 10px var(--font-mono);letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;cursor:default}
+.updchip.ready{cursor:pointer;color:#fff;border-color:transparent;background:var(--fang);box-shadow:0 0 14px -4px var(--fang)}
+.updchip.ready:hover{filter:brightness(1.1)}
 .livechip{position:relative;flex:none;margin-left:6px;padding:5px 10px 5px 21px;border-radius:99px;border:1px solid var(--line-2);font:700 10px var(--font-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--bone-dim);white-space:nowrap}
 .livechip::before{content:"";position:absolute;left:9px;top:50%;width:7px;height:7px;margin-top:-3.5px;border-radius:50%;background:var(--bone-faint)}
 .livechip.live{color:var(--ok);border-color:color-mix(in srgb,var(--ok) 45%,transparent)}
@@ -499,6 +502,7 @@ select.tm-in{padding-right:6px;cursor:pointer}
     </div>
     <button id="viewBtn" class="ib" title="View: minimap, snapping, skin, hide interface" aria-label="View options"><svg viewBox="0 0 20 20"><path d="M2.5 10s2.8-5 7.5-5 7.5 5 7.5 5-2.8 5-7.5 5-7.5-5-7.5-5z"/><circle cx="10" cy="10" r="2.2"/></svg></button>
     <label class="opac desk-only" title="Window opacity"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3c2.9 3.5 4.7 6.1 4.7 8.6a4.7 4.7 0 0 1-9.4 0C5.3 9.1 7.1 6.5 10 3z"/><path d="M10 16.3a4.7 4.7 0 0 0 4.7-4.7H5.3a4.7 4.7 0 0 0 4.7 4.7z" fill="currentColor" stroke="none" opacity=".5"/></svg><input id="opRange" type="range" min="20" max="100" step="1" value="100" aria-label="Window opacity"><span id="opVal">100%</span></label>
+    <button id="updateChip" class="updchip desk-only" hidden type="button"></button>
     <button id="winLockBtn" class="ib desk-only" hidden title="Window is locked in place. Click to unlock." aria-label="Unlock window"><svg viewBox="0 0 20 20"><rect x="4.5" y="9" width="11" height="8" rx="2"/><path d="M7 9V6.5a3 3 0 0 1 6 0V9"/></svg></button>
     <button id="pinBtn" class="ib desk-only" title="Pin on top (Ctrl+Shift+A) · right-click for opacity" aria-label="Pin window on top" aria-pressed="false"><svg viewBox="0 0 20 20"><path d="M11.8 3.2l5 5-2.2.8-3.2 3.2.2 3.4-1.4 1.4-7.2-7.2 1.4-1.4 3.4.2L11 5.4z"/><path d="M6.6 13.4 3 17"/></svg></button>
     <button id="helpBtn" class="ib q" title="Shortcuts (?)" aria-label="Keyboard shortcuts">?</button>
@@ -577,7 +581,7 @@ select.tm-in{padding-right:6px;cursor:pointer}
 
 <div id="help" class="modal" hidden>
   <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
-    <h2 id="helpTitle">Venom<em>/</em>Board shortcuts <span class="ver">v1.0.0</span></h2>
+    <h2 id="helpTitle">Venom<em>/</em>Board shortcuts <span class="ver">v1.1.0</span></h2>
     <p>Boards autosave on this computer. Save writes a .json file you can back up, put in your repo or open on another PC.</p>
     <div class="keys">
       <section><h3>Tools</h3><dl>
@@ -968,6 +972,7 @@ const ICON = {
   topbar: '<rect x="3" y="3.5" width="14" height="13" rx="2"/><path d="M3 7.5h14"/>',
   key: '<circle cx="6.8" cy="12.8" r="3.3"/><path d="M9.2 10.4 16 3.6M13.6 6l2 2M11.8 7.8l1.4 1.4"/>',
   eye: '<path d="M2.5 10s2.8-5 7.5-5 7.5 5 7.5 5-2.8 5-7.5 5-7.5-5-7.5-5z"/><circle cx="10" cy="10" r="2.2"/>',
+  update: '<path d="M16 10a6 6 0 1 1-1.8-4.3"/><path d="M16.3 3.2v3.6h-3.6"/><path d="M10 7v3.4l2.2 1.4"/>',
 };
 const ic = n => `<svg viewBox="0 0 20 20" aria-hidden="true">${ICON[n] || ''}</svg>`;
 function headHTML(it) {
@@ -2737,6 +2742,9 @@ function windowEntries() {
   if (desk) E.push(
     {label: 'Opacity', icon: 'eye', slider: {min: 20, max: 100, value: Math.round(deskState.opacity * 100), onInput: v => queueOpacity(v)}},
     {label: 'Change click-through key…', icon: 'key', run: recordShortcut});
+  if (desk && desk.checkUpdate && updateInfo.enabled) E.push('-',
+    updateInfo.state === 'ready' ? {label: `Restart to update to ${updateInfo.version}`, icon: 'update', run: installUpdate}
+      : {label: 'Check for updates', kb: 'v' + (updateInfo.current || ''), icon: 'update', run: checkForUpdates});
   return E;
 }
 async function switchBoard(id) {
@@ -3304,6 +3312,36 @@ $('#pinBtn').onclick = togglePin;
 $('#winLockBtn').onclick = toggleWinLock;
 $('#opRange').addEventListener('input', e => queueOpacity(+e.target.value));
 if (desk && desk.onState) desk.onState(applyDeskState);
+
+/* ---------- updates (desktop app) ---------- */
+// The desktop shell downloads new versions in the background; this shows progress and offers the restart.
+let updateInfo = {state: 'idle'}, checkingByHand = false;
+function applyUpdate(u) {
+  if (!u) return;
+  updateInfo = {...updateInfo, ...u};
+  const s = updateInfo.state, chip = $('#updateChip');
+  chip.hidden = s !== 'downloading' && s !== 'ready';
+  chip.classList.toggle('ready', s === 'ready');
+  chip.textContent = s === 'ready' ? 'Restart to update' : `Updating ${updateInfo.percent || 0}%`;
+  chip.title = s === 'ready' ? `Venom Board ${updateInfo.version} is ready. Restart now to install it, or it installs when you close the app.`
+    : `Downloading Venom Board ${updateInfo.version || ''} in the background`;
+  if (!checkingByHand) return;
+  if (s === 'current') { checkingByHand = false; toast(`You have the latest version (${updateInfo.current}).`); }
+  else if (s === 'downloading' || s === 'ready') { checkingByHand = false; toast(`Venom Board ${updateInfo.version} is ${s === 'ready' ? 'ready to install' : 'downloading'}.`); }
+  else if (s === 'error') { checkingByHand = false; toast("Couldn't check for updates. Try again later.", 4000); }
+}
+function checkForUpdates() { checkingByHand = true; toast('Checking for updates…'); desk.checkUpdate(); }
+async function installUpdate() {
+  if (updateInfo.state !== 'ready') return;
+  if (editing) finishEdit();
+  toast('Saving and restarting…', 4000);
+  try { await persistNow(); } catch (e) {}
+  // give live edits that haven't been confirmed yet a moment to reach the team server
+  for (let i = 0; i < 30 && board.team && (team.unacked.length || team.pending.size); i++) await new Promise(r => setTimeout(r, 100));
+  desk.installUpdate();
+}
+$('#updateChip').onclick = installUpdate;
+if (desk && desk.onUpdate) { desk.onUpdate(applyUpdate); desk.getUpdate().then(applyUpdate).catch(() => {}); }
 
 /* ---------- keyboard ---------- */
 function handleEditKeys(e) {

@@ -17,4 +17,11 @@ contextBridge.exposeInMainWorld('venomDesktop', {
   saveFile: opts => ipcRenderer.invoke('vb:save-file', opts),
   openFile: opts => ipcRenderer.invoke('vb:open-file', opts),
   openExternal: url => ipcRenderer.invoke('vb:open-external', url),
+  getUpdate: () => ipcRenderer.invoke('vb:get-update'),
+  onUpdate: cb => {
+    ipcRenderer.removeAllListeners('vb:update');
+    ipcRenderer.on('vb:update', (e, u) => cb(u));
+  },
+  checkUpdate: () => ipcRenderer.invoke('vb:check-update'),
+  installUpdate: () => ipcRenderer.invoke('vb:install-update'),
 });
