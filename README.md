@@ -34,12 +34,12 @@ Solo boards need no account, no subscription and no telemetry. They work offline
 
 | | |
 |---|---|
-| **Windows desktop app** | Download `VenomBoard-Setup-1.1.0.exe` from the [latest release](https://github.com/1337VIPER/venom-board/releases/latest) and run it. It installs for your Windows account in a few seconds (no admin rights needed) and adds Start menu and desktop shortcuts. **It keeps itself up to date**: new versions download in the background and install when you restart. |
-| **Browser version** | Download `VenomBoard-1.1.0-web.zip`, unzip it and open `index.html` in Chrome, Edge or Firefox, or use the web app at [venomboard.com/app](https://venomboard.com/app). Pin on top, click-through and window opacity need the desktop app. |
+| **Windows desktop app** | Download `VenomBoard-Setup-1.1.1.exe` from the [latest release](https://github.com/1337VIPER/venom-board/releases/latest) and run it. It installs for your Windows account in a few seconds (no admin rights needed) and adds Start menu and desktop shortcuts. **It keeps itself up to date**: new versions download in the background and install when you restart. |
+| **Browser version** | Download `VenomBoard-1.1.1-web.zip`, unzip it and open `index.html` in Chrome, Edge or Firefox, or use the web app at [venomboard.com/app](https://venomboard.com/app). Pin on top, click-through and window opacity need the desktop app. |
 
 > **Windows SmartScreen:** the installer isn't code-signed yet, so Windows may show *"Windows protected your PC"* the first time. Click **More info → Run anyway**. Updates after that install without the warning.
 >
-> **Coming from 1.0.0?** The 1.0.0 zip version can't update itself. Install 1.1.0 once and you'll get every update after that automatically. Your boards carry over.
+> **Coming from 1.0.0?** The 1.0.0 zip version can't update itself. Install the new version once and you'll get every update after that automatically. Your boards carry over.
 
 ## Features
 
@@ -78,6 +78,7 @@ Solo boards need no account, no subscription and no telemetry. They work offline
 - **Automatic updates**: the app checks for new versions when it starts, downloads them in the background and installs them when you restart. *Restart to update* appears in the top bar when one is ready, and **Check for updates** is in the Window menu. Every update is checked against Venom Board's update signature before it installs
 - Right-click anywhere for the Window menu
 - Two skins: **Venom** (dark) and **Anti-Venom** (light)
+- **Fits any screen**: on small or low-resolution screens the top bar folds its least-used buttons into a **⋯** menu and the tool spine compacts, and **View → Interface size** (80–150%) scales everything up or down
 
 ## Screenshots
 

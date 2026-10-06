@@ -2,6 +2,15 @@
 
 All notable changes to Venom Board are listed here. The project follows [Semantic Versioning](https://semver.org).
 
+## [1.1.1] - 2026-10-06
+
+### Fits any screen
+- The top bar fits itself to the window: button labels drop first, then the least-used buttons fold into a new **⋯ More** menu, so nothing is cut off or hidden under the window buttons at low resolutions or high display scaling
+- The tool spine shrinks on short screens instead of hiding tools off the bottom, and shows a scroll bar if a tiny window still can't fit them all
+- The selection toolbar stays clear of the tool spine and the planner, and the coordinates readout no longer covers it on narrow windows
+- **Interface size** (View menu, desktop app): 80% to 150%, to fit more on small screens or make everything bigger on large high-resolution ones
+- The desktop window can't be made shorter than 400 px, so every tool always fits
+
 ## [1.1.0] - 2026-10-06
 
 ### Teams and live collaboration
@@ -52,5 +61,6 @@ The first public release.
 - Venom and Anti-Venom skins
 - Native save and open dialogs; boards autosave locally
 
+[1.1.1]: https://github.com/1337VIPER/venom-board/releases/tag/v1.1.1
 [1.1.0]: https://github.com/1337VIPER/venom-board/releases/tag/v1.1.0
 [1.0.0]: https://github.com/1337VIPER/venom-board/releases/tag/v1.0.0

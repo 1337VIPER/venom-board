@@ -14,6 +14,7 @@ contextBridge.exposeInMainWorld('venomDesktop', {
   setClickKey: accel => ipcRenderer.invoke('vb:set-click-key', accel),
   setTopbar: on => ipcRenderer.invoke('vb:set-topbar', on),
   setSkin: skin => ipcRenderer.invoke('vb:set-skin', skin),
+  setUiScale: f => ipcRenderer.invoke('vb:set-ui-scale', f),
   saveFile: opts => ipcRenderer.invoke('vb:save-file', opts),
   openFile: opts => ipcRenderer.invoke('vb:open-file', opts),
   openExternal: url => ipcRenderer.invoke('vb:open-external', url),

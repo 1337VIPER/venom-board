@@ -65,14 +65,14 @@ button{font:inherit;color:inherit}
 /* ---------- top rail ---------- */
 #top{height:52px;flex:none;display:flex;align-items:center;gap:8px;padding:0 12px 0 14px;background:linear-gradient(180deg,var(--hide-2),var(--hide));border-bottom:1px solid var(--line);position:relative;z-index:20}
 #top::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:1px;background:linear-gradient(90deg,transparent 5%,var(--sheen) 35%,var(--sheen-2) 62%,transparent 95%);opacity:.5;pointer-events:none}
-html.desktop #top{-webkit-app-region:drag;padding-right:150px}
+html.desktop #top{-webkit-app-region:drag;padding-right:calc(150px / var(--ui-scale, 1))}
 html.desktop #top button,html.desktop #top input,html.desktop .boardsel{-webkit-app-region:no-drag}
 html:not(.desktop) .desk-only{display:none}
 .brand{display:flex;align-items:center;gap:9px;flex:none}
 .mark{width:30px;height:30px;display:block}
 .word{font:900 14px/1 var(--font-display);letter-spacing:.07em;white-space:nowrap}
 .word em{font-style:normal;color:var(--fang)}
-.boardsel{display:flex;align-items:center;gap:2px;min-width:0;margin-left:10px;padding:2px 2px 2px 11px;border:1px solid var(--line);border-radius:11px 11px 11px 3px;background:var(--void-2)}
+.boardsel{display:flex;align-items:center;gap:2px;flex:none;margin-left:10px;padding:2px 2px 2px 11px;border:1px solid var(--line);border-radius:11px 11px 11px 3px;background:var(--void-2)}
 #boardName{background:none;border:0;color:var(--bone);font:700 13px var(--font-ui);width:17ch;min-width:5ch;outline:none;padding:6px 0}
 .savestate{font:500 11px var(--font-mono);color:var(--bone-faint);margin-left:8px;white-space:nowrap}
 .savestate.off{color:var(--warn)}
@@ -97,7 +97,7 @@ html:not(.desktop) .desk-only{display:none}
 .opac span{font:600 11px var(--font-mono);min-width:4ch;text-align:right;color:var(--bone);font-variant-numeric:tabular-nums}
 html.desktop #top .opac{-webkit-app-region:no-drag}
 html.topbar-off #top{display:none}
-html.desktop.topbar-off #planner{padding-top:30px}
+html.desktop.topbar-off #planner{padding-top:calc(30px / var(--ui-scale, 1))}
 #ctBadge{position:absolute;left:16px;bottom:16px;z-index:12;display:flex;align-items:center;gap:8px;padding:7px 12px;border-radius:12px 12px 12px 3px;background:var(--fang);color:#fff;font:700 12px var(--font-ui);box-shadow:0 12px 26px -10px var(--shadow);pointer-events:none}
 #ctBadge kbd{font:600 10.5px var(--font-mono);padding:2px 6px;border-radius:5px;background:rgba(0,0,0,.25)}
 html.ct-on body::after{content:"";position:fixed;inset:0;border:2px solid color-mix(in srgb,var(--fang) 60%,transparent);pointer-events:none;z-index:200}
@@ -227,7 +227,7 @@ html.ct-on body::after{content:"";position:fixed;inset:0;border:2px solid color-
 /* ---------- tool spine ---------- */
 #dock{position:absolute;left:16px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;align-items:center;z-index:10;max-height:calc(100% - 110px)}
 #tools{display:flex;flex-direction:column;gap:3px;padding:8px 6px;background:linear-gradient(180deg,var(--hide-2),var(--hide) 60%);border:1px solid var(--line);border-radius:24px 24px 22px 22px;box-shadow:inset 0 1px 0 var(--gloss),0 22px 44px -12px var(--shadow);overflow-y:auto;scrollbar-width:none;min-height:0}
-#tools::-webkit-scrollbar{display:none}
+
 .drip{width:34px;height:30px;margin-top:-2px;flex:none;fill:var(--hide);stroke:var(--line);stroke-width:1}
 .tool{position:relative;width:40px;height:40px;flex:none;display:grid;place-items:center;border:0;border-radius:12px;background:transparent;color:var(--bone-dim);cursor:pointer;transition:border-radius .18s ease,background-color .18s ease}
 .tool:hover{color:var(--bone);background:var(--hide-3)}
@@ -240,8 +240,8 @@ html.ct-on body::after{content:"";position:fixed;inset:0;border:2px solid color-
 html.board-locked .tool:not([data-tool=select]):not([data-tool=hand]){opacity:.25;cursor:not-allowed}
 
 /* ---------- context strip ---------- */
-#ctx{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);display:flex;align-items:center;gap:7px;flex-wrap:wrap;justify-content:center;width:max-content;max-width:calc(100% - 32px);padding:7px 10px;background:color-mix(in srgb,var(--hide) 94%,transparent);backdrop-filter:blur(10px);border:1px solid var(--line);border-radius:16px 16px 16px 4px;box-shadow:inset 0 1px 0 var(--gloss),0 18px 40px -14px var(--shadow);z-index:10}
-#wrap.pl-open #ctx{left:calc(50% - 180px);max-width:calc(100% - 400px)}
+#ctx{position:absolute;left:calc(50% + 36px);bottom:16px;transform:translateX(-50%);display:flex;align-items:center;gap:7px;flex-wrap:wrap;justify-content:center;width:max-content;max-width:calc(100% - 104px);padding:7px 10px;background:color-mix(in srgb,var(--hide) 94%,transparent);backdrop-filter:blur(10px);border:1px solid var(--line);border-radius:16px 16px 16px 4px;box-shadow:inset 0 1px 0 var(--gloss),0 18px 40px -14px var(--shadow);z-index:10}
+#wrap.pl-open #ctx{left:calc(50% - 144px);max-width:calc(100% - 464px)}
 .cl{font:800 10px var(--font-display);letter-spacing:.14em;text-transform:uppercase;color:var(--bone-dim);padding:0 4px;white-space:nowrap}
 .sws{display:flex;gap:5px;align-items:center;flex-wrap:wrap}
 .sw{position:relative;width:22px;height:22px;border-radius:50%;border:2px solid var(--hide);background:var(--c);box-shadow:0 0 0 1px var(--line-2);cursor:pointer;padding:0;flex:none}
@@ -356,7 +356,7 @@ html.board-locked .tool:not([data-tool=select]):not([data-tool=hand]){opacity:.2
 #labelEdit{position:absolute;z-index:30;transform:translate(-50%,-50%);font:600 12px var(--font-ui);padding:6px 12px;border-radius:99px;border:1px solid var(--fang);background:var(--hide-2);color:var(--bone);outline:none;width:190px;text-align:center}
 #uiRestore{position:absolute;left:12px;top:12px;z-index:40;background:var(--hide-2);border:1px solid var(--line)}
 #dragStrip{display:none}
-html.desktop.ui-off #dragStrip,html.desktop.topbar-off #dragStrip{display:block;position:absolute;left:0;top:0;right:150px;height:12px;-webkit-app-region:drag;z-index:39}
+html.desktop.ui-off #dragStrip,html.desktop.topbar-off #dragStrip{display:block;position:absolute;left:0;top:0;right:calc(150px / var(--ui-scale, 1));height:12px;-webkit-app-region:drag;z-index:39}
 html.desktop.win-locked #dragStrip{display:none}
 html.ui-off #top,html.ui-off #dock,html.ui-off #ctx,html.ui-off #hud,html.ui-off #minimap,html.ui-off #planner{display:none!important}
 .modal{position:fixed;inset:0;z-index:80;display:grid;place-items:center;background:rgba(0,0,0,.55);padding:16px}
@@ -403,7 +403,7 @@ html.ui-off #top,html.ui-off #dock,html.ui-off #ctx,html.ui-off #hud,html.ui-off
 
 /* ---------- team panel ---------- */
 #teamPanel{position:absolute;top:0;right:0;bottom:0;width:min(360px,100%);background:var(--hide);border-left:1px solid var(--line);display:flex;flex-direction:column;z-index:15;box-shadow:-24px 0 40px -24px var(--shadow)}
-html.desktop.topbar-off #teamPanel{padding-top:30px}
+html.desktop.topbar-off #teamPanel{padding-top:calc(30px / var(--ui-scale, 1))}
 #tmBody{flex:1;overflow:auto;padding:4px 16px 18px;min-height:0;display:flex;flex-direction:column;gap:16px}
 .tm-lead{color:var(--bone-dim);font-size:13px;margin:4px 0 0;line-height:1.5}
 .tm-form{display:flex;flex-direction:column;gap:8px}
@@ -459,9 +459,27 @@ select.tm-in{padding-right:6px;cursor:pointer}
 .u-peer{fill:none;stroke-width:2;stroke-dasharray:5 4}
 .u-peer-t{fill:#0b0b10;font:700 11px var(--font-ui)}
 @media (max-width:900px){.peers{display:none}}
-@media (max-width:1100px){.tb span{display:none}.tb{padding:0 9px}.tb .chev{display:none}}
-@media (max-width:900px){.word,.savestate,.tool .k,.opac svg{display:none}#boardName{width:12ch}#minimap{display:none}.opac input{width:60px}}
-@media (max-width:600px){#hud,#zoomBtn,#viewBtn,#tplBtn,.opac{display:none}#top{gap:4px;padding:0 8px}.boardsel{margin-left:4px}#boardName{width:8ch}#dock{left:10px}.tool{width:36px;height:36px}#ctx,#wrap.pl-open #ctx{left:50%;bottom:10px;max-width:calc(100% - 20px)}.rng input{width:80px}.hint{white-space:normal;text-align:center;line-height:1.9}}
+/* the top bar folds itself to fit (see fitTopbar): labels go first, then buttons move into the "⋯" menu */
+#moreBtn{display:none}
+#moreBtn.on{display:grid}
+#moreBtn svg{fill:currentColor;stroke:none}
+#top .folded{display:none!important}
+#top.compact .tb span,#top.compact .tb .chev{display:none}
+#top.compact .tb{padding:0 9px}
+#top.narrow-name #boardName{width:9ch}
+#top.tiny-name #boardName{width:5ch}
+@media (max-width:900px){.tool .k,#minimap,#hud{display:none}}
+@media (max-width:600px){#top{gap:4px;padding:0 8px}.boardsel{margin-left:4px}#dock{left:10px}#ctx{left:calc(50% + 29px);bottom:10px;max-width:calc(100% - 68px)}#wrap.pl-open #ctx{left:50%;bottom:10px;max-width:calc(100% - 20px)}.rng input{width:80px}.hint{white-space:normal;text-align:center;line-height:1.9}}
+/* short screens: the tool spine shrinks to fit instead of hiding tools off the bottom */
+@media (max-height:780px){#dock{max-height:calc(100% - 28px)}.tool{width:36px;height:36px}.tool svg{width:18px;height:18px}#tools{gap:2px;padding:6px 5px}.tsep{margin:3px 5px}}
+@media (max-height:620px){.tool{width:32px;height:32px;border-radius:10px}.tool svg{width:17px;height:17px}.tool .k{display:none}.drip{height:20px}}
+@media (max-height:500px){.tool{width:28px;height:28px;border-radius:9px}.tool svg{width:15px;height:15px}#tools{padding:4px 4px;gap:1px}.tsep{margin:2px 4px}.drip{display:none}#minimap{display:none}}
+@media (max-height:400px){#dock{max-height:calc(100% - 16px)}.tool{width:24px;height:24px;border-radius:8px}.tool svg{width:14px;height:14px}#tools{gap:0;padding:3px}.tsep{margin:2px 3px}.tool .dot{width:6px;height:6px;right:3px;top:3px}}
+@media (max-height:340px){.tool{width:22px;height:22px}.tool svg{width:13px;height:13px}}
+/* if a very small window still can't fit every tool, show that the spine scrolls */
+#tools{scrollbar-width:thin;scrollbar-color:var(--line-2) transparent}
+#tools::-webkit-scrollbar{display:block;width:3px}
+#tools::-webkit-scrollbar-thumb{background:var(--line-2);border-radius:3px}
 @media (prefers-reduced-motion:reduce){.l-flow,.l-path.grow{animation:none}.l-path.grow{stroke-dasharray:none}.tool,.item{transition:none}}
 </style>
 
@@ -506,6 +524,7 @@ select.tm-in{padding-right:6px;cursor:pointer}
     <button id="winLockBtn" class="ib desk-only" hidden title="Window is locked in place. Click to unlock." aria-label="Unlock window"><svg viewBox="0 0 20 20"><rect x="4.5" y="9" width="11" height="8" rx="2"/><path d="M7 9V6.5a3 3 0 0 1 6 0V9"/></svg></button>
     <button id="pinBtn" class="ib desk-only" title="Pin on top (Ctrl+Shift+A) · right-click for opacity" aria-label="Pin window on top" aria-pressed="false"><svg viewBox="0 0 20 20"><path d="M11.8 3.2l5 5-2.2.8-3.2 3.2.2 3.4-1.4 1.4-7.2-7.2 1.4-1.4 3.4.2L11 5.4z"/><path d="M6.6 13.4 3 17"/></svg></button>
     <button id="helpBtn" class="ib q" title="Shortcuts (?)" aria-label="Keyboard shortcuts">?</button>
+    <button id="moreBtn" class="ib" title="More" aria-label="More options" aria-haspopup="menu"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="4.5" cy="10" r="1.6"/><circle cx="10" cy="10" r="1.6"/><circle cx="15.5" cy="10" r="1.6"/></svg></button>
   </header>
 
   <div id="wrap">
@@ -581,7 +600,7 @@ select.tm-in{padding-right:6px;cursor:pointer}
 
 <div id="help" class="modal" hidden>
   <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
-    <h2 id="helpTitle">Venom<em>/</em>Board shortcuts <span class="ver">v1.1.0</span></h2>
+    <h2 id="helpTitle">Venom<em>/</em>Board shortcuts <span class="ver">v1.1.1</span></h2>
     <p>Boards autosave on this computer. Save writes a .json file you can back up, put in your repo or open on another PC.</p>
     <div class="keys">
       <section><h3>Tools</h3><dl>
@@ -2612,7 +2631,9 @@ function showMenu(x, y, entries, above) {
 function menuAt(btn, entries) {
   if (!btn) return;
   if (!menu.hidden && menu._anchor === btn) { hideMenus(); return; }
-  const r = btn.getBoundingClientRect(), up = r.top > innerHeight / 2;
+  // a button folded into the "⋯" menu opens its menu from there instead
+  const at = btn.getClientRects().length ? btn : $('#moreBtn').getClientRects().length ? $('#moreBtn') : btn;
+  const r = at.getBoundingClientRect(), up = r.top > innerHeight / 2;
   showMenu(r.left, up ? r.top - 6 : r.bottom + 6, entries, up);
   menu._anchor = btn;
 }
@@ -2702,9 +2723,10 @@ function viewMenu() {
     {label: 'Minimap', kb: 'M', cur: showMini, run: toggleMini},
     {label: 'Snap to other items', kb: 'Ctrl skips', cur: snapOn, run: () => { snapOn = !snapOn; savePref('snap', snapOn); toast(snapOn ? 'Snapping on' : 'Snapping off'); }},
     {label: 'Hide interface', kb: '\\', run: toggleUI},
-    {label: skin === 'anti' ? 'Venom skin' : 'Anti-Venom skin', run: () => applySkin(skin === 'anti' ? 'venom' : 'anti')},
-    '-', {label: 'Zoom to fit', kb: 'Shift 1', run: () => fitTo(allObjs())},
-    {label: 'Next phase', kb: 'PgDn', run: () => flyPhase(1)}, {label: 'Previous phase', kb: 'PgUp', run: () => flyPhase(-1)}];
+    {label: skin === 'anti' ? 'Venom skin' : 'Anti-Venom skin', run: () => applySkin(skin === 'anti' ? 'venom' : 'anti')}];
+  if (desk && desk.setUiScale) E.push({label: 'Interface size…', kb: Math.round((deskState.uiScale || 1) * 100) + '%', run: uiScaleMenu});
+  E.push('-', {label: 'Zoom to fit', kb: 'Shift 1', run: () => fitTo(allObjs())},
+    {label: 'Next phase', kb: 'PgDn', run: () => flyPhase(1)}, {label: 'Previous phase', kb: 'PgUp', run: () => flyPhase(-1)});
   menuAt($('#viewBtn'), [...E, '-', ...windowEntries()]);
 }
 function lockedEntries(hit) {
@@ -3230,7 +3252,14 @@ function applyDeskState(s) {
   $('#ctKey').textContent = deskState.keyLabel;
   $('#helpCtKey').textContent = deskState.keyLabel;
   $('#winLockBtn').hidden = !s.locked;
+  root.style.setProperty('--ui-scale', s.uiScale || 1);
   syncOpacityUI();
+}
+const UI_SCALES = [0.8, 0.9, 1, 1.1, 1.25, 1.5];
+function uiScaleMenu() {
+  const cur = deskState.uiScale || 1;
+  menuAt($('#viewBtn'), [{head: 'Interface size'}, ...UI_SCALES.map(f => ({label: Math.round(f * 100) + '%' + (f === 1 ? ' (default)' : ''), cur: f === cur,
+    run: () => desk.setUiScale(f).then(v => { deskState.uiScale = v; document.documentElement.style.setProperty('--ui-scale', v); })}))]);
 }
 function syncOpacityUI() {
   const p = Math.round(deskState.opacity * 100), r = $('#opRange');
@@ -3453,6 +3482,60 @@ $('#saveBtn').onclick = () => saveBoardFile(false);
 $('#exportBtn').onclick = exportMenu;
 $('#viewBtn').onclick = viewMenu;
 $('#helpBtn').onclick = () => { $('#help').hidden = false; };
+
+/* ---------- a top bar that fits any window ---------- */
+// When the window is too narrow for everything (small screens, big display scaling, the desktop app's extra
+// controls), labels drop first, then the least-used buttons fold into the "⋯" menu one at a time.
+const FOLD = [
+  {compact: true},
+  {sel: '#saveState'},
+  {sel: '.brand .word'},
+  {sel: '#helpBtn', entry: () => ({label: 'Keyboard shortcuts', kb: '?', run: () => { $('#help').hidden = false; }})},
+  {sel: '#viewBtn', entry: () => ({label: 'View options…', icon: 'eye', run: viewMenu})},
+  {sel: '#zoomBtn', entry: () => ({label: `Fit board to window (${$('#zoomBtn').textContent})`, kb: 'Shift 1', run: () => fitTo(allObjs())})},
+  {sel: '.opac', entry: () => ({label: 'Opacity', icon: 'eye', slider: {min: 20, max: 100, value: Math.round(deskState.opacity * 100), onInput: v => queueOpacity(v)}})},
+  {sel: '#openBtn', entry: () => ({label: 'Open board file…', kb: 'Ctrl O', run: openFlow})},
+  {sel: '#saveBtn', entry: () => ({label: 'Save board file', kb: 'Ctrl S', run: () => saveBoardFile(false)})},
+  {sel: '#exportBtn', entry: () => ({label: 'Export…', run: exportMenu})},
+  {sel: '#tplBtn', entry: () => ({label: 'Templates', icon: 'card', run: openTemplates})},
+  {sel: '#undoBtn', entry: () => ({label: 'Undo', kb: 'Ctrl Z', run: undo})},
+  {sel: '#redoBtn', entry: () => ({label: 'Redo', kb: 'Ctrl Y', run: redo})},
+  {sel: '#pinBtn', entry: () => ({label: 'Pin on top', kb: 'Ctrl Shift A', icon: 'pin', cur: pinned, run: togglePin})},
+  {name: true},
+  {sel: '.brand'},
+  {tiny: true},
+  {sel: '#planBtn', entry: () => ({label: 'Planner', kb: 'Ctrl F', cur: plannerOpen, run: () => setPlanner(!plannerOpen)})},
+  {sel: '#teamBtn', entry: () => ({label: 'Team', cur: team.panelOpen, run: () => setTeamPanel(!team.panelOpen)})},
+];
+const topBar = $('#top'), moreBtn = $('#moreBtn');
+function topbarOverflows() {
+  const limit = topBar.getBoundingClientRect().right - parseFloat(getComputedStyle(topBar).paddingRight) + 0.5;
+  for (const el of topBar.children) if (el.getClientRects().length && el.getBoundingClientRect().right > limit) return true;
+  return false;
+}
+function fitTopbar() {
+  topBar.classList.remove('compact', 'narrow-name', 'tiny-name');
+  moreBtn.classList.remove('on');
+  for (const f of FOLD) if (f.sel) $(f.sel).classList.remove('folded');
+  if (!topBar.getClientRects().length || !topbarOverflows()) return;
+  moreBtn.classList.add('on');
+  for (const f of FOLD) {
+    if (f.compact) topBar.classList.add('compact');
+    else if (f.name) topBar.classList.add('narrow-name');
+    else if (f.tiny) topBar.classList.add('tiny-name');
+    else { const el = $(f.sel); if (!el.getClientRects().length) continue; el.classList.add('folded'); }
+    if (!topbarOverflows()) break;
+  }
+  // only show "⋯" when something actually moved into it (hiding labels or the save status doesn't count)
+  if (!FOLD.some(f => f.entry && $(f.sel).classList.contains('folded'))) moreBtn.classList.remove('on');
+}
+moreBtn.onclick = () => menuAt(moreBtn, FOLD.filter(f => f.entry && $(f.sel).classList.contains('folded')).map(f => f.entry()));
+let fitQueued = false;
+const queueFit = () => { if (fitQueued) return; fitQueued = true; requestAnimationFrame(() => { fitQueued = false; fitTopbar(); }); };
+new ResizeObserver(queueFit).observe(topBar);
+// things that appear in the bar later (live chip, teammates, update button) can tip it over too
+new MutationObserver(queueFit).observe(topBar, {subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ['hidden']});
+document.fonts && document.fonts.ready.then(queueFit);
 $('#uiRestore').onclick = toggleUI;
 $('#help').addEventListener('click', e => { if (e.target.id === 'help') $('#help').hidden = true; });
 $('#boardsBtn').onclick = boardsMenu;

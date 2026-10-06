@@ -8,8 +8,9 @@ const fs = require('fs');
 app.setAppUserModelId('com.venomboard.app');
 
 const ROOT = path.join(__dirname, '..');
-// Developer modes (electron/dev): VB_SMOKE=<dir> runs the self-test, VB_SHOTS=<dir> renders the README screenshots.
-const DEV = process.env.VB_SMOKE ? ['smoke', process.env.VB_SMOKE] : process.env.VB_SHOTS ? ['screenshots', process.env.VB_SHOTS] : null;
+// Developer modes (electron/dev): VB_SMOKE=<dir> runs the self-test, VB_SHOTS=<dir> renders the README screenshots,
+// VB_LAYOUT=<dir> checks the layout across screen and interface sizes.
+const DEV = process.env.VB_SMOKE ? ['smoke', process.env.VB_SMOKE] : process.env.VB_SHOTS ? ['screenshots', process.env.VB_SHOTS] : process.env.VB_LAYOUT ? ['layout', process.env.VB_LAYOUT] : null;
 if (DEV) app.setPath('userData', path.join(DEV[1], 'userdata'));
 const statePath = () => path.join(app.getPath('userData'), 'window-state.json');
 const ICON = path.join(ROOT, 'assets', 'icon.ico');
@@ -27,7 +28,10 @@ let pinBeforeClickThrough = null;
 let registeredKey = null;
 
 const keyLabel = k => String(k || '').replace(/CommandOrControl/g, 'Ctrl').replace(/Super/g, 'Win');
-const overlay = () => ({ ...OVERLAY[state.skin === 'anti' ? 'anti' : 'venom'], height: state.topbar === false ? 30 : 52 });
+// Interface size: the whole page zooms, and the title bar overlay grows or shrinks to match the top bar.
+const UI_SCALES = [0.8, 0.9, 1, 1.1, 1.25, 1.5];
+const uiScale = () => (UI_SCALES.includes(state.uiScale) ? state.uiScale : 1);
+const overlay = () => ({ ...OVERLAY[state.skin === 'anti' ? 'anti' : 'venom'], height: Math.round((state.topbar === false ? 30 : 52) * uiScale()) });
 
 function loadState() {
   try { return JSON.parse(fs.readFileSync(statePath(), 'utf8')); } catch (e) { return {}; }
@@ -46,6 +50,7 @@ function publicState() {
     clickKey: state.clickKey,
     keyLabel: keyLabel(state.clickKey),
     keyOk: !!registeredKey,
+    uiScale: uiScale(),
   };
 }
 function pushState() {
@@ -119,7 +124,7 @@ function createWindow() {
     x: state.x,
     y: state.y,
     minWidth: 480,
-    minHeight: 340,
+    minHeight: 400,
     title: 'Venom Board',
     backgroundColor: '#060609',
     icon: ICON,
@@ -143,6 +148,7 @@ function createWindow() {
   if (DEV) { try { devMode = require('./dev/' + DEV[0]); } catch (e) { devMode = null; } }
   if (devMode) devMode(app, win, DEV[1]);
   else win.once('ready-to-show', () => win.show());
+  win.webContents.on('did-finish-load', () => win.webContents.setZoomFactor(uiScale()));
   win.loadFile(path.join(ROOT, 'index.html'));
 
   // Links on cards open in the real browser, never inside the app window.
@@ -203,6 +209,15 @@ ipcMain.handle('vb:set-click-key', (e, accel) => {
   saveState();
   pushState();
   return { ok, ...publicState() };
+});
+ipcMain.handle('vb:set-ui-scale', (e, f) => {
+  if (!win || !UI_SCALES.includes(f)) return uiScale();
+  state.uiScale = f;
+  win.webContents.setZoomFactor(f);
+  try { win.setTitleBarOverlay(overlay()); } catch (err) { /* older platforms */ }
+  saveState();
+  pushState();
+  return f;
 });
 ipcMain.handle('vb:set-topbar', (e, on) => {
   state.topbar = !!on;
