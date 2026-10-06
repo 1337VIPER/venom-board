@@ -1,0 +1,14 @@
+# dependencies and build output
+node_modules/
+dist/
+release/
+
+# local launchers and editor settings
+*.lnk
+*.bat
+.vscode/
+
+# OS files
+Thumbs.db
+Desktop.ini
+.DS_Store

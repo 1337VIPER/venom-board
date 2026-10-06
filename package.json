@@ -1,0 +1,37 @@
+{
+  "name": "venom-board",
+  "productName": "Venom Board",
+  "version": "1.0.0",
+  "description": "The reference board and roadmap planner for game developers: infinite canvas, dependency-aware task cards, milestones and an always-on-top overlay mode.",
+  "author": "1337VIPER",
+  "license": "MIT",
+  "homepage": "https://github.com/1337VIPER/venom-board",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/1337VIPER/venom-board.git"
+  },
+  "bugs": {
+    "url": "https://github.com/1337VIPER/venom-board/issues"
+  },
+  "keywords": [
+    "gamedev",
+    "game-development",
+    "roadmap",
+    "project-planning",
+    "reference-board",
+    "moodboard",
+    "pureref",
+    "kanban",
+    "electron"
+  ],
+  "main": "electron/main.js",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "package": "electron-packager . VenomBoard --platform=win32 --arch=x64 --out=dist --overwrite --asar --icon=assets/icon.ico --executable-name=VenomBoard --app-copyright=\"Copyright (c) 2026 1337VIPER\" --win32metadata.CompanyName=1337VIPER --win32metadata.ProductName=\"Venom Board\" --win32metadata.FileDescription=\"Venom Board\" --ignore=^/docs --ignore=^/dist --ignore=^/release --ignore=^/electron/dev/screenshots\\.js --ignore=^/\\.github --ignore=^/\\.gitignore --ignore=^/node_modules --ignore=\\.lnk$ --ignore=\\.bat$"
+  },
+  "devDependencies": {
+    "@electron/packager": "^20.3.0",
+    "electron": "^44.5.1"
+  }
+}
