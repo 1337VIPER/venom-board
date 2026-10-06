@@ -26,7 +26,9 @@ Game production lives in three places at once: a folder of reference images, a t
 - **It's a dependency network**: drag a tendril from one card to the next and the board works out what's blocked and what's ready to start.
 - **It's an overlay**: pin it on top of Unreal, Unity or Godot, turn the opacity down, and let clicks pass straight through to your engine.
 
-No account, no subscription, no telemetry. Works offline. Your boards are plain `.json` files you can back up or commit to your game's repo.
+- **It's multiplayer**: make a free account at [venomboard.com](https://venomboard.com), invite your team and edit shared projects together live.
+
+Solo boards need no account, no subscription and no telemetry. They work offline, and they're plain `.json` files you can back up or commit to your game's repo.
 
 ## Download
 
@@ -58,6 +60,14 @@ No account, no subscription, no telemetry. Works offline. Your boards are plain 
 - **10 game-dev templates**: feature, level and character pipelines, vertical slice, weekly sprint board, bug triage, playtest loop, 48-hour game jam, Steam launch and a design-doc outline
 - **Export to Markdown** (GitHub, Notion, Discord) and **CSV** (Sheets, Jira, Trello)
 - **Board lock**: a view-only mode for reviews and sharing, so nothing gets nudged by accident
+
+### Teams and live collaboration
+- **Free accounts** at [venomboard.com](https://venomboard.com). Sign in from the **Team** panel in the desktop app or the web app
+- **Teams** with a leader, team admins, editors and viewers. Invite people by username or email; they accept from the app or the website
+- **Shared projects**: each team has a project list. **Share this board** turns any board into a team project
+- **Live editing**: every card, connector, frame, image, ink stroke and text appears for everyone as it happens, including drags, resizes and typing in progress
+- **Presence**: teammates' avatars in the top bar, their cursors and selections on the canvas, and *is typing…* labels
+- **Viewers** watch live without being able to change anything
 
 ### Overlay mode (desktop app)
 - **Pin on top** and an **opacity slider** in the top bar
@@ -104,7 +114,7 @@ Press `?` inside the app for the full list.
 - Boards autosave locally, and you can keep as many boards as you like.
 - **Save** writes a `.venomboard.json` file containing the board and its images. Use it for backups, to move boards between computers, or to commit next to your project.
 - The desktop app and a browser keep separate local storage; use Save and Open to move boards between them.
-- Nothing ever leaves your machine.
+- Solo boards never leave your machine. Team projects are stored on venomboard.com so everyone in the team can open them.
 
 ## Build from source
 

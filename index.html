@@ -381,6 +381,81 @@ html.ui-off #top,html.ui-off #dock,html.ui-off #ctx,html.ui-off #hud,html.ui-off
 .tb.danger{background:var(--fang);border-color:transparent;color:#fff}
 .tb.danger:hover{background:var(--fang);filter:brightness(1.1)}
 
+/* ---------- team: presence in the top bar ---------- */
+.peers{display:flex;align-items:center;padding-left:8px}
+.peers .av{margin-left:-7px;box-shadow:0 0 0 2px var(--hide)}
+.av{width:26px;height:26px;border-radius:50%;display:inline-grid;place-items:center;flex:none;background:var(--c,var(--bone-faint));color:#0b0b10;font:800 10.5px var(--font-ui);letter-spacing:.02em}
+.av.more{background:var(--hide-3);color:var(--bone)}
+.livechip{position:relative;flex:none;margin-left:6px;padding:5px 10px 5px 21px;border-radius:99px;border:1px solid var(--line-2);font:700 10px var(--font-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--bone-dim);white-space:nowrap}
+.livechip::before{content:"";position:absolute;left:9px;top:50%;width:7px;height:7px;margin-top:-3.5px;border-radius:50%;background:var(--bone-faint)}
+.livechip.live{color:var(--ok);border-color:color-mix(in srgb,var(--ok) 45%,transparent)}
+.livechip.live::before{background:var(--ok);box-shadow:0 0 8px var(--ok);animation:vbpulse 1.8s ease-in-out infinite}
+.livechip.connecting,.livechip.reconnecting{color:var(--warn);border-color:color-mix(in srgb,var(--warn) 45%,transparent)}
+.livechip.connecting::before,.livechip.reconnecting::before{background:var(--warn)}
+.livechip.viewer{color:var(--run);border-color:color-mix(in srgb,var(--run) 45%,transparent)}
+.livechip.viewer::before{background:var(--run);box-shadow:none}
+@keyframes vbpulse{50%{opacity:.35}}
+#teamBtn{position:relative}
+#teamBtn.signed::after{content:"";position:absolute;top:6px;right:6px;width:7px;height:7px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 2px var(--hide-2)}
+
+/* ---------- team panel ---------- */
+#teamPanel{position:absolute;top:0;right:0;bottom:0;width:min(360px,100%);background:var(--hide);border-left:1px solid var(--line);display:flex;flex-direction:column;z-index:15;box-shadow:-24px 0 40px -24px var(--shadow)}
+html.desktop.topbar-off #teamPanel{padding-top:30px}
+#tmBody{flex:1;overflow:auto;padding:4px 16px 18px;min-height:0;display:flex;flex-direction:column;gap:16px}
+.tm-lead{color:var(--bone-dim);font-size:13px;margin:4px 0 0;line-height:1.5}
+.tm-form{display:flex;flex-direction:column;gap:8px}
+.tm-in{width:100%;height:36px;border-radius:10px;border:1px solid var(--line);background:var(--void-2);color:var(--bone);padding:0 12px;font:600 13px var(--font-ui);outline:none;min-width:0}
+.tm-in:focus{border-color:var(--fang)}
+select.tm-in{padding-right:6px;cursor:pointer}
+.tm-wide{justify-content:center;width:100%;height:38px}
+.tm-err{color:var(--bad);font-size:12.5px;margin:0}
+.tm-links{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.tm-link{border:0;background:none;color:var(--bone-dim);font:700 12px var(--font-ui);cursor:pointer;padding:2px 0;text-decoration:underline;text-underline-offset:3px}
+.tm-link:hover{color:var(--bone)}
+.tm-link.danger{color:var(--fang)}
+.tm-note{color:var(--bone-faint);font-size:12px;margin:6px 0 0;line-height:1.5}
+.tm-me{display:flex;align-items:center;gap:10px;padding-top:8px}
+.tm-me .av{width:34px;height:34px;font-size:12px}
+.tm-who{flex:1;min-width:0;display:flex;flex-direction:column}
+.tm-who b{font-size:14px}
+.tm-who span{font:500 11.5px var(--font-mono);color:var(--bone-faint)}
+.tm-sec h4{margin:0 0 8px;font:800 10px var(--font-display);letter-spacing:.14em;text-transform:uppercase;color:var(--bone-faint)}
+.tm-list{display:flex;flex-direction:column;gap:2px}
+.tm-row{display:flex;align-items:center;gap:9px;padding:6px 8px;border-radius:10px}
+.tm-row:hover{background:var(--hide-2)}
+.tm-row.on{background:color-mix(in srgb,var(--fang) 12%,transparent)}
+.tm-row-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px;text-align:left;border:0;background:none;color:var(--bone);padding:0;font:inherit}
+.tm-open{cursor:pointer}
+.tm-row-main b{font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tm-row-main span{font-size:11.5px;color:var(--bone-faint);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tm-btn{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 11px;border-radius:9px;border:1px solid var(--line);background:var(--hide-2);color:var(--bone);font:700 12px var(--font-ui);cursor:pointer;white-space:nowrap;flex:none}
+.tm-btn:hover{border-color:var(--line-2)}
+.tm-btn.ok{background:var(--fang);border-color:transparent;color:#fff}
+.tm-ico svg{width:14px;height:14px;display:block;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.tm-icon{width:28px;height:28px;display:grid;place-items:center;border:0;border-radius:8px;background:none;color:var(--bone-faint);cursor:pointer;flex:none}
+.tm-icon:hover{background:var(--hide-3);color:var(--fang)}
+.tm-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.tm-inline{display:flex;gap:6px;align-items:center;margin-top:8px}
+.tm-role{font:600 10.5px var(--font-mono);color:var(--bone-dim);text-transform:uppercase;letter-spacing:.05em;white-space:nowrap}
+.tm-role-sel{height:28px;border-radius:8px;border:1px solid var(--line);background:var(--void-2);color:var(--bone);font:700 11.5px var(--font-ui);padding:0 4px;flex:none;cursor:pointer}
+.tm-live{border:1px solid var(--line-2);border-radius:14px 14px 14px 4px;padding:12px;background:var(--hide-2);display:flex;flex-direction:column;gap:8px}
+.tm-live.live{border-color:color-mix(in srgb,var(--ok) 45%,transparent)}
+.tm-live-top{display:flex;align-items:center;gap:8px}
+.tm-live-top b{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tm-live .dot{width:8px;height:8px;border-radius:50%;background:var(--warn);flex:none}
+.tm-live.live .dot{background:var(--ok);box-shadow:0 0 8px var(--ok)}
+.tm-live p{margin:0;font-size:12px;color:var(--bone-dim)}
+.tm-people{display:flex;flex-wrap:wrap;gap:8px}
+.tm-person{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600}
+.tm-person .av{width:20px;height:20px;font-size:9px}
+.tm-site{align-self:flex-start;margin-top:auto}
+.tm-verify{border:1px dashed color-mix(in srgb,var(--warn) 55%,transparent);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+.tm-verify p{margin:0;font-size:12.5px;color:var(--bone-dim);line-height:1.5}
+
+/* ---------- other people on the canvas ---------- */
+.u-peer{fill:none;stroke-width:2;stroke-dasharray:5 4}
+.u-peer-t{fill:#0b0b10;font:700 11px var(--font-ui)}
+@media (max-width:900px){.peers{display:none}}
 @media (max-width:1100px){.tb span{display:none}.tb{padding:0 9px}.tb .chev{display:none}}
 @media (max-width:900px){.word,.savestate,.tool .k,.opac svg{display:none}#boardName{width:12ch}#minimap{display:none}.opac input{width:60px}}
 @media (max-width:600px){#hud,#zoomBtn,#viewBtn,#tplBtn,.opac{display:none}#top{gap:4px;padding:0 8px}.boardsel{margin-left:4px}#boardName{width:8ch}#dock{left:10px}.tool{width:36px;height:36px}#ctx,#wrap.pl-open #ctx{left:50%;bottom:10px;max-width:calc(100% - 20px)}.rng input{width:80px}.hint{white-space:normal;text-align:center;line-height:1.9}}
@@ -404,6 +479,8 @@ html.ui-off #top,html.ui-off #dock,html.ui-off #ctx,html.ui-off #hud,html.ui-off
       <button id="boardsBtn" class="ib" title="Switch, create or delete boards" aria-label="Boards menu"><svg viewBox="0 0 20 20"><path d="M6 8l4 4 4-4"/></svg></button>
     </div>
     <span id="saveState" class="savestate">Saved</span>
+    <span id="liveChip" class="livechip" hidden></span>
+    <div id="peerDock" class="peers" hidden></div>
     <div class="spacer"></div>
     <div class="grp">
       <button id="undoBtn" class="ib" title="Undo (Ctrl+Z)" aria-label="Undo"><svg viewBox="0 0 20 20"><path d="M7.5 4.5 4 8l3.5 3.5M4.5 8h7.2a4.3 4.3 0 0 1 0 8.6H9"/></svg></button>
@@ -413,6 +490,7 @@ html.ui-off #top,html.ui-off #dock,html.ui-off #ctx,html.ui-off #hud,html.ui-off
     <div class="grp">
       <button id="tplBtn" class="tb" title="Insert a game-dev template"><svg viewBox="0 0 20 20"><rect x="3" y="3" width="6" height="6" rx="1.2"/><rect x="11" y="3" width="6" height="6" rx="1.2"/><rect x="3" y="11" width="6" height="6" rx="1.2"/><path d="M14 11v6M11 14h6"/></svg><span>Templates</span></button>
       <button id="planBtn" class="tb" title="Planner: progress, filters, search (Ctrl+F)" aria-pressed="false"><svg viewBox="0 0 20 20"><path d="M8.5 5.5H17M8.5 10H17M8.5 14.5H17"/><path d="M3 5.6l1.3 1.3L6.2 4.6M3 10.1l1.3 1.3 1.9-2.3M3.6 14.5h1.6"/></svg><span>Planner</span></button>
+      <button id="teamBtn" class="tb" title="Team: sign in to share projects and edit them together live" aria-pressed="false"><svg viewBox="0 0 20 20"><circle cx="7.5" cy="7" r="2.8"/><path d="M2.5 16.5c.6-2.8 2.6-4.5 5-4.5s4.4 1.7 5 4.5"/><circle cx="14" cy="7.6" r="2.2"/><path d="M13.6 12.1c1.9.2 3.3 1.6 3.9 4.4"/></svg><span>Team</span></button>
     </div>
     <div class="grp">
       <button id="openBtn" class="ib" title="Open a board file (Ctrl+O)" aria-label="Open board file"><svg viewBox="0 0 20 20"><path d="M3 6.5V15a1.5 1.5 0 0 0 1.5 1.5h11A1.5 1.5 0 0 0 17 15V8.5A1.5 1.5 0 0 0 15.5 7H10L8.3 5H4.5A1.5 1.5 0 0 0 3 6.5z"/></svg></button>
@@ -473,6 +551,11 @@ html.ui-off #top,html.ui-off #dock,html.ui-off #ctx,html.ui-off #hud,html.ui-off
       <div id="plList" class="pl-list"></div>
       <div class="pl-foot"><button class="tb" data-pl="md">Copy Markdown</button><button class="tb" data-pl="csv">Save CSV</button></div>
     </aside>
+
+    <aside id="teamPanel" hidden aria-label="Team">
+      <div class="pl-head"><h2>Team<em>.</em></h2><button id="tmClose" class="ib" aria-label="Close team panel" title="Close team panel"><svg viewBox="0 0 20 20"><path d="M5 5l10 10M15 5 5 15"/></svg></button></div>
+      <div id="tmBody"></div>
+    </aside>
   </div>
 </div>
 
@@ -523,6 +606,12 @@ html.ui-off #top,html.ui-off #dock,html.ui-off #ctx,html.ui-off #hud,html.ui-off
         <dt><kbd>M</kbd></dt><dd>Minimap</dd>
         <dt><kbd>\</kbd></dt><dd>Hide or show the whole interface</dd>
         <dt><kbd>Ctrl Shift B</kbd></dt><dd>Hide or show the top bar</dd>
+      </dl></section>
+      <section><h3>Team · live</h3><dl>
+        <dt><kbd>Team</kbd></dt><dd>Sign in, accept invites, open shared projects</dd>
+        <dt><kbd>Live</kbd></dt><dd>Everyone's edits, drags and typing appear as they happen</dd>
+        <dt><kbd>Cursors</kbd></dt><dd>Teammates' pointers and selections show in their colour</dd>
+        <dt><kbd>Viewer</kbd></dt><dd>Viewers watch live but can't change anything</dd>
       </dl></section>
       <section class="desk-only"><h3>Window · desktop app</h3><dl>
         <dt><kbd>Right-click</kbd></dt><dd>Anywhere: pin, lock, click-through, top bar, opacity</dd>
@@ -667,7 +756,7 @@ const geom = new Map(), titleBox = new Map(), els = new Map(), inkEls = new Map(
 let editing = null, drag = null, hover = null, spaceDown = false, grown = null;
 let stageRect = stage.getBoundingClientRect();
 let lastPtr = null, ptrInStage = false, handles = [];
-let hist = [], hi = -1;
+let undoStack = [], redoStack = [], base = null;
 let storageOK = true, fileHandle = null, deskPath = null, dl = null, clip = null, pinned = false;
 const pref = (k, d) => { try { const v = localStorage.getItem('venom-board-' + k); return v === null ? d : v === '1'; } catch (e) { return d; } };
 const savePref = (k, v) => { try { localStorage.setItem('venom-board-' + k, v ? '1' : '0'); } catch (e) {} };
@@ -762,7 +851,7 @@ function fitTo(objs, animate = true, maxZ = 2.5) {
   let t;
   if (!b) t = {z: 1, x: stageRect.width / 2, y: stageRect.height / 2};
   else {
-    const padL = 90, padR = plannerOpen ? 400 : 60, padY = 80;
+    const padL = 90, padR = plannerOpen || team.panelOpen ? 400 : 60, padY = 80;
     const z = clamp(Math.min((stageRect.width - padL - padR) / Math.max(b.w, 1), (stageRect.height - padY * 2) / Math.max(b.h, 1)), 0.05, maxZ);
     t = {z, x: padL + (stageRect.width - padL - padR) / 2 - (b.x + b.w / 2) * z, y: stageRect.height / 2 - (b.y + b.h / 2) * z};
   }
@@ -771,12 +860,12 @@ function fitTo(objs, animate = true, maxZ = 2.5) {
 function zoomTo(z) { zoomAt({x: stageRect.width / 2, y: stageRect.height / 2}, z / cam.z); }
 function flyTo(it) {
   const b = bboxOf(it); if (!b) return;
-  const z = clamp(cam.z < 0.7 ? 1 : cam.z, 0.7, 1.6), vw = stageRect.width - (plannerOpen ? 360 : 0);
+  const z = clamp(cam.z < 0.7 ? 1 : cam.z, 0.7, 1.6), vw = stageRect.width - (plannerOpen || team.panelOpen ? 360 : 0);
   animateCam({z, x: vw / 2 - (b.x + b.w / 2) * z, y: stageRect.height / 2 - (b.y + b.h / 2) * z});
 }
 function ensureVisible(it) {
   const b = bboxOf(it), a = toScreen(b.x, b.y), c = toScreen(b.x + b.w, b.y + (b.h || 100));
-  const right = stageRect.width - (plannerOpen ? 380 : 20);
+  const right = stageRect.width - (plannerOpen || team.panelOpen ? 380 : 20);
   if (a.x < 70 || a.y < 10 || c.x > right || c.y > stageRect.height - 80) flyTo(it);
 }
 let phaseIdx = -1;
@@ -939,7 +1028,8 @@ function syncEl(el, it) {
   if (it.type === 'image') {
     el.style.width = it.w + 'px'; el.style.height = it.h + 'px';
     const src = it.asset ? assets[it.asset] : it.src;
-    const img = el.firstChild; if (img._src !== src) { img._src = src; if (src) img.src = src; }
+    const img = el.firstChild;
+    if (img._src !== src) { img._src = src; if (teamAsset(src)) img.crossOrigin = 'anonymous'; else img.removeAttribute('crossorigin'); if (src) img.src = src; }
     el.classList.toggle('flip', !!it.flip); el.classList.toggle('gray', !!it.gray);
   } else if (it.type === 'node') {
     const k = it.kind || 'task';
@@ -1144,7 +1234,7 @@ function renderUI() {
     if (b) { const a = toScreen(b.x, b.y); s += `<rect class="u-group" x="${rd(a.x - 8)}" y="${rd(a.y - 8)}" width="${rd(b.w * z + 16)}" height="${rd(b.h * z + 16)}" rx="6"/>`; }
   }
   const busy = drag && (drag.type === 'move' || drag.type === 'marquee' || drag.type === 'pan');
-  const one = list.length === 1 && tool === 'select' && !editing && !busy && !pending && !board.locked ? list[0] : null;
+  const one = list.length === 1 && tool === 'select' && !editing && !busy && !pending && !viewOnly() ? list[0] : null;
   if (one && one.type === 'link') {
     const g = geom.get(one.id);
     if (g) for (const [end, pt] of [['from', g.p0], ['to', g.p1]]) {
@@ -1172,6 +1262,7 @@ function renderUI() {
   }
   const tgt = drag && (drag.type === 'link' || drag.type === 'relink') ? drag.target : (tool === 'link' && !drag && hover && hover.id ? idx.get(hover.id) : null);
   if (tgt) { const b = bboxOf(tgt); if (b) { const a = toScreen(b.x, b.y); s += `<rect class="u-target" x="${rd(a.x - 5)}" y="${rd(a.y - 5)}" width="${rd(b.w * z + 10)}" height="${rd(b.h * z + 10)}" rx="8"/>`; } }
+  s += drawPeers();
   if (tool === 'eraser' && hover && hover.eraser) s += `<circle class="u-eraser" cx="${rd(hover.eraser.x)}" cy="${rd(hover.eraser.y)}" r="${opts.eraser.size / 2}"/>`;
   ui.innerHTML = s;
 }
@@ -1181,25 +1272,102 @@ function hitHandle(p) {
 }
 function render() { reindex(); computeDerived(); renderItems(); measure(); renderLinks(); renderInk(); renderUI(); scheduleMini(); }
 function renderMove() { renderItems(); renderLinks(); renderInk(); renderUI(); scheduleMini(); }
-function refresh() { render(); updateCtx(); schedulePlanner(); }
+function refresh() {
+  render(); updateCtx(); schedulePlanner();
+  if (board.team) { const s = [...sel].join(); if (s !== team.selSig) { team.selSig = s; teamPresence({sel: [...sel]}); } }
+}
 
 /* ---------- history + persistence ---------- */
-const snap = () => JSON.stringify(doc);
+/* Comparing the board with its last committed state yields object operations: put (create or
+   replace), del and order. They drive undo and redo, and in a team project they are exactly what
+   is sent to everyone else. */
+const COLS = ['items', 'links', 'strokes'];
+// card heights and text sizes are measured on each screen, so they never count as an edit
+const syncJson = o => o.type === 'node' ? JSON.stringify({...o, h: 0}) : o.type === 'text' ? JSON.stringify({...o, w: 0, h: 0}) : JSON.stringify(o);
+function captureBase() {
+  base = {};
+  for (const k of COLS) base[k] = {json: new Map(doc[k].map(o => [o.id, syncJson(o)])), order: doc[k].map(o => o.id)};
+}
+function diffBase() {
+  const fwd = [], inv = [];
+  for (const k of COLS) {
+    const b = base[k], ids = doc[k].map(o => o.id), now = new Set(ids);
+    let membership = false;
+    for (const o of doc[k]) {
+      const j = syncJson(o), old = b.json.get(o.id);
+      if (old === j) continue;
+      fwd.push({k, op: 'put', obj: JSON.parse(JSON.stringify(o))});
+      if (old === undefined) { inv.push({k, op: 'del', id: o.id}); membership = true; }
+      else inv.push({k, op: 'put', obj: JSON.parse(old)});
+    }
+    for (const [id, old] of b.json) if (!now.has(id)) { fwd.push({k, op: 'del', id}); inv.push({k, op: 'put', obj: JSON.parse(old)}); membership = true; }
+    const reordered = ids.filter(id => b.json.has(id)).join() !== b.order.filter(id => now.has(id)).join();
+    if (reordered) fwd.push({k, op: 'order', ids});
+    if (reordered || membership) inv.push({k, op: 'order', ids: b.order.slice()});
+  }
+  return {fwd, inv};
+}
+const CLEANERS = {items: o => cleanItem(o), links: o => cleanLink(o), strokes: o => cleanStroke(o)};
+function applyOps(ops) {
+  for (const o of ops) {
+    if (!o || !COLS.includes(o.k)) continue;
+    const arr = doc[o.k];
+    if (o.op === 'put') {
+      const obj = CLEANERS[o.k](o.obj);
+      if (!obj) continue;
+      const i = arr.findIndex(x => x.id === obj.id);
+      if (i < 0) { arr.push(obj); continue; }
+      if (!obj.h && arr[i].h) obj.h = arr[i].h;
+      if (obj.type === 'text' && !obj.w) obj.w = arr[i].w;
+      arr[i] = obj;
+    } else if (o.op === 'del') {
+      const i = arr.findIndex(x => x.id === o.id);
+      if (i >= 0) arr.splice(i, 1);
+    } else if (o.op === 'order' && Array.isArray(o.ids)) {
+      const pos = new Map(o.ids.map((id, i) => [id, i]));
+      doc[o.k] = arr.filter(x => pos.has(x.id)).sort((a, b) => pos.get(a.id) - pos.get(b.id)).concat(arr.filter(x => !pos.has(x.id)));
+    }
+  }
+}
+// fold a change made by someone else into the committed state, so it never reads as our own edit
+function foldBase(o) {
+  const b = base && base[o.k];
+  if (!b) return;
+  if (o.op === 'put') {
+    const cur = doc[o.k].find(x => x.id === o.obj.id);
+    if (cur) { if (!b.json.has(cur.id)) b.order.push(cur.id); b.json.set(cur.id, syncJson(cur)); }
+  } else if (o.op === 'del') { b.json.delete(o.id); b.order = b.order.filter(id => id !== o.id); }
+  else if (o.op === 'order') b.order = doc[o.k].map(x => x.id).filter(id => b.json.has(id));
+}
+function docFromBase() {
+  const d = {};
+  for (const k of COLS) d[k] = base[k].order.map(id => JSON.parse(base[k].json.get(id)));
+  return d;
+}
 function commit() {
-  const s = snap(); if (hist[hi] === s) return;
-  hist = hist.slice(0, hi + 1); hist.push(s);
-  if (hist.length > 160) hist.shift();
-  hi = hist.length - 1; updateUndo(); scheduleSave();
+  if (!base) captureBase();
+  const {fwd, inv} = diffBase();
+  if (!fwd.length) return;
+  undoStack.push({fwd, inv});
+  if (undoStack.length > 200) undoStack.shift();
+  redoStack = [];
+  captureBase();
+  changed(fwd);
 }
-function resetHistory() { hist = [snap()]; hi = 0; updateUndo(); }
-function restore() {
-  doc = JSON.parse(hist[hi]); reindex();
+function changed(ops) { updateUndo(); if (board.team) teamSend(ops); else scheduleSave(); }
+function resetHistory() { undoStack = []; redoStack = []; captureBase(); updateUndo(); }
+function stepHistory(from, to, key) {
+  if (blocked()) return;
+  if (editing) finishEdit();
+  const e = from.pop();
+  if (!e) return;
+  applyOps(e[key]); to.push(e); captureBase(); reindex();
   for (const id of [...sel]) if (!idx.has(id)) sel.delete(id);
-  refresh(); updateUndo(); scheduleSave();
+  refresh(); changed(e[key]);
 }
-function undo() { if (blocked()) return; if (editing) finishEdit(); if (hi > 0) { hi--; restore(); } }
-function redo() { if (blocked()) return; if (editing) finishEdit(); if (hi < hist.length - 1) { hi++; restore(); } }
-function updateUndo() { $('#undoBtn').disabled = !!board.locked || hi <= 0; $('#redoBtn').disabled = !!board.locked || hi >= hist.length - 1; }
+function undo() { stepHistory(undoStack, redoStack, 'inv'); }
+function redo() { stepHistory(redoStack, undoStack, 'fwd'); }
+function updateUndo() { const ro = viewOnly(); $('#undoBtn').disabled = ro || !undoStack.length; $('#redoBtn').disabled = ro || !redoStack.length; }
 
 const store = {
   open() {
@@ -1234,10 +1402,10 @@ function setSaveState(s) {
   el.classList.toggle('off', s === 'off');
   el.title = s === 'off' ? 'Local storage is blocked here. Use Save to keep a file.' : 'Boards autosave on this computer';
 }
-function scheduleSave() { if (!storageOK) return; clearTimeout(saveT); setSaveState('saving'); saveT = setTimeout(persist, 600); }
+function scheduleSave() { if (!storageOK || board.team) return; clearTimeout(saveT); setSaveState('saving'); saveT = setTimeout(persist, 600); }
 async function persistNow() { clearTimeout(saveT); await persist(); }
 async function persist() {
-  if (!storageOK) return;
+  if (!storageOK || board.team) return;
   try {
     const used = usedAssets();
     for (const id of used) if (!savedAssets.has(id) && assets[id]) { await store.set(assetKey(id), assets[id]); savedAssets.add(id); }
@@ -1315,7 +1483,7 @@ function cleanAssets(a) {
 function setBoard(meta, d, a, c) {
   if (editing) finishEdit();
   closePicker(true);
-  board = {id: okId(meta.id) ? meta.id : uid(), name: txt(meta.name, 80) || 'Untitled board', locked: !!meta.locked};
+  board = {id: okId(meta.id) ? meta.id : uid(), name: txt(meta.name, 80) || 'Untitled board', locked: !!meta.locked, team: !!meta.team};
   doc = normalizeDoc(d); assets = cleanAssets(a);
   sel.clear(); drag = null; fileHandle = null; deskPath = null; trace = null; savedAssets = new Set(); lastAssetList = [];
   for (const el of els.values()) el.remove(); els.clear();
@@ -1385,7 +1553,7 @@ async function openBoardData(file, handle, path) {
   try {
     const data = JSON.parse(await file.text());
     if (data.app !== 'venom-board' || !data.doc) throw new Error('format');
-    await persistNow();
+    if (team.project) leaveProject(false); else await persistNow();
     const name = data.name || file.name.replace(/\.json$/i, '').replace(/\.venomboard$/i, '');
     setBoard({id: uid(), name, locked: !!data.locked}, data.doc, data.assets || {}, data.cam);
     fileHandle = handle || null; deskPath = path || null;
@@ -1414,7 +1582,8 @@ function openLink(url) {
 
 /* ---------- images ---------- */
 const readFile = f => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = () => rej(r.error); r.readAsDataURL(f); });
-const loadImg = src => new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = src; });
+const loadImg = (src, cors) => new Promise((res, rej) => { const i = new Image(); if (cors && /^https?:/i.test(src)) i.crossOrigin = 'anonymous'; i.onload = () => res(i); i.onerror = rej; i.src = src; });
+const teamAsset = src => !!src && src.startsWith(team.server + '/assets/');
 function fitSize(nw, nh) {
   nw = nw || 320; nh = nh || 320;
   const max = Math.min(Math.max(nw, nh), Math.max(260, stageRect.width * 0.42) / cam.z);
@@ -1441,16 +1610,30 @@ async function addImageFiles(files, at) {
   const placed = [];
   for (const f of files) {
     try {
-      const data = await readFile(f), img = await loadImg(data), aid = uid();
-      assets[aid] = data;
-      const sz = fitSize(img.naturalWidth, img.naturalHeight);
-      placed.push({id: uid(), type: 'image', x: 0, y: 0, w: sz.w, h: sz.h, asset: aid, name: f.name || 'Pasted image'});
-    } catch (e) { toast(`Couldn't read ${f.name || 'that image'}`); }
+      let ref;
+      if (board.team) ref = {src: await uploadImage(f)};
+      else { const data = await readFile(f), aid = uid(); assets[aid] = data; ref = {asset: aid}; }
+      const img = await loadImg(ref.src || assets[ref.asset], !!ref.src), sz = fitSize(img.naturalWidth, img.naturalHeight);
+      placed.push({id: uid(), type: 'image', x: 0, y: 0, w: sz.w, h: sz.h, ...ref, name: f.name || 'Pasted image'});
+    } catch (e) { toast(board.team && e.message ? e.message : `Couldn't read ${f.name || 'that image'}`, 4000); }
   }
   placeImages(placed, at);
 }
 async function addImageURL(url, at) {
   if (blocked()) return;
+  if (board.team) {  // shared boards only show pictures stored on the team server, so outside images are copied there
+    try {
+      let src = url;
+      if (!teamAsset(url)) {
+        const blob = url.startsWith('data:') ? dataUrlBlob(url) : await fetchImageBlob(url);
+        if (!blob) throw new Error("That site doesn't allow copying its images. Save the image, then drop the file in.");
+        src = await uploadImage(blob);
+      }
+      const img = await loadImg(src, teamAsset(src)), sz = fitSize(img.naturalWidth, img.naturalHeight);
+      placeImages([{id: uid(), type: 'image', x: 0, y: 0, w: sz.w, h: sz.h, src, name: url.slice(0, 80)}], at);
+    } catch (e) { toast(e && e.message ? e.message : "That image couldn't be loaded.", 4000); }
+    return;
+  }
   let data = url.startsWith('data:') ? url : null;
   if (!data) {
     try {
@@ -1468,6 +1651,12 @@ async function addImageURL(url, at) {
   } catch (e) { toast("That image couldn't be loaded. Save it, then drop the file in."); }
 }
 const isImageFile = f => f.type.startsWith('image/') || /\.(png|jpe?g|gif|webp|avif|bmp|svg)$/i.test(f.name || '');
+async function fetchImageBlob(url) {  // null when the site doesn't allow its pictures to be copied
+  try {
+    const r = await fetch(url, {mode: 'cors'}); if (!r.ok) return null;
+    const b = await r.blob(); return b.type.startsWith('image/') ? b : null;
+  } catch (e) { return null; }
+}
 
 /* ---------- editing text ---------- */
 function startEdit(id, field, selectAll) {
@@ -1489,10 +1678,12 @@ function startEdit(id, field, selectAll) {
   const r = document.createRange(); r.selectNodeContents(t); if (!selectAll) r.collapse(false);
   const s = getSelection(); s.removeAllRanges(); s.addRange(r);
   t.addEventListener('blur', () => { if (editing && editing.el === t) finishEdit(); }, {once: true});
+  teamPresence({editing: id});
   measure(); renderLinks(); renderUI(); updateCtx();
 }
 function finishEdit() {
   if (!editing) return;
+  teamPresence({editing: null});
   const {id, key, el: t} = editing; editing = null;
   const it = idx.get(id);
   // innerText applies CSS text-transform (milestone and phase titles render uppercase), so titles read raw textContent
@@ -1510,7 +1701,7 @@ function finishEdit() {
   }
   refresh(); commit();
 }
-function onEditInput() { if (editing) { measure(); renderLinks(); renderUI(); } }
+function onEditInput() { if (editing) { measure(); renderLinks(); renderUI(); teamPreviewEdit(); } }
 itemLayer.addEventListener('input', onEditInput);
 frameLayer.addEventListener('input', onEditInput);
 itemLayer.addEventListener('click', e => { if (e.target.closest('a.lnk')) e.preventDefault(); });
@@ -1690,7 +1881,7 @@ function eraseAt(w) {
 
 /* ---------- tools ---------- */
 function setTool(t) {
-  if (board.locked && t !== 'select' && t !== 'hand') { blocked(); return; }
+  if (viewOnly() && t !== 'select' && t !== 'hand') { blocked(); return; }
   if (t === 'image') { $('#fileImg').click(); return; }
   if (editing) finishEdit();
   tool = t; stage.dataset.tool = t;
@@ -1748,7 +1939,7 @@ stage.addEventListener('pointerdown', e => {
   }
 });
 function downSelect(e, p, w) {
-  const h = board.locked ? null : hitHandle(p);
+  const h = viewOnly() ? null : hitHandle(p);
   if (h) {
     const it = selObjs()[0]; if (!it) return;
     if (h.kind === 'resize') { drag = {type: 'resize', id: it.id, corner: h.corner, o: {...it}}; return; }
@@ -1760,8 +1951,8 @@ function downSelect(e, p, w) {
     if (e.shiftKey && sel.has(hit.id)) { sel.delete(hit.id); refresh(); return; }
     if (e.shiftKey) sel.add(hit.id);
     else if (!sel.has(hit.id)) { sel.clear(); sel.add(hit.id); }
-    if (e.altKey && !board.locked) duplicateSelection(0);
-    const carry = board.locked ? new Set() : carrySet();
+    if (e.altKey && !viewOnly()) duplicateSelection(0);
+    const carry = viewOnly() ? new Set() : carrySet();
     const box0 = unionBox([...carry].map(id => idx.get(id)).filter(o => o && o.type !== 'link' && o.type !== 'stroke').map(bboxOf));
     const cands = doc.items.filter(o => !carry.has(o.id)).map(bboxOf);
     const a = e.target.closest && e.target.closest('a.lnk');
@@ -1778,13 +1969,14 @@ function downInk(p, w, kind) {
   path.setAttribute('stroke', col(o.color));
   path.setAttribute('stroke-width', o.size / cam.z);
   (kind === 'hl' ? hlSvg : penSvg).appendChild(path);
-  drag = {type: 'stroke', kind, pts: [w.x, w.y], color: o.color, size: o.size, el: path, lastS: p, start: w};
+  drag = {type: 'stroke', kind, pts: [w.x, w.y], color: o.color, size: o.size, el: path, lastS: p, start: w, sid: uid()};
   path.setAttribute('d', strokePath(drag.pts));
 }
 stage.addEventListener('pointermove', e => {
   const p = screenPt(e), w = toWorld(p);
   lastPtr = w;
   $('#hudPos').textContent = `x ${Math.round(w.x)} · y ${Math.round(w.y)}`;
+  if (board.team && e.pointerType !== 'touch') teamPresence({x: rd(w.x), y: rd(w.y)});
   if (e.pointerType === 'touch' && touches.has(e.pointerId)) {
     touches.set(e.pointerId, p);
     if (pinch && touches.size === 2) {
@@ -1803,9 +1995,10 @@ stage.addEventListener('pointermove', e => {
       const raw = {x: w.x - drag.start.x, y: w.y - drag.start.y}, sn = snapOffset(raw, e.ctrlKey || e.metaKey);
       const want = {x: raw.x + sn.x, y: raw.y + sn.y};
       moveBy(drag.carry, want.x - drag.applied.x, want.y - drag.applied.y); drag.applied = want;
+      teamPreview(drag.carry);
       renderMove(); break;
     }
-    case 'resize': doResize(w, e.shiftKey); render(); break;
+    case 'resize': doResize(w, e.shiftKey); render(); teamPreview([drag.id]); break;
     case 'marquee': {
       drag.b = w; const r = normRect(drag.a, drag.b);
       sel.clear(); drag.base.forEach(id => sel.add(id));
@@ -1823,10 +2016,12 @@ stage.addEventListener('pointermove', e => {
           drag.lastS = sp; const q = toWorld(sp); drag.pts.push(q.x, q.y);
         }
       }
-      drag.el.setAttribute('d', strokePath(drag.pts)); break;
+      drag.el.setAttribute('d', strokePath(drag.pts));
+      if (board.team) queuePreview({k: 'strokes', op: 'put', obj: {id: drag.sid, type: 'stroke', kind: drag.kind, color: drag.color, size: Math.round(drag.size / cam.z * 100) / 100, pts: drag.pts}});
+      break;
     }
     case 'erase': hover = {eraser: p}; eraseAt(w); renderUI(); break;
-    case 'frame': { const f = idx.get(drag.id), r = normRect(drag.a, w); Object.assign(f, {x: rd(r.x), y: rd(r.y), w: rd(r.w), h: rd(r.h)}); render(); break; }
+    case 'frame': { const f = idx.get(drag.id), r = normRect(drag.a, w); Object.assign(f, {x: rd(r.x), y: rd(r.y), w: rd(r.w), h: rd(r.h)}); render(); teamPreview([drag.id]); break; }
     case 'link': {
       const h = itemAt(w, true), t = h && h.id !== drag.temp.from.id ? h : null;
       drag.target = t; drag.cur = w; drag.temp.to = t ? {id: t.id} : {x: rd(w.x), y: rd(w.y)};
@@ -1837,6 +2032,7 @@ stage.addEventListener('pointermove', e => {
       const other = drag.end === 'from' ? l.to : l.from;
       const h = itemAt(w, true), t = h && h.id !== other.id ? h : null;
       drag.target = t; l[drag.end] = t ? {id: t.id} : {x: rd(w.x), y: rd(w.y)};
+      teamPreview([drag.id]);
       renderLinks(); renderUI(); break;
     }
   }
@@ -1874,7 +2070,7 @@ function onUp(e) {
       d.el.remove();
       let pts = d.pts; if (pts.length === 2) pts = [pts[0], pts[1], pts[0] + 0.01, pts[1]];
       pts = simplify(pts, 0.4 / cam.z);
-      doc.strokes.push({id: uid(), type: 'stroke', kind: d.kind, color: d.color, size: Math.round(d.size / cam.z * 100) / 100, pts});
+      doc.strokes.push({id: d.sid, type: 'stroke', kind: d.kind, color: d.color, size: Math.round(d.size / cam.z * 100) / 100, pts});
       commit(); break;
     }
     case 'erase': if (d.n) commit(); break;
@@ -1914,7 +2110,12 @@ function cancelDrag() {
   if (!drag) return;
   const d = drag; drag = null; stage.classList.remove('panning');
   if (d.type === 'stroke') d.el.remove();
-  if (['frame', 'move', 'resize', 'relink', 'erase'].includes(d.type)) { doc = JSON.parse(hist[hi]); reindex(); for (const id of [...sel]) if (!idx.has(id)) sel.delete(id); }
+  if (d.type === 'stroke' && d.sid) queuePreview({k: 'strokes', op: 'del', id: d.sid});
+  if (['frame', 'move', 'resize', 'relink', 'erase'].includes(d.type)) {
+    doc = docFromBase(); reindex();
+    for (const id of [...sel]) if (!idx.has(id)) sel.delete(id);
+    if (board.team) teamPreview(d.carry ? [...d.carry] : d.id ? [d.id] : []);  // put teammates' view back too
+  }
   refresh();
 }
 stage.addEventListener('wheel', e => {
@@ -1929,7 +2130,7 @@ stage.addEventListener('wheel', e => {
 stage.addEventListener('dblclick', e => {
   if (editing || tool !== 'select' || e.target.closest('.chk')) return;
   const w = toWorld(screenPt(e)), hit = hitTest(w);
-  if (board.locked) { if (hit && hit.type === 'image') fitTo([hit]); else if (hit) blocked(); return; }
+  if (viewOnly()) { if (hit && hit.type === 'image') fitTo([hit]); else if (hit) blocked(); return; }
   if (!hit) { newNode(w); return; }
   sel.clear(); sel.add(hit.id); refresh();
   if (hit.type === 'node') {
@@ -2296,7 +2497,9 @@ function selCtx(list) {
 }
 function updateCtx() {
   const list = selObjs();
-  const h = !editing && board.locked ? '<span class="cl">Board locked</span><span class="hint">View only · pan, zoom, search, copy and export still work</span><button class="chip" data-act="unlockBoard" aria-pressed="true">Unlock board</button>'
+  const teamNote = team.project && !board.team ? 'Joining the team project…' : team.status === 'reconnecting' ? 'Reconnecting… your team\'s changes will catch up when the connection is back' : 'View only · you can watch this project live, but your role can\'t edit it';
+  const h = !editing && teamReadOnly() && !board.locked ? `<span class="cl">${board.team && team.status === 'live' ? 'Viewer' : 'Team'}</span><span class="hint">${teamNote}</span>`
+    : !editing && board.locked ? '<span class="cl">Board locked</span><span class="hint">View only · pan, zoom, search, copy and export still work</span><button class="chip" data-act="unlockBoard" aria-pressed="true">Unlock board</button>'
     : editing ? '<span class="hint"><kbd>Enter</kbd> done · <kbd>Tab</kbd> title ↔ notes · <kbd>[ ]</kbd> starts a checkbox line · <kbd>Esc</kbd> finish</span>'
     : tool === 'select' && list.length ? selCtx(list) : toolCtx(tool);
   if (ctxBar._h !== h) { ctxBar.innerHTML = h; ctxBar._h = h; }
@@ -2472,11 +2675,12 @@ function ago(t) {
   return Math.floor(s / 86400) + 'd ago';
 }
 function boardsMenu() {
-  const E = [{head: 'Boards'}];
-  const list = boards.slice(); if (!list.find(b => b.id === board.id)) list.push({id: board.id, name: board.name, updated: Date.now()});
+  const E = [{head: board.team ? 'Team project' : 'Boards'}];
+  if (board.team) E.push({label: board.name, kb: 'live', cur: true, run: () => setTeamPanel(true)}, {label: 'Leave and go back to my boards', icon: 'arrow', run: () => leaveProject()}, {head: 'My boards'});
+  const list = boards.slice(); if (!board.team && !list.find(b => b.id === board.id)) list.push({id: board.id, name: board.name, updated: Date.now()});
   list.sort((a, b) => b.updated - a.updated).forEach(b => E.push({label: b.id === board.id ? board.name : b.name, kb: b.id === board.id ? 'open' : ago(b.updated), cur: b.id === board.id, run: () => switchBoard(b.id)}));
   E.push('-', {label: 'New empty board', icon: 'plus', run: () => newBoard('Untitled board', false)}, {label: 'New sample roadmap', icon: 'card', run: () => newBoard('Game Roadmap', true)},
-    '-', {label: 'Clear this board', run: clearBoard}, {label: 'Delete this board', danger: true, icon: 'trash', run: deleteBoard});
+    ...(board.team ? [] : ['-', {label: 'Clear this board', run: clearBoard}, {label: 'Delete this board', danger: true, icon: 'trash', run: deleteBoard}]));
   menuAt($('#boardsBtn'), E);
 }
 function exportMenu() {
@@ -2513,10 +2717,11 @@ function toggleBoardLock() {
 }
 function applyBoardLock() {
   const on = !!board.locked, b = $('#boardLockBtn');
-  document.documentElement.classList.toggle('board-locked', on);
+  document.documentElement.classList.toggle('board-locked', viewOnly());
+  $('#boardName').readOnly = teamReadOnly();
   b.setAttribute('aria-pressed', String(on));
   b.title = on ? 'Board is locked (view only). Click to unlock (Ctrl+Shift+K)' : "Lock board so cards can't be edited (Ctrl+Shift+K)";
-  if (on && tool !== 'select' && tool !== 'hand') {
+  if (viewOnly() && tool !== 'select' && tool !== 'hand') {
     tool = 'select'; stage.dataset.tool = 'select';
     document.querySelectorAll('#tools [data-tool]').forEach(x => x.setAttribute('aria-pressed', String(x.dataset.tool === 'select')));
   }
@@ -2536,11 +2741,11 @@ function windowEntries() {
 }
 async function switchBoard(id) {
   if (id === board.id) return;
-  await persistNow();
+  if (team.project) leaveProject(false); else await persistNow();
   try { if (await loadBoard(id)) toast('Opened ' + board.name); } catch (e) { toast("Couldn't open that board."); }
 }
 async function newBoard(name, sample) {
-  await persistNow();
+  if (team.project) leaveProject(false); else await persistNow();
   const s = sample ? sampleBoard() : {doc: {items: [], links: [], strokes: []}, assets: {}};
   setBoard({id: uid(), name}, s.doc, s.assets, sample ? null : {x: stageRect.width / 2, y: stageRect.height / 2, z: 1});
   boards.push({id: board.id, name: board.name, updated: Date.now()});
@@ -2572,7 +2777,11 @@ function ask(title, msg, yes) {
   });
 }
 let toastT = 0;
+const teamReadOnly = () => !!board.team && (team.role === 'viewer' || team.status !== 'live');
+const viewOnly = () => !!board.locked || teamReadOnly() || (!!team.project && !board.team);
 function blocked() {
+  if (team.project && team.status !== 'live') { toast(team.status === 'connecting' ? 'Joining the team project…' : 'Reconnecting to your team… changes are paused until it\'s back.'); return true; }
+  if (board.team && team.role === 'viewer') { toast('You have view-only access to this team project.'); return true; }
   if (!board.locked) return false;
   toast('This board is locked. Unlock it with the lock next to the board name, or Ctrl+Shift+K.');
   return true;
@@ -2585,7 +2794,8 @@ let plRaf = 0, searchIdx = -1;
 function schedulePlanner() { if (plannerOpen && !plRaf) plRaf = requestAnimationFrame(renderPlanner); }
 function setPlanner(open, focusSearch) {
   plannerOpen = open; planner.hidden = !open;
-  $('#wrap').classList.toggle('pl-open', open); $('#planBtn').setAttribute('aria-pressed', String(open));
+  if (open && team.panelOpen) setTeamPanel(false);
+  $('#wrap').classList.toggle('pl-open', open || team.panelOpen); $('#planBtn').setAttribute('aria-pressed', String(open));
   savePref('planner', open);
   refresh();
   if (open && focusSearch) { const s = $('#plSearch'); s.focus(); s.select(); }
@@ -2825,7 +3035,7 @@ async function exportPNG() {
     if (it.type === 'image') {
       const src = it.asset ? assets[it.asset] : it.src; if (!src) continue;
       try {
-        const img = await loadImg(src);
+        const img = await loadImg(src, true);
         g.save(); if (it.gray) g.filter = 'grayscale(1)';
         if (it.flip) { g.translate(it.x + it.w, it.y); g.scale(-1, 1); g.drawImage(img, 0, 0, it.w, it.h); } else g.drawImage(img, it.x, it.y, it.w, it.h);
         g.restore();
@@ -3206,8 +3416,10 @@ $('#helpBtn').onclick = () => { $('#help').hidden = false; };
 $('#uiRestore').onclick = toggleUI;
 $('#help').addEventListener('click', e => { if (e.target.id === 'help') $('#help').hidden = true; });
 $('#boardsBtn').onclick = boardsMenu;
+$('#teamBtn').onclick = () => setTeamPanel(!team.panelOpen);
+$('#tmClose').onclick = () => setTeamPanel(false);
 $('#boardLockBtn').onclick = toggleBoardLock;
-$('#boardName').addEventListener('input', e => { board.name = e.target.value.slice(0, 80) || 'Untitled board'; scheduleSave(); });
+$('#boardName').addEventListener('input', e => { if (teamReadOnly()) return; board.name = e.target.value.slice(0, 80) || 'Untitled board'; if (board.team) renameProjectSoon(board.name); else scheduleSave(); });
 $('#boardName').addEventListener('change', e => { if (!e.target.value.trim()) e.target.value = board.name = 'Untitled board'; scheduleSave(); });
 $('#fileOpen').addEventListener('change', e => { const f = e.target.files[0]; if (f) openBoardData(f); e.target.value = ''; });
 $('#fileImg').addEventListener('change', e => {
@@ -3222,6 +3434,473 @@ function applySkin(s) {
   try { localStorage.setItem('venom-board-skin', skin); } catch (e) {}
   if (desk) desk.setSkin(skin);
   readTokens(); refresh();
+}
+
+/* ---------- team: accounts, shared projects and live collaboration ----------
+   A team project lives on the server. Each local change is a list of object operations (see
+   history); in a team project those operations go to the server, which applies them in one order
+   and relays them to everyone else. Incoming changes skip objects whose own changes are still on
+   their way, so people editing the same thing at once always end up with the same result. */
+const ROLE_NAME = {leader: 'Team leader', admin: 'Team admin', editor: 'Editor', viewer: 'Viewer'};
+const ROLE_RANK = {viewer: 1, editor: 2, admin: 3, leader: 4};
+const HOSTED_SERVER = 'https://venomboard.com';
+const pageServer = /^https?:$/.test(location.protocol) && /^\/app\/?$/.test(location.pathname) ? location.origin : '';
+const team = {server: pageServer || HOSTED_SERVER, token: '', devices: {}, user: null, teams: [], invites: [], teamId: '', detail: null, panelOpen: false, ui: {},
+  project: null, role: 'viewer', status: 'off', ws: null, retry: 0, retryT: 0, peers: new Map(), pending: new Map(), unacked: [], batch: 0,
+  afterJoin: null, selSig: '', renameT: 0};
+const canGrantRole = (actor, role) => (actor === 'leader' ? ['admin', 'editor', 'viewer'] : actor === 'admin' ? ['editor', 'viewer'] : []).includes(role);
+const canManageRole = (actor, target) => actor === 'leader' ? target !== 'leader' : actor === 'admin' ? ROLE_RANK[target] < ROLE_RANK.admin : false;
+const hostOf = u => { try { return new URL(u).host; } catch (e) { return String(u); } };
+function loadAccount() {
+  try {
+    const a = JSON.parse(localStorage.getItem('venom-board-account') || '{}');
+    if (typeof a.token === 'string') team.token = a.token;
+    if (a.devices && typeof a.devices === 'object') for (const [k, v] of Object.entries(a.devices)) if (typeof v === 'string') team.devices[k] = v;
+  } catch (e) {}
+}
+// devices remembers this computer to each server it has signed in to, so the owner can still sign in
+// while strangers are hammering their account; it stays when you sign out
+function saveAccount() { try { localStorage.setItem('venom-board-account', JSON.stringify({server: team.server, token: team.token, devices: team.devices})); } catch (e) {} }
+async function api(path, method = 'GET', body) {
+  const headers = {'X-VB': '1'};
+  let payload;
+  if (body instanceof Blob) { payload = body; headers['Content-Type'] = body.type || 'application/octet-stream'; }
+  else if (body !== undefined) { payload = JSON.stringify(body); headers['Content-Type'] = 'application/json'; }
+  if (team.token) headers.Authorization = 'Bearer ' + team.token;
+  let r;
+  try { r = await fetch(team.server + path, {method, headers, body: payload, credentials: team.server === location.origin ? 'same-origin' : 'omit'}); }
+  catch (e) { throw new Error(`Can't reach ${hostOf(team.server)}. Check your internet connection.`); }
+  const data = await r.json().catch(() => ({}));
+  if (r.status === 401 && team.user && path !== '/api/auth/login') signOutLocal();
+  if (!r.ok) throw Object.assign(new Error(data.error || `The server answered ${r.status}.`), {status: r.status, code: data.code});
+  return data;
+}
+
+/* --- account --- */
+async function refreshMe(quiet) {
+  if (!team.token && !pageServer) { team.user = null; renderTeam(); updateTeamBtn(); return; }
+  try {
+    const me = await api('/api/me');
+    team.user = me.user; team.teams = me.teams; team.invites = me.invites;
+    if (!team.teams.some(t => t.id === team.teamId)) team.teamId = team.teams[0] ? team.teams[0].id : '';
+    team.detail = team.teamId ? await api('/api/teams/' + team.teamId).catch(() => null) : null;
+  } catch (e) { if (e.status === 401) team.user = null; else if (!quiet) toast(e.message); }
+  renderTeam(); updateTeamBtn();
+}
+async function teamSignIn(login, password) {
+  team.server = pageServer || HOSTED_SERVER;
+  const r = await api('/api/auth/login', 'POST', {login, password, device: team.devices[team.server] || ''});
+  team.token = r.token;
+  if (typeof r.device === 'string') team.devices[team.server] = r.device;
+  saveAccount();
+  await refreshMe();
+  toast(`Signed in as ${r.user.displayName}`);
+}
+async function teamSignOut() { try { await api('/api/auth/logout', 'POST'); } catch (e) {} signOutLocal(); toast('Signed out'); }
+function signOutLocal() {
+  if (team.project) leaveProject();
+  Object.assign(team, {token: '', user: null, teams: [], invites: [], detail: null, teamId: ''});
+  saveAccount(); renderTeam(); updateTeamBtn();
+}
+async function teamAction(fn, okMsg) {  // run an API call from the panel, then refresh what the panel shows
+  try { await fn(); if (okMsg) toast(okMsg); } catch (e) { toast(e.message, 4000); }
+  await refreshMe(true);
+}
+
+/* --- panel --- */
+function mk(tag, attrs = {}, ...kids) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (v == null || v === false) continue;
+    if (k === 'class') e.className = v;
+    else if (k.startsWith('on')) e.addEventListener(k.slice(2), v);
+    else if (k === 'css') for (const [p, val] of Object.entries(v)) e.style.setProperty(p, val);
+    else e.setAttribute(k, v === true ? '' : v);
+  }
+  for (const c of kids.flat()) if (c != null && c !== false) e.append(c.nodeType ? c : String(c));
+  return e;
+}
+const icon = n => { const s = document.createElement('span'); s.className = 'tm-ico'; s.innerHTML = ic(n); return s; };
+const initials = name => String(name || '?').trim().split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase() || '?';
+const avatar = p => mk('span', {class: 'av', title: p.displayName || p.name || '', css: {'--c': col(p.color)}}, initials(p.displayName || p.name));
+const section = (title, ...kids) => mk('section', {class: 'tm-sec'}, mk('h4', {}, title), ...kids);
+function setTeamPanel(open) {
+  team.panelOpen = open; $('#teamPanel').hidden = !open;
+  if (open && plannerOpen) setPlanner(false);
+  $('#wrap').classList.toggle('pl-open', open || plannerOpen);
+  $('#teamBtn').setAttribute('aria-pressed', String(open));
+  if (open) { renderTeam(); refreshMe(true); }
+  scheduleMini();
+}
+function updateTeamBtn() {
+  const b = $('#teamBtn');
+  b.classList.toggle('signed', !!team.user);
+  b.title = team.user ? `Team · signed in as ${team.user.displayName}` : 'Team: sign in to share projects and edit them together live';
+}
+function renderTeam() {
+  if (!team.panelOpen) return;
+  const body = $('#tmBody'), top = body.scrollTop;
+  body.replaceChildren(...(team.user ? signedInView() : signInView()).filter(Boolean));
+  body.scrollTop = top;
+}
+function signInView() {
+  const login = mk('input', {class: 'tm-in', placeholder: 'Email or username', autocomplete: 'username', 'aria-label': 'Email or username'});
+  const pass = mk('input', {class: 'tm-in', type: 'password', placeholder: 'Password', autocomplete: 'current-password', 'aria-label': 'Password'});
+  const err = mk('p', {class: 'tm-err', hidden: true});
+  const btn = mk('button', {class: 'tb danger tm-wide', type: 'submit'}, 'Sign in');
+  const submit = async e => {
+    e.preventDefault(); err.hidden = true; btn.disabled = true;
+    try { await teamSignIn(login.value.trim(), pass.value); }
+    catch (x) { err.textContent = x.message; err.hidden = false; btn.disabled = false; }
+  };
+  return [
+    mk('p', {class: 'tm-lead'}, 'Sign in to share projects with your team and build them together, live.'),
+    mk('form', {class: 'tm-form', onsubmit: submit}, login, pass, err, btn),
+    mk('div', {class: 'tm-links'},
+      mk('button', {class: 'tm-link', type: 'button', onclick: () => openLink(team.server + '/account#signup')}, 'Create a free account'),
+      mk('button', {class: 'tm-link', type: 'button', onclick: () => openLink(team.server + '/account#forgot')}, 'Forgot password?')),
+  ];
+}
+function signedInView() {
+  const u = team.user;
+  return [
+    mk('div', {class: 'tm-me'}, avatar(u), mk('div', {class: 'tm-who'}, mk('b', {}, u.displayName), mk('span', {}, '@' + u.username)),
+      mk('button', {class: 'tm-link', type: 'button', onclick: teamSignOut}, 'Sign out')),
+    u.emailVerified === false ? mk('div', {class: 'tm-verify'},
+      mk('p', {}, `Confirm ${u.email || 'your email'} with the link we sent you. Invites sent to your email address show up here after that.`),
+      mk('button', {class: 'tm-link', type: 'button', onclick: () => teamAction(async () => { const r = await api('/api/auth/verify/resend', 'POST', {}); if (!r.verified) toast('Sent. Check your inbox and spam folder.'); })}, 'Send the link again')) : null,
+    team.project ? liveCard() : null,
+    team.invites.length ? section('Invitations', mk('div', {class: 'tm-list'}, ...team.invites.map(inviteRow))) : null,
+    teamPicker(),
+    team.detail ? projectsSection() : null,
+    team.detail ? membersSection() : null,
+    mk('button', {class: 'tm-link tm-site', type: 'button', onclick: () => openLink(team.server + '/account')}, `Your account on ${hostOf(team.server)}`),
+  ];
+}
+const peopleHere = () => [...new Map([...team.peers.values()].map(p => [p.uid, p])).values()];
+function liveCard() {
+  const people = peopleHere();
+  const status = team.status === 'live' ? (people.length ? `Live with ${people.length} other${people.length === 1 ? '' : 's'}` : 'Live · nobody else is here yet')
+    : team.status === 'connecting' ? 'Connecting…' : 'Reconnecting… changes pause until the connection is back';
+  return mk('div', {class: 'tm-live ' + team.status},
+    mk('div', {class: 'tm-live-top'}, mk('i', {class: 'dot'}), mk('b', {}, team.project.name || 'Team project'), mk('span', {class: 'tm-role'}, ROLE_NAME[team.role] || '')),
+    mk('p', {}, status),
+    people.length ? mk('div', {class: 'tm-people'}, ...people.map(p => mk('span', {class: 'tm-person'}, avatar(p), p.name))) : null,
+    mk('button', {class: 'tb tm-wide', type: 'button', onclick: () => leaveProject()}, 'Leave project'));
+}
+function inviteRow(i) {
+  return mk('div', {class: 'tm-row'},
+    mk('div', {class: 'tm-row-main'}, mk('b', {}, i.team.name), mk('span', {}, `${i.from ? i.from + ' invited you' : 'Invited'} as ${(ROLE_NAME[i.role] || '').toLowerCase()}`)),
+    mk('button', {class: 'tm-btn ok', type: 'button', onclick: () => teamAction(async () => { const r = await api(`/api/invites/${i.id}/accept`, 'POST'); team.teamId = r.team.id; }, `You joined ${i.team.name}`)}, 'Accept'),
+    mk('button', {class: 'tm-btn', type: 'button', onclick: () => teamAction(() => api(`/api/invites/${i.id}/decline`, 'POST'))}, 'Decline'));
+}
+function teamPicker() {
+  const input = mk('input', {class: 'tm-in', placeholder: 'Team name, e.g. Night Keep Studio', maxlength: 60, 'aria-label': 'New team name'});
+  const form = mk('form', {class: 'tm-inline', hidden: !!team.teams.length && !team.ui.newTeam, onsubmit: e => {
+    e.preventDefault();
+    const name = input.value.trim(); if (!name) return;
+    team.ui.newTeam = false;
+    teamAction(async () => { const r = await api('/api/teams', 'POST', {name}); team.teamId = r.team.id; }, `Team “${name}” created. Invite people from Members.`);
+  }}, input, mk('button', {class: 'tm-btn ok', type: 'submit'}, 'Create'));
+  if (!team.teams.length) return section('Your team', mk('p', {class: 'tm-note'}, "You're not in a team yet. Create one and invite people, or accept an invitation."), form);
+  const select = mk('select', {class: 'tm-in', 'aria-label': 'Team', onchange: e => { team.teamId = e.target.value; refreshMe(true); }},
+    ...team.teams.map(t => mk('option', {value: t.id, selected: t.id === team.teamId}, `${t.name} · ${ROLE_NAME[t.role]}`)));
+  return section('Team', mk('div', {class: 'tm-inline'}, select, mk('button', {class: 'tm-btn', type: 'button', onclick: () => { team.ui.newTeam = !team.ui.newTeam; renderTeam(); }}, 'New team')), form);
+}
+function projectsSection() {
+  const d = team.detail, canEdit = ROLE_RANK[d.role] >= ROLE_RANK.editor, canDelete = ROLE_RANK[d.role] >= ROLE_RANK.admin;
+  const rows = d.projects.map(p => mk('div', {class: 'tm-row' + (team.project && team.project.id === p.id ? ' on' : '')},
+    mk('button', {class: 'tm-row-main tm-open', type: 'button', title: 'Open and edit live', onclick: () => teamOpen(p.id)},
+      mk('b', {}, p.name), mk('span', {}, `Updated ${ago(p.updatedAt)}${p.updatedBy ? ' by ' + p.updatedBy : ''}`)),
+    canDelete ? mk('button', {class: 'tm-icon', type: 'button', title: 'Delete project', 'aria-label': 'Delete ' + p.name, onclick: async () => {
+      if (await ask('Delete this project?', `“${p.name}” will be deleted for everyone in ${d.team.name}. This can't be undone.`, 'Delete project')) teamAction(() => api('/api/projects/' + p.id, 'DELETE'), 'Project deleted');
+    }}, icon('trash')) : null));
+  const nameIn = mk('input', {class: 'tm-in', placeholder: 'Project name', maxlength: 80, 'aria-label': 'New project name'});
+  const newForm = mk('form', {class: 'tm-inline', hidden: !team.ui.newProject, onsubmit: e => {
+    e.preventDefault();
+    const name = nameIn.value.trim() || 'Untitled project';
+    team.ui.newProject = false;
+    teamAction(async () => { const r = await api(`/api/teams/${d.team.id}/projects`, 'POST', {name}); teamOpen(r.project.id); });
+  }}, nameIn, mk('button', {class: 'tm-btn ok', type: 'submit'}, 'Create'));
+  return section('Shared projects',
+    rows.length ? mk('div', {class: 'tm-list'}, ...rows) : mk('p', {class: 'tm-note'}, canEdit ? 'No projects yet. Start one, or share the board you have open.' : 'No projects yet.'),
+    canEdit ? mk('div', {class: 'tm-actions'},
+      mk('button', {class: 'tm-btn', type: 'button', onclick: () => { team.ui.newProject = !team.ui.newProject; renderTeam(); }}, icon('plus'), 'New project'),
+      board.team ? null : mk('button', {class: 'tm-btn', type: 'button', title: 'Copy the board you have open into this team', onclick: () => teamShareBoard(d.team.id)}, icon('arrow'), 'Share this board')) : null,
+    newForm);
+}
+function membersSection() {
+  const d = team.detail, me = team.user.id, myRole = d.role;
+  const rows = d.members.map(m => {
+    const editable = m.id !== me && canManageRole(myRole, m.role);
+    const roleCtl = editable
+      ? mk('select', {class: 'tm-role-sel', 'aria-label': 'Role for ' + m.displayName, onchange: e => teamAction(() => api(`/api/teams/${d.team.id}/members/${m.id}`, 'PATCH', {role: e.target.value}), `${m.displayName} is now ${ROLE_NAME[e.target.value].toLowerCase()}`)},
+          ...['admin', 'editor', 'viewer'].filter(r => canGrantRole(myRole, r) || r === m.role).map(r => mk('option', {value: r, selected: r === m.role}, ROLE_NAME[r])))
+      : mk('span', {class: 'tm-role'}, ROLE_NAME[m.role]);
+    const leave = async () => {
+      if (!(await ask('Leave this team?', `You'll lose access to ${d.team.name}'s projects until someone invites you again.`, 'Leave team'))) return;
+      if (team.project && d.projects.some(p => p.id === team.project.id)) leaveProject();
+      teamAction(() => api(`/api/teams/${d.team.id}/members/${me}`, 'DELETE'), `You left ${d.team.name}`);
+    };
+    const remove = async () => {
+      if (await ask('Remove this member?', `${m.displayName} will lose access to every project in ${d.team.name}.`, 'Remove')) teamAction(() => api(`/api/teams/${d.team.id}/members/${m.id}`, 'DELETE'), `${m.displayName} was removed`);
+    };
+    return mk('div', {class: 'tm-row'}, avatar(m), mk('div', {class: 'tm-row-main'}, mk('b', {}, m.displayName + (m.id === me ? ' (you)' : '')), mk('span', {}, '@' + m.username)), roleCtl,
+      m.id === me ? (myRole !== 'leader' ? mk('button', {class: 'tm-link danger', type: 'button', onclick: leave}, 'Leave') : null)
+        : editable ? mk('button', {class: 'tm-icon', type: 'button', title: 'Remove from team', 'aria-label': 'Remove ' + m.displayName, onclick: remove}, icon('trash')) : null);
+  });
+  const out = [mk('div', {class: 'tm-list'}, ...rows)];
+  if (ROLE_RANK[myRole] >= ROLE_RANK.admin) {
+    const who = mk('input', {class: 'tm-in', placeholder: 'Username or email', maxlength: 254, 'aria-label': 'Invite by username or email'});
+    const role = mk('select', {class: 'tm-role-sel', 'aria-label': 'Role for the invite'},
+      ...['admin', 'editor', 'viewer'].filter(r => canGrantRole(myRole, r)).map(r => mk('option', {value: r, selected: r === 'editor'}, ROLE_NAME[r])));
+    out.push(mk('form', {class: 'tm-inline', onsubmit: e => {
+      e.preventDefault();
+      const w = who.value.trim(); if (!w) return;
+      teamAction(() => api(`/api/teams/${d.team.id}/invites`, 'POST', {who: w, role: role.value}), `Invite sent to ${w}`);
+    }}, who, role, mk('button', {class: 'tm-btn ok', type: 'submit'}, 'Invite')));
+    if (d.invites.length) out.push(mk('div', {class: 'tm-list tm-pending'}, ...d.invites.map(i => mk('div', {class: 'tm-row'},
+      mk('div', {class: 'tm-row-main'}, mk('b', {}, i.displayName || i.username || i.email), mk('span', {}, `Invited as ${ROLE_NAME[i.role].toLowerCase()} · waiting`)),
+      mk('button', {class: 'tm-link danger', type: 'button', onclick: () => teamAction(() => api(`/api/teams/${d.team.id}/invites/${i.id}`, 'DELETE'), 'Invite cancelled')}, 'Cancel')))));
+  } else out.push(mk('p', {class: 'tm-note'}, 'Team admins and the team leader can invite people and change roles.'));
+  return section(`Members · ${d.members.length}`, ...out);
+}
+
+/* --- live connection --- */
+function wsSend(m) { if (team.ws && team.ws.readyState === 1) team.ws.send(JSON.stringify(m)); }
+function closeSocket() { const ws = team.ws; team.ws = null; if (ws) { ws.onclose = ws.onmessage = null; try { ws.close(); } catch (e) {} } }
+function setStatus(s) { team.status = s; updatePeerDock(); applyBoardLock(); updateCtx(); renderTeam(); }
+async function teamOpen(projectId) {
+  if (!team.user) { setTeamPanel(true); return; }
+  if (team.project && team.project.id === projectId && board.team) return;
+  if (editing) finishEdit();
+  if (team.project) leaveProject(false); else await persistNow();
+  Object.assign(team, {project: {id: projectId, name: ''}, role: 'viewer', retry: 0, unacked: [], selSig: ''});
+  team.peers.clear(); team.pending.clear();
+  setStatus('connecting');
+  connectLive();
+}
+function connectLive() {
+  closeSocket(); clearTimeout(team.retryT);
+  if (!team.project) return;
+  let ws;
+  try { ws = new WebSocket(team.server.replace(/^http/, 'ws') + '/ws'); } catch (e) { toast("Couldn't open the live connection."); resetLive(); return; }
+  team.ws = ws;
+  ws.onopen = () => { if (team.token) ws.send(JSON.stringify({t: 'auth', token: team.token})); };
+  ws.onmessage = e => { let m; try { m = JSON.parse(e.data); } catch (x) { return; } if (m && typeof m === 'object') onLive(m); };
+  ws.onclose = () => {
+    if (team.ws !== ws) return;
+    team.ws = null;
+    if (!team.project) return;
+    if (team.status === 'connecting' && !board.team) { toast(`Couldn't connect to ${hostOf(team.server)}. Check your connection and try again.`, 4000); resetLive(); return; }
+    setStatus('reconnecting');
+    team.retryT = setTimeout(connectLive, Math.min(15000, 1000 * 2 ** team.retry++));
+  };
+}
+function resetLive() {
+  closeSocket(); clearTimeout(team.retryT);
+  Object.assign(team, {project: null, status: 'off', unacked: [], afterJoin: null});
+  team.peers.clear(); team.pending.clear();
+  updatePeerDock(); applyBoardLock(); updateCtx(); renderTeam();
+}
+function leaveProject(loadLocal = true) {
+  if (!team.project) return;
+  const wasTeamBoard = board.team;
+  wsSend({t: 'leave'});
+  resetLive();
+  $('#saveState').hidden = false;
+  if (loadLocal && wasTeamBoard) openLastLocalBoard();
+}
+async function openLastLocalBoard() {
+  const next = boards.slice().sort((a, b) => b.updated - a.updated)[0];
+  if (next && await loadBoard(next.id).catch(() => false)) return;
+  const s = sampleBoard();
+  setBoard({id: uid(), name: 'Game Roadmap'}, s.doc, s.assets, null);
+  scheduleSave();
+}
+function onLive(m) {
+  switch (m.t) {
+    case 'ready': team.retry = 0; if (team.project) wsSend({t: 'join', project: team.project.id}); break;
+    case 'snapshot': applySnapshot(m); break;
+    case 'ops': applyRemote(m.ops, m.by, false); break;
+    case 'preview': applyRemote(m.ops, m.by, true); break;
+    case 'ack': ackBatch(m.batch); break;
+    case 'peer': case 'presence': upsertPeer(m.peer); break;
+    case 'peer-leave': peerLeft(m.cid); break;
+    case 'role':
+      if (!ROLE_RANK[m.role]) break;
+      team.role = m.role; setStatus(team.status); refresh();
+      toast(`Your role in this team is now ${ROLE_NAME[m.role].toLowerCase()}`, 3600);
+      break;
+    case 'renamed': if (board.team && typeof m.name === 'string') { team.project.name = board.name = txt(m.name, 80); $('#boardName').value = board.name; renderTeam(); } break;
+    case 'kicked': case 'deleted': toast(txt(m.message, 200) || 'You left the project.', 4000); leaveProject(); refreshMe(true); break;
+    case 'error':
+      if (m.code === 'read_only') { team.unacked = []; team.pending.clear(); team.role = 'viewer'; wsSend({t: 'resync'}); toast(txt(m.message, 200)); }
+      else if (m.code === 'auth') { toast(txt(m.message, 200), 4000); signOutLocal(); }
+      else if (['forbidden', 'not_found', 'full'].includes(m.code)) { toast(txt(m.message, 200), 4000); leaveProject(); }
+      else toast(txt(m.message, 200));
+      break;
+  }
+}
+function applySnapshot(m) {
+  const id = 'team-' + m.project.id, first = board.id !== id;
+  team.role = ROLE_RANK[m.role] ? m.role : 'viewer';
+  team.project = {id: m.project.id, name: txt(m.project.name, 80), teamId: m.project.teamId};
+  team.peers = new Map((Array.isArray(m.peers) ? m.peers : []).filter(p => p && p.cid).map(p => [p.cid, p]));
+  setBoard({id, name: team.project.name, team: true, locked: !first && board.locked}, m.doc, {}, first ? null : {...cam});
+  $('#saveState').hidden = true;
+  if (team.unacked.length) {  // our unconfirmed edits go back on top of the server's copy and are sent again
+    const again = team.unacked.flatMap(b => b.ops);
+    team.unacked = []; team.pending.clear();
+    applyOps(again); captureBase(); teamSend(again);
+  }
+  team.status = 'live';
+  if (team.afterJoin) { const ops = team.afterJoin; team.afterJoin = null; applyOps(ops); captureBase(); teamSend(ops); }
+  setStatus('live'); refresh();
+  if (first) toast(`Joined ${team.project.name} as ${ROLE_NAME[team.role].toLowerCase()}`);
+}
+
+/* --- incoming and outgoing changes --- */
+const opKey = o => o.k + ':' + (o.op === 'order' ? '#order' : o.obj ? o.obj.id : o.id);
+const opTarget = o => (o.obj ? o.obj.id : o.id);
+function applyRemote(ops, by, isPreview) {
+  if (!Array.isArray(ops) || !board.team) return;
+  const peer = team.peers.get(by);
+  if (peer) peer.previewing = isPreview;
+  // objects with our own edits in flight, or in our hands right now, keep our version
+  const busy = new Set(drag && drag.carry ? drag.carry : drag && drag.id ? [drag.id] : []);
+  const keep = ops.filter(o => o && COLS.includes(o.k) && !team.pending.has(opKey(o)) && !busy.has(opTarget(o)));
+  if (!keep.length) return;
+  applyOps(keep);
+  for (const o of keep) foldBase(o);
+  reindex();
+  let selTouched = false;
+  for (const id of [...sel]) if (!idx.has(id)) { sel.delete(id); selTouched = true; }
+  if (keep.some(o => sel.has(opTarget(o)))) selTouched = true;
+  render(); schedulePlanner();
+  if (selTouched && !ctxBar.contains(document.activeElement)) updateCtx();
+}
+function teamSend(ops) {
+  if (!board.team || !ops.length) return;
+  clearTimeout(prevTimer); prevTimer = 0; prevQueue.clear();  // the real change supersedes any preview
+  const batch = ++team.batch, keys = [...new Set(ops.map(opKey))];
+  for (const k of keys) team.pending.set(k, (team.pending.get(k) || 0) + 1);
+  team.unacked.push({batch, ops, keys});
+  if (team.status === 'live') wsSend({t: 'ops', batch, ops});
+}
+function ackBatch(batch) {
+  const i = team.unacked.findIndex(b => b.batch === batch);
+  if (i < 0) return;
+  const [b] = team.unacked.splice(i, 1);
+  for (const k of b.keys) { const n = (team.pending.get(k) || 1) - 1; if (n > 0) team.pending.set(k, n); else team.pending.delete(k); }
+}
+let presTimer = 0, presQueue = null;
+function teamPresence(patch) {
+  if (!board.team || team.status !== 'live') return;
+  presQueue = {...presQueue, ...patch};
+  if (!presTimer) presTimer = setTimeout(() => { presTimer = 0; const p = presQueue; presQueue = null; wsSend({t: 'presence', ...p}); }, 60);
+}
+const prevQueue = new Map();
+let prevTimer = 0;
+function queuePreview(op) {
+  if (!board.team || teamReadOnly()) return;
+  prevQueue.set(opKey(op), op);
+  if (!prevTimer) prevTimer = setTimeout(flushPreview, 50);
+}
+function flushPreview() { prevTimer = 0; const ops = [...prevQueue.values()]; prevQueue.clear(); if (ops.length) wsSend({t: 'preview', ops}); }
+const colOf = o => (o.type === 'link' ? 'links' : o.type === 'stroke' ? 'strokes' : 'items');
+function teamPreview(ids) { if (!board.team) return; for (const id of ids) { const o = idx.get(id); if (o) queuePreview({k: colOf(o), op: 'put', obj: o}); } }
+function teamPreviewEdit() {
+  if (!board.team || !editing) return;
+  const it = idx.get(editing.id);
+  if (it) queuePreview({k: 'items', op: 'put', obj: {...it, [editing.key]: editing.key === 'title' ? editing.el.textContent : editing.el.innerText}});
+}
+function renameProjectSoon(name) {
+  clearTimeout(team.renameT);
+  team.renameT = setTimeout(() => { if (board.team && team.project) api('/api/projects/' + team.project.id, 'PATCH', {name}).catch(e => toast(e.message)); }, 700);
+}
+function dataUrlBlob(u) {
+  const [head, b64] = u.split(','), mime = (head.match(/data:([^;,]+)/) || [])[1] || 'image/png';
+  const bin = atob(b64), bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return new Blob([bytes], {type: mime});
+}
+async function uploadImage(blob) { return (await api(`/api/projects/${team.project.id}/assets`, 'POST', blob)).url; }
+async function teamShareBoard(teamId) {
+  if (board.team) return;
+  if (editing) finishEdit();
+  const name = board.name, d = JSON.parse(JSON.stringify(doc));
+  const withAssets = d.items.filter(it => it.type === 'image' && it.asset && assets[it.asset]);
+  // pictures linked from other sites are copied to the team server too, since shared boards don't link out
+  const linked = d.items.filter(it => it.type === 'image' && !it.asset && it.src && !teamAsset(it.src));
+  toast(`Sharing “${name}” with the team…`, 4000);
+  try {
+    // the project is created first so its images can be uploaded into it, then they arrive as live edits
+    const items = d.items.filter(it => !linked.includes(it)).map(({asset, ...rest}) => rest);
+    const {project} = await api(`/api/teams/${teamId}/projects`, 'POST', {name, doc: {...d, items}});
+    const ops = [];
+    for (const it of withAssets) {
+      const r = await api(`/api/projects/${project.id}/assets`, 'POST', dataUrlBlob(assets[it.asset]));
+      const {asset, ...rest} = it;
+      ops.push({k: 'items', op: 'put', obj: {...rest, src: r.url}});
+    }
+    let missed = 0;
+    for (const it of linked) {
+      const blob = await fetchImageBlob(it.src);
+      if (!blob) { missed++; continue; }
+      try { const r = await api(`/api/projects/${project.id}/assets`, 'POST', blob); ops.push({k: 'items', op: 'put', obj: {...it, src: r.url}}); }
+      catch (e) { missed++; }
+    }
+    if (missed) setTimeout(() => toast(`${missed} linked image${missed === 1 ? '' : 's'} couldn't be copied to the team, so ${missed === 1 ? 'it was' : 'they were'} left out. Save ${missed === 1 ? 'it' : 'them'} and drop the file${missed === 1 ? '' : 's'} in.`, 6000), 1500);
+    team.afterJoin = ops.length ? ops : null;
+    await refreshMe(true);
+    teamOpen(project.id);
+  } catch (e) { toast(e.message, 4000); }
+}
+
+/* --- other people on the canvas --- */
+function upsertPeer(p) {
+  if (!p || typeof p.cid !== 'string') return;
+  const isNew = !team.peers.has(p.cid);
+  team.peers.set(p.cid, {...team.peers.get(p.cid), ...p});
+  if (isNew) { updatePeerDock(); renderTeam(); }
+  renderUI();
+}
+function peerLeft(cid) {
+  const p = team.peers.get(cid);
+  team.peers.delete(cid);
+  if (p && p.previewing) wsSend({t: 'resync'});  // they left mid-drag, so fetch the saved state
+  updatePeerDock(); renderTeam(); renderUI();
+}
+function updatePeerDock() {
+  const dock = $('#peerDock'), chip = $('#liveChip');
+  if (!team.project) { dock.hidden = true; chip.hidden = true; return; }
+  chip.hidden = false;
+  chip.className = 'livechip ' + team.status + (team.status === 'live' && team.role === 'viewer' ? ' viewer' : '');
+  chip.textContent = team.status === 'live' ? (team.role === 'viewer' ? 'Live · view only' : 'Live') : team.status === 'connecting' ? 'Connecting' : 'Reconnecting';
+  const people = peopleHere();
+  dock.hidden = !people.length;
+  dock.replaceChildren(...people.slice(0, 5).map(p => avatar(p)), ...(people.length > 5 ? [mk('span', {class: 'av more'}, '+' + (people.length - 5))] : []));
+}
+function drawPeers() {
+  if (!board.team || !team.peers.size) return '';
+  let s = '';
+  mctx.font = '700 11px Manrope, "Segoe UI", system-ui, sans-serif';
+  const tag = (x, y, c, label) => { const w = mctx.measureText(label).width + 14; return `<g transform="translate(${rd(x)} ${rd(y)})"><rect width="${rd(w)}" height="18" rx="5" fill="${c}"/><text class="u-peer-t" x="7" y="13">${esc(label)}</text></g>`; };
+  for (const p of team.peers.values()) {
+    const c = col(p.color), name = txt(p.name, 40);
+    for (const id of (Array.isArray(p.sel) ? p.sel : []).slice(0, 60)) {
+      const b = bboxOf(idx.get(id)); if (!b) continue;
+      const a = toScreen(b.x, b.y);
+      s += `<rect class="u-peer" x="${rd(a.x - 4)}" y="${rd(a.y - 4)}" width="${rd(b.w * cam.z + 8)}" height="${rd(b.h * cam.z + 8)}" rx="6" stroke="${c}"/>`;
+    }
+    if (p.editing) { const b = bboxOf(idx.get(p.editing)); if (b) { const a = toScreen(b.x, b.y); s += tag(a.x, a.y - 24, c, `${name} is typing…`); } }
+    if (Number.isFinite(p.x) && Number.isFinite(p.y)) {
+      const q = toScreen(p.x, p.y);
+      s += `<g transform="translate(${rd(q.x)} ${rd(q.y)})"><path d="M0 0 L12.5 4.8 L7.2 6.8 L5 12 Z" fill="${c}" stroke="#0b0b10" stroke-width="1" stroke-linejoin="round"/></g>` + tag(q.x + 11, q.y + 13, c, name);
+    }
+  }
+  return s;
 }
 
 /* ---------- sample board ---------- */
@@ -3306,6 +3985,7 @@ async function boot() {
   let s0 = 'venom'; try { s0 = localStorage.getItem('venom-board-skin') || 'venom'; } catch (e) {}
   skin = s0 === 'anti' ? 'anti' : 'venom'; document.documentElement.dataset.skin = skin;
   if (desk) { desk.setSkin(skin); desk.getState().then(applyDeskState).catch(() => {}); }
+  loadAccount();
   applyTopbar();
   readTokens();
   mini.hidden = !showMini;
@@ -3326,6 +4006,11 @@ async function boot() {
   }
   refresh();
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { render(); if (!ok) fitTo(allObjs(), false); });
+  // signed-in accounts come back quietly; a #p=<project> link opens that team project
+  refreshMe(true).then(() => {
+    const link = location.hash.match(/^#p=([\w-]{1,64})$/);
+    if (link && team.user) teamOpen(link[1]);
+  });
 }
 boot();
 })();

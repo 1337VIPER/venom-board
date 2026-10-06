@@ -2,6 +2,19 @@
 
 All notable changes to Venom Board are listed here. The project follows [Semantic Versioning](https://semver.org).
 
+## [Unreleased]
+
+### Teams and live collaboration
+- Free accounts at venomboard.com, usable from the website, the web app and the desktop app
+- Teams with a leader, team admins, editors and viewers; invites by username or email that people accept or decline
+- Shared projects: a project list for each team, and "Share this board" to turn any board into one
+- Live editing: cards, connectors, frames, images, ink and text appear for everyone as they happen, including drags, resizes and typing in progress
+- See who's here: avatars in the top bar, teammates' cursors and selections on the canvas, and "is typing…" labels
+- Role changes, renames, removals and deletions take effect live
+- Undo and redo only touch your own changes, and edits that hadn't reached the server when a connection dropped are sent again once it's back
+- Email confirmation: invites sent to an email address only reach an account that has confirmed it
+- Manage your account, teams, members and invites at venomboard.com
+
 ## [1.0.0] - 2026-10-06
 
 The first public release.
