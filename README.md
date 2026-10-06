@@ -34,8 +34,8 @@ Solo boards need no account, no subscription and no telemetry. They work offline
 
 | | |
 |---|---|
-| **Windows desktop app** | Download `VenomBoard-Setup-1.1.1.exe` from the [latest release](https://github.com/1337VIPER/venom-board/releases/latest) and run it. It installs for your Windows account in a few seconds (no admin rights needed) and adds Start menu and desktop shortcuts. **It keeps itself up to date**: new versions download in the background and install when you restart. |
-| **Browser version** | Download `VenomBoard-1.1.1-web.zip`, unzip it and open `index.html` in Chrome, Edge or Firefox, or use the web app at [venomboard.com/app](https://venomboard.com/app). Pin on top, click-through and window opacity need the desktop app. |
+| **Windows desktop app** | Download `VenomBoard-Setup-1.1.2.exe` from the [latest release](https://github.com/1337VIPER/venom-board/releases/latest) and run it. It installs for your Windows account in a few seconds (no admin rights needed) and adds Start menu and desktop shortcuts. **It keeps itself up to date**: new versions download in the background and install when you restart. |
+| **Browser version** | Download `VenomBoard-1.1.2-web.zip`, unzip it and open `index.html` in Chrome, Edge or Firefox, or use the web app at [venomboard.com/app](https://venomboard.com/app). Pin on top, click-through and window opacity need the desktop app. |
 
 > **Windows SmartScreen:** the installer isn't code-signed yet, so Windows may show *"Windows protected your PC"* the first time. Click **More info → Run anyway**. Updates after that install without the warning.
 >
@@ -70,13 +70,14 @@ Solo boards need no account, no subscription and no telemetry. They work offline
 - **Live editing**: every card, connector, frame, image, ink stroke and text appears for everyone as it happens, including drags, resizes and typing in progress
 - **Presence**: teammates' avatars in the top bar, their cursors and selections on the canvas, and *is typing…* labels
 - **Viewers** watch live without being able to change anything
+- **Account settings** (`Ctrl+,`): change your display name, your cursor colour and your password, see where you're signed in and sign out everywhere else, or delete your account
 
 ### Overlay mode (desktop app)
 - **Pin on top** and an **opacity slider** in the top bar
 - **Click-through**: clicks pass straight through the board to the app underneath. Turn it off from anywhere with a global shortcut (default `Ctrl+Shift+X`, customisable) or the tray icon
 - **Lock window in place**, **hide the top bar**, or hide the whole interface with `\`
 - **Automatic updates**: the app checks for new versions when it starts, downloads them in the background and installs them when you restart. *Restart to update* appears in the top bar when one is ready, and **Check for updates** is in the Window menu. Every update is checked against Venom Board's update signature before it installs
-- Right-click anywhere for the Window menu
+- Right-click anywhere for the Window menu. Every window option is also in **Settings** (`Ctrl+,`)
 - Two skins: **Venom** (dark) and **Anti-Venom** (light)
 - **Fits any screen**: on small or low-resolution screens the top bar folds its least-used buttons into a **⋯** menu and the tool spine compacts, and **View → Interface size** (80–150%) scales everything up or down
 
@@ -102,6 +103,7 @@ Solo boards need no account, no subscription and no telemetry. They work offline
 | `T` | Text | `Shift+1` / `Shift+2` | Fit board / fit selection |
 | `A` | Connector | `Ctrl+Shift+K` | Lock the board |
 | `F` | Phase frame | `Ctrl+Shift+L` | Lock selected items |
+| `I` | Insert image | `Ctrl+,` | Settings |
 
 | Editing | | Window (desktop) | |
 |---|---|---|---|

@@ -82,6 +82,24 @@ module.exports = function smoke(app, win, outDir) {
       await wait(200);
       report.windowMenu = await js("[...document.querySelectorAll('#menu button .lbl, #menu .msl span')].map(e => e.textContent)");
       await shot('electron-menu.png');
+      await js("document.dispatchEvent(new KeyboardEvent('keydown', {key: 'Escape', bubbles: true}))");
+
+      // settings: Ctrl+, opens it, the desktop page drives the real window, Esc closes it
+      await js("window.dispatchEvent(new KeyboardEvent('keydown', {key: ',', code: 'Comma', ctrlKey: true, bubbles: true}))");
+      await wait(300);
+      report.settings = {open: await js("!document.getElementById('settings').hidden"), tabs: await js("[...document.querySelectorAll('.st-tab')].map(b => b.textContent.trim())")};
+      await js("[...document.querySelectorAll('.st-tab')].find(b => b.textContent.trim() === 'Desktop app').click()");
+      await wait(200);
+      await js("document.querySelector('.st-sw[aria-label=\"Pin on top\"]').click()");
+      await wait(400);
+      report.settings.pinSwitch = {pinned: win.isAlwaysOnTop(), shown: await js("document.querySelector('.st-sw[aria-label=\"Pin on top\"]').getAttribute('aria-checked')")};
+      report.settings.version = await js("[...document.querySelectorAll('#stBody .st-txt b')].map(b => b.textContent).find(t => /^Version|ready|Downloading/.test(t)) || ''");
+      await shot('electron-settings.png');
+      await js("document.querySelector('.st-sw[aria-label=\"Pin on top\"]').click()");
+      await wait(300);
+      report.settings.unpinned = !win.isAlwaysOnTop();
+      await js("window.dispatchEvent(new KeyboardEvent('keydown', {key: 'Escape', bubbles: true}))");
+      report.settings.closed = await js("document.getElementById('settings').hidden");
 
       // hostile board file: markup in colours, ids, widths and text must never reach the page as HTML
       report.hostileBoard = await js(`(async () => {

@@ -109,6 +109,7 @@ html.ct-on body::after{content:"";position:fixed;inset:0;border:2px solid color-
 
 /* ---------- stage ---------- */
 #wrap{flex:1;position:relative;min-height:0;overflow:hidden}
+#top,#dock,#ctx,#hud{user-select:none;-webkit-user-select:none}
 #stage{position:absolute;inset:0;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none;outline:none;
   --gs:24px;--gx:0px;--gy:0px;
   background-color:var(--void);
@@ -455,6 +456,76 @@ select.tm-in{padding-right:6px;cursor:pointer}
 .tm-verify{border:1px dashed color-mix(in srgb,var(--warn) 55%,transparent);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:6px;align-items:flex-start}
 .tm-verify p{margin:0;font-size:12.5px;color:var(--bone-dim);line-height:1.5}
 
+/* ---------- settings ---------- */
+.st-sheet{width:min(820px,100%);height:min(660px,calc(100% - 16px));max-height:none;display:flex;flex-direction:column;padding:0;overflow:hidden}
+.st-head{display:flex;align-items:center;gap:10px;padding:18px 18px 14px 26px;border-bottom:1px solid var(--line)}
+.st-head h2{flex:1;margin:0}
+.st-wrap{flex:1;min-height:0;display:flex}
+.st-nav{flex:none;width:190px;padding:14px 10px;border-right:1px solid var(--line);display:flex;flex-direction:column;gap:2px;overflow:auto}
+.st-tab{display:flex;align-items:center;gap:10px;height:36px;padding:0 12px;border:0;border-radius:10px;background:none;color:var(--bone-dim);font:700 13px var(--font-ui);cursor:pointer;text-align:left;white-space:nowrap;flex:none}
+.st-tab .tm-ico svg{width:17px;height:17px}
+.st-tab:hover{background:var(--hide-2);color:var(--bone)}
+.st-tab[aria-selected=true]{background:color-mix(in srgb,var(--fang) 14%,transparent);color:var(--bone)}
+.st-tab[aria-selected=true] .tm-ico{color:var(--fang)}
+.st-body{flex:1;min-width:0;overflow:auto;padding:18px 26px 28px;display:flex;flex-direction:column;gap:24px}
+.st-body p{margin:0;max-width:none;font-size:12.5px;line-height:1.5}
+.st-group{display:flex;flex-direction:column}
+.st-group h3{margin:0 0 2px;font:800 10px var(--font-display);letter-spacing:.14em;text-transform:uppercase;color:var(--bone-faint)}
+.st-row,.st-field{display:flex;gap:14px;padding:12px 0;border-bottom:1px solid var(--line)}
+.st-row{align-items:center}
+.st-field{flex-direction:column;gap:8px}
+.st-group>:last-child{border-bottom:0}
+.st-txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.st-txt b{font-size:13px;font-weight:700}
+.st-txt span{font-size:12px;color:var(--bone-faint);line-height:1.45;overflow-wrap:anywhere}
+.st-sw{position:relative;flex:none;width:40px;height:23px;border-radius:99px;border:1px solid var(--line-2);background:var(--void-2);cursor:pointer;padding:0;transition:background .15s}
+.st-sw::after{content:"";position:absolute;top:2px;left:2px;width:17px;height:17px;border-radius:50%;background:var(--bone-faint);transition:transform .15s,background .15s}
+.st-sw[aria-checked=true]{background:var(--fang);border-color:transparent}
+.st-sw[aria-checked=true]::after{transform:translateX(17px);background:#fff}
+.st-seg{display:flex;flex-wrap:wrap;gap:3px;padding:3px;border:1px solid var(--line);border-radius:11px;background:var(--void-2);flex:none;max-width:100%}
+.st-seg button{height:28px;padding:0 11px;border:0;border-radius:8px;background:none;color:var(--bone-dim);font:700 12px var(--font-ui);cursor:pointer}
+.st-seg button:hover{color:var(--bone)}
+.st-seg button[aria-pressed=true]{background:var(--hide-3);color:var(--bone);box-shadow:inset 0 0 0 1px var(--line-2)}
+.st-inline{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.st-inline .tm-in{flex:1;min-width:150px}
+.st-field>.tm-in{max-width:360px}
+.st-msg.ok{color:var(--ok)}
+.st-msg.bad{color:var(--bad)}
+.st-profile{display:flex;align-items:center;gap:14px}
+.st-profile .av{width:54px;height:54px;font-size:18px}
+.st-profile .st-txt b{font-size:16px}
+.st-badge{flex:none;display:inline-flex;align-items:center;height:22px;padding:0 9px;border-radius:99px;font:700 10px var(--font-mono);letter-spacing:.06em;text-transform:uppercase;border:1px solid}
+.st-badge.ok{color:var(--ok);border-color:color-mix(in srgb,var(--ok) 45%,transparent)}
+.st-badge.warn{color:var(--warn);border-color:color-mix(in srgb,var(--warn) 45%,transparent)}
+.st-colors{display:flex;flex-wrap:wrap;gap:8px}
+.st-color{width:28px;height:28px;border-radius:50%;border:2px solid transparent;background:var(--c);cursor:pointer;padding:0;box-shadow:inset 0 0 0 2px var(--hide)}
+.st-color:hover{transform:scale(1.08)}
+.st-color[aria-pressed=true]{border-color:var(--bone)}
+.st-danger{border:1px solid color-mix(in srgb,var(--bad) 40%,transparent);border-radius:14px 14px 14px 4px;padding:14px;display:flex;flex-direction:column;gap:10px;align-items:flex-start;margin-top:6px}
+.st-danger p{color:var(--bone-dim)}
+.st-danger .st-inline{align-self:stretch}
+.st-warn{color:var(--warn)!important}
+.tm-btn.bad{background:var(--bad);border-color:transparent;color:#fff}
+.tm-btn.bad-line{border-color:color-mix(in srgb,var(--bad) 55%,transparent);color:var(--bad)}
+.tm-btn:disabled{opacity:.45;cursor:default}
+.st-op{flex:none}
+.st-range{width:150px;accent-color:var(--fang)}
+.st-val{font:600 11px var(--font-mono);color:var(--bone-dim);min-width:36px;text-align:right}
+.st-about{display:flex;align-items:center;gap:16px}
+.st-about .mark{width:58px;height:58px;flex:none}
+.st-about .st-txt b{font:900 18px var(--font-display);letter-spacing:.05em;text-transform:uppercase}
+.st-links{display:flex;flex-wrap:wrap;gap:8px;padding:10px 0 4px}
+@media (max-width:640px){
+  .st-head{padding:14px 12px 12px 18px}
+  .st-wrap{flex-direction:column}
+  .st-nav{width:auto;flex-direction:row;border-right:0;border-bottom:1px solid var(--line);padding:8px 10px;overflow-x:auto;scrollbar-width:none}
+  .st-nav::-webkit-scrollbar{display:none}
+  .st-tab{padding:0 11px;gap:7px}
+  .st-body{padding:14px 16px 22px}
+  .st-row{flex-wrap:wrap}
+}
+@media (max-width:460px){.st-tab .tm-ico{display:none}}
+
 /* ---------- other people on the canvas ---------- */
 .u-peer{fill:none;stroke-width:2;stroke-dasharray:5 4}
 .u-peer-t{fill:#0b0b10;font:700 11px var(--font-ui)}
@@ -523,6 +594,7 @@ select.tm-in{padding-right:6px;cursor:pointer}
     <button id="updateChip" class="updchip desk-only" hidden type="button"></button>
     <button id="winLockBtn" class="ib desk-only" hidden title="Window is locked in place. Click to unlock." aria-label="Unlock window"><svg viewBox="0 0 20 20"><rect x="4.5" y="9" width="11" height="8" rx="2"/><path d="M7 9V6.5a3 3 0 0 1 6 0V9"/></svg></button>
     <button id="pinBtn" class="ib desk-only" title="Pin on top (Ctrl+Shift+A) · right-click for opacity" aria-label="Pin window on top" aria-pressed="false"><svg viewBox="0 0 20 20"><path d="M11.8 3.2l5 5-2.2.8-3.2 3.2.2 3.4-1.4 1.4-7.2-7.2 1.4-1.4 3.4.2L11 5.4z"/><path d="M6.6 13.4 3 17"/></svg></button>
+    <button id="settingsBtn" class="ib" title="Settings: account, appearance, window (Ctrl+,)" aria-label="Settings"><svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="2.4"/><circle cx="10" cy="10" r="5.4"/><path d="M10 2.6v2M10 15.4v2M2.6 10h2M15.4 10h2M4.8 4.8l1.4 1.4M13.8 13.8l1.4 1.4M4.8 15.2l1.4-1.4M13.8 6.2l1.4-1.4"/></svg></button>
     <button id="helpBtn" class="ib q" title="Shortcuts (?)" aria-label="Keyboard shortcuts">?</button>
     <button id="moreBtn" class="ib" title="More" aria-label="More options" aria-haspopup="menu"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="4.5" cy="10" r="1.6"/><circle cx="10" cy="10" r="1.6"/><circle cx="15.5" cy="10" r="1.6"/></svg></button>
   </header>
@@ -600,7 +672,7 @@ select.tm-in{padding-right:6px;cursor:pointer}
 
 <div id="help" class="modal" hidden>
   <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
-    <h2 id="helpTitle">Venom<em>/</em>Board shortcuts <span class="ver">v1.1.1</span></h2>
+    <h2 id="helpTitle">Venom<em>/</em>Board shortcuts <span class="ver" data-ver>v1.1.2</span></h2>
     <p>Boards autosave on this computer. Save writes a .json file you can back up, put in your repo or open on another PC.</p>
     <div class="keys">
       <section><h3>Tools</h3><dl>
@@ -629,6 +701,7 @@ select.tm-in{padding-right:6px;cursor:pointer}
         <dt><kbd>M</kbd></dt><dd>Minimap</dd>
         <dt><kbd>\</kbd></dt><dd>Hide or show the whole interface</dd>
         <dt><kbd>Ctrl Shift B</kbd></dt><dd>Hide or show the top bar</dd>
+        <dt><kbd>Ctrl ,</kbd></dt><dd>Settings: your account, appearance, window</dd>
       </dl></section>
       <section><h3>Team · live</h3><dl>
         <dt><kbd>Team</kbd></dt><dd>Sign in, accept invites, open shared projects</dd>
@@ -661,6 +734,16 @@ select.tm-in{padding-right:6px;cursor:pointer}
       </dl></section>
     </div>
     <p style="margin:18px 0 0">Ink drawn fully on a card or image moves with it. Dragging a phase frame carries everything inside it, and the frame header counts its finished tasks.</p>
+  </div>
+</div>
+
+<div id="settings" class="modal" hidden>
+  <div class="sheet st-sheet" role="dialog" aria-modal="true" aria-labelledby="stTitle">
+    <div class="st-head"><h2 id="stTitle">Settings<em>.</em></h2><button id="stClose" class="ib" aria-label="Close settings" title="Close (Esc)"><svg viewBox="0 0 20 20"><path d="M5 5l10 10M15 5 5 15"/></svg></button></div>
+    <div class="st-wrap">
+      <nav id="stNav" class="st-nav" role="tablist" aria-label="Settings sections"></nav>
+      <div id="stBody" class="st-body" role="tabpanel"></div>
+    </div>
   </div>
 </div>
 
@@ -992,6 +1075,9 @@ const ICON = {
   key: '<circle cx="6.8" cy="12.8" r="3.3"/><path d="M9.2 10.4 16 3.6M13.6 6l2 2M11.8 7.8l1.4 1.4"/>',
   eye: '<path d="M2.5 10s2.8-5 7.5-5 7.5 5 7.5 5-2.8 5-7.5 5-7.5-5-7.5-5z"/><circle cx="10" cy="10" r="2.2"/>',
   update: '<path d="M16 10a6 6 0 1 1-1.8-4.3"/><path d="M16.3 3.2v3.6h-3.6"/><path d="M10 7v3.4l2.2 1.4"/>',
+  gear: '<circle cx="10" cy="10" r="2.4"/><circle cx="10" cy="10" r="5.4"/><path d="M10 2.6v2M10 15.4v2M2.6 10h2M15.4 10h2M4.8 4.8l1.4 1.4M13.8 13.8l1.4 1.4M4.8 15.2l1.4-1.4M13.8 6.2l1.4-1.4"/>',
+  user: '<circle cx="10" cy="7" r="3.2"/><path d="M3.8 17c.8-3.3 3.3-5.2 6.2-5.2s5.4 1.9 6.2 5.2"/>',
+  info: '<circle cx="10" cy="10" r="7"/><path d="M10 9.2v4.8M10 6.3v.1"/>',
 };
 const ic = n => `<svg viewBox="0 0 20 20" aria-hidden="true">${ICON[n] || ''}</svg>`;
 function headHTML(it) {
@@ -2000,7 +2086,6 @@ stage.addEventListener('pointermove', e => {
   const p = screenPt(e), w = toWorld(p);
   lastPtr = w;
   $('#hudPos').textContent = `x ${Math.round(w.x)} · y ${Math.round(w.y)}`;
-  if (board.team && e.pointerType !== 'touch') teamPresence({x: rd(w.x), y: rd(w.y)});
   if (e.pointerType === 'touch' && touches.has(e.pointerId)) {
     touches.set(e.pointerId, p);
     if (pinch && touches.size === 2) {
@@ -2308,7 +2393,13 @@ document.addEventListener('cut', e => {
   e.clipboardData.setData('text/plain', CLIP + clip.id);
   deleteSelection();
 });
+// Linux browsers (and some mouse software) paste the last selected text on a middle click. Here a middle drag
+// pans, so letting go mustn't drop that text onto the board as a new card.
+let middleAt = 0;
+for (const t of ['pointerdown', 'pointerup']) window.addEventListener(t, e => { if (e.button === 1) middleAt = Date.now(); }, true);
+for (const t of ['mouseup', 'auxclick']) stage.addEventListener(t, e => { if (e.button === 1) e.preventDefault(); });
 document.addEventListener('paste', e => {
+  if (Date.now() - middleAt < 800 && !isField(e.target)) { e.preventDefault(); return; }
   if (editing || isField(e.target) || blocked()) return;
   const dt = e.clipboardData; if (!dt) return;
   const at = pasteAnchor();
@@ -2767,6 +2858,7 @@ function windowEntries() {
   if (desk && desk.checkUpdate && updateInfo.enabled) E.push('-',
     updateInfo.state === 'ready' ? {label: `Restart to update to ${updateInfo.version}`, icon: 'update', run: installUpdate}
       : {label: 'Check for updates', kb: 'v' + (updateInfo.current || ''), icon: 'update', run: checkForUpdates});
+  E.push('-', {label: 'Settings', kb: 'Ctrl ,', icon: 'gear', run: () => openSettings()});
   return E;
 }
 async function switchBoard(id) {
@@ -3254,6 +3346,7 @@ function applyDeskState(s) {
   $('#winLockBtn').hidden = !s.locked;
   root.style.setProperty('--ui-scale', s.uiScale || 1);
   syncOpacityUI();
+  refreshSettings('desktop');
 }
 const UI_SCALES = [0.8, 0.9, 1, 1.1, 1.25, 1.5];
 function uiScaleMenu() {
@@ -3354,6 +3447,7 @@ function applyUpdate(u) {
   chip.textContent = s === 'ready' ? 'Restart to update' : s === 'verifying' ? 'Verifying update' : `Updating ${updateInfo.percent || 0}%`;
   // a download that fails its signature check is thrown away; say so, since it shouldn't ever happen
   if (s === 'error' && /verified/.test(updateInfo.message || '')) { checkingByHand = false; toast(updateInfo.message, 6000); return; }
+  refreshSettings('desktop');
   chip.title = s === 'ready' ? `Venom Board ${updateInfo.version} is ready. Restart now to install it, or it installs when you close the app.`
     : `Downloading Venom Board ${updateInfo.version || ''} in the background`;
   if (!checkingByHand) return;
@@ -3395,6 +3489,8 @@ window.addEventListener('keydown', e => {
   const ctrl = e.ctrlKey || e.metaKey;
   if (!$('#confirm').hidden) { if (e.key === 'Escape' && $('#confirm')._done) $('#confirm')._done(false); return; }
   if (!$('#help').hidden || !$('#tplModal').hidden) { if (e.key === 'Escape' || e.key === '?') { $('#help').hidden = true; $('#tplModal').hidden = true; e.preventDefault(); } return; }
+  if (!$('#settings').hidden) { if (e.key === 'Escape' || (ctrl && e.key === ',')) { e.preventDefault(); closeSettings(); } return; }
+  if (ctrl && e.key === ',') { e.preventDefault(); openSettings(); return; }
   if (ctrl && e.key.toLowerCase() === 'f') { e.preventDefault(); setPlanner(true, true); return; }
   if (desk && accelFromEvent(e) === deskState.clickKey) { e.preventDefault(); toggleClickThrough(true); return; }
   if (ctrl && e.shiftKey && e.code === 'KeyB') { e.preventDefault(); toggleTopbar(); return; }
@@ -3482,6 +3578,7 @@ $('#saveBtn').onclick = () => saveBoardFile(false);
 $('#exportBtn').onclick = exportMenu;
 $('#viewBtn').onclick = viewMenu;
 $('#helpBtn').onclick = () => { $('#help').hidden = false; };
+$('#settingsBtn').onclick = () => openSettings();
 
 /* ---------- a top bar that fits any window ---------- */
 // When the window is too narrow for everything (small screens, big display scaling, the desktop app's extra
@@ -3492,6 +3589,7 @@ const FOLD = [
   {sel: '.brand .word'},
   {sel: '#helpBtn', entry: () => ({label: 'Keyboard shortcuts', kb: '?', run: () => { $('#help').hidden = false; }})},
   {sel: '#viewBtn', entry: () => ({label: 'View options…', icon: 'eye', run: viewMenu})},
+  {sel: '#settingsBtn', entry: () => ({label: 'Settings', kb: 'Ctrl ,', icon: 'gear', run: () => openSettings()})},
   {sel: '#zoomBtn', entry: () => ({label: `Fit board to window (${$('#zoomBtn').textContent})`, kb: 'Shift 1', run: () => fitTo(allObjs())})},
   {sel: '.opac', entry: () => ({label: 'Opacity', icon: 'eye', slider: {min: 20, max: 100, value: Math.round(deskState.opacity * 100), onInput: v => queueOpacity(v)}})},
   {sel: '#openBtn', entry: () => ({label: 'Open board file…', kb: 'Ctrl O', run: openFlow})},
@@ -3607,10 +3705,12 @@ async function refreshMe(quiet) {
     if (!team.token && !(await api('/api/session')).user) { team.user = null; renderTeam(); updateTeamBtn(); return; }
     const me = await api('/api/me');
     team.user = me.user; team.teams = me.teams; team.invites = me.invites;
+    team.sessionsOthers = me.sessions ? me.sessions.others : 0;
+    team.colors = Array.isArray(me.colors) ? me.colors.filter(okColor) : [];
     if (!team.teams.some(t => t.id === team.teamId)) team.teamId = team.teams[0] ? team.teams[0].id : '';
     team.detail = team.teamId ? await api('/api/teams/' + team.teamId).catch(() => null) : null;
   } catch (e) { if (e.status === 401) team.user = null; else if (!quiet) toast(e.message); }
-  renderTeam(); updateTeamBtn();
+  renderTeam(); updateTeamBtn(); refreshSettings('account');
 }
 async function teamSignIn(login, password) {
   team.server = pageServer || HOSTED_SERVER;
@@ -3625,7 +3725,7 @@ async function teamSignOut() { try { await api('/api/auth/logout', 'POST'); } ca
 function signOutLocal() {
   if (team.project) leaveProject();
   Object.assign(team, {token: '', user: null, teams: [], invites: [], detail: null, teamId: ''});
-  saveAccount(); renderTeam(); updateTeamBtn();
+  saveAccount(); renderTeam(); updateTeamBtn(); refreshSettings('account');
 }
 async function teamAction(fn, okMsg) {  // run an API call from the panel, then refresh what the panel shows
   try { await fn(); if (okMsg) toast(okMsg); } catch (e) { toast(e.message, 4000); }
@@ -3690,6 +3790,7 @@ function signedInView() {
   const u = team.user;
   return [
     mk('div', {class: 'tm-me'}, avatar(u), mk('div', {class: 'tm-who'}, mk('b', {}, u.displayName), mk('span', {}, '@' + u.username)),
+      mk('button', {class: 'tm-link', type: 'button', title: 'Your name, colour, password and sign-ins', onclick: () => openSettings('account')}, 'Settings'),
       mk('button', {class: 'tm-link', type: 'button', onclick: teamSignOut}, 'Sign out')),
     u.emailVerified === false ? mk('div', {class: 'tm-verify'},
       mk('p', {}, `Confirm ${u.email || 'your email'} with the link we sent you. Invites sent to your email address show up here after that.`),
@@ -3794,7 +3895,7 @@ function membersSection() {
 /* --- live connection --- */
 function wsSend(m) { if (team.ws && team.ws.readyState === 1) team.ws.send(JSON.stringify(m)); }
 function closeSocket() { const ws = team.ws; team.ws = null; if (ws) { ws.onclose = ws.onmessage = null; try { ws.close(); } catch (e) {} } }
-function setStatus(s) { team.status = s; updatePeerDock(); applyBoardLock(); updateCtx(); renderTeam(); }
+function setLiveStatus(s) { team.status = s; updatePeerDock(); applyBoardLock(); updateCtx(); renderTeam(); }
 async function teamOpen(projectId) {
   if (!team.user) { setTeamPanel(true); return; }
   if (team.project && team.project.id === projectId && board.team) return;
@@ -3802,7 +3903,7 @@ async function teamOpen(projectId) {
   if (team.project) leaveProject(false); else await persistNow();
   Object.assign(team, {project: {id: projectId, name: ''}, role: 'viewer', retry: 0, unacked: [], selSig: ''});
   team.peers.clear(); team.pending.clear();
-  setStatus('connecting');
+  setLiveStatus('connecting');
   connectLive();
 }
 function connectLive() {
@@ -3818,7 +3919,7 @@ function connectLive() {
     team.ws = null;
     if (!team.project) return;
     if (team.status === 'connecting' && !board.team) { toast(`Couldn't connect to ${hostOf(team.server)}. Check your connection and try again.`, 4000); resetLive(); return; }
-    setStatus('reconnecting');
+    setLiveStatus('reconnecting');
     team.retryT = setTimeout(connectLive, Math.min(15000, 1000 * 2 ** team.retry++));
   };
 }
@@ -3854,7 +3955,7 @@ function onLive(m) {
     case 'peer-leave': peerLeft(m.cid); break;
     case 'role':
       if (!ROLE_RANK[m.role]) break;
-      team.role = m.role; setStatus(team.status); refresh();
+      team.role = m.role; setLiveStatus(team.status); refresh();
       toast(`Your role in this team is now ${ROLE_NAME[m.role].toLowerCase()}`, 3600);
       break;
     case 'renamed': if (board.team && typeof m.name === 'string') { team.project.name = board.name = txt(m.name, 80); $('#boardName').value = board.name; renderTeam(); } break;
@@ -3881,7 +3982,7 @@ function applySnapshot(m) {
   }
   team.status = 'live';
   if (team.afterJoin) { const ops = team.afterJoin; team.afterJoin = null; applyOps(ops); captureBase(); teamSend(ops); }
-  setStatus('live'); refresh();
+  setLiveStatus('live'); refresh();
   if (first) toast(`Joined ${team.project.name} as ${ROLE_NAME[team.role].toLowerCase()}`);
 }
 
@@ -3920,6 +4021,15 @@ function ackBatch(batch) {
   for (const k of b.keys) { const n = (team.pending.get(k) || 1) - 1; if (n > 0) team.pending.set(k, n); else team.pending.delete(k); }
 }
 let presTimer = 0, presQueue = null;
+// Teammates see your pointer wherever it is in the window. The card toolbar, the tool spine and the menus float
+// above the canvas but aren't inside it, so listening on the canvas alone froze your cursor for everyone else
+// whenever you went to change a status or opened a menu. Leaving the window hides it instead of freezing it.
+window.addEventListener('pointermove', e => {
+  if (!board.team || e.pointerType === 'touch') return;
+  const w = toWorld(screenPt(e));
+  teamPresence({x: rd(w.x), y: rd(w.y)});
+}, {capture: true, passive: true});
+document.documentElement.addEventListener('pointerleave', () => { if (board.team) teamPresence({x: null, y: null}); });
 function teamPresence(patch) {
   if (!board.team || team.status !== 'live') return;
   presQueue = {...presQueue, ...patch};
@@ -3986,9 +4096,11 @@ async function teamShareBoard(teamId) {
 /* --- other people on the canvas --- */
 function upsertPeer(p) {
   if (!p || typeof p.cid !== 'string') return;
-  const isNew = !team.peers.has(p.cid);
-  team.peers.set(p.cid, {...team.peers.get(p.cid), ...p});
-  if (isNew) { updatePeerDock(); renderTeam(); }
+  const old = team.peers.get(p.cid);
+  // the server always sends a peer's whole presence, so a missing cursor means it's gone, not unchanged
+  team.peers.set(p.cid, {...p, previewing: old ? old.previewing : false});
+  // someone new, or someone who changed their name, colour or role, also shows in the avatars and the panel
+  if (!old || old.name !== p.name || old.color !== p.color || old.role !== p.role) { updatePeerDock(); renderTeam(); }
   renderUI();
 }
 function peerLeft(cid) {
@@ -4027,6 +4139,216 @@ function drawPeers() {
   }
   return s;
 }
+
+/* ---------- settings ----------
+   One place for your account and every preference. Each control calls the same function as its shortcut or
+   menu entry, so the two can never disagree. */
+const APP_VERSION = '1.1.2';
+const REPO_URL = 'https://github.com/1337VIPER/venom-board';
+document.querySelectorAll('[data-ver]').forEach(e => { e.textContent = 'v' + APP_VERSION; });
+const settingsEl = $('#settings'), stNav = $('#stNav'), stBody = $('#stBody');
+const ST_TABS = [['account', 'Account', 'user'], ['look', 'Appearance', 'palette'], ['board', 'Board', 'card'], ['desktop', 'Desktop app', 'topbar'], ['about', 'About', 'info']];
+const st = {tab: 'account', sig: null, deleting: false};
+function openSettings(tab) {
+  if (editing) finishEdit();
+  hideMenus(); closePicker(true);
+  st.tab = tab || st.tab;
+  if (st.tab === 'desktop' && !desk) st.tab = 'account';
+  st.deleting = false;
+  settingsEl.hidden = false;
+  renderSettings();
+  if (team.token || pageServer) refreshMe(true);  // fresh sign-in count and team list
+  const cur = stNav.querySelector('[aria-selected=true]'); if (cur) cur.focus();
+}
+function closeSettings() { settingsEl.hidden = true; st.deleting = false; }
+// account details are only redrawn when they change, so nothing you're typing gets wiped
+const accountSig = () => team.user ? JSON.stringify([team.user, team.teams.map(t => [t.id, t.name, t.role, t.members, t.projects]), team.sessionsOthers]) : '';
+function refreshSettings(tab) {
+  if ($('#settings').hidden || st.tab !== tab) return;
+  if (tab === 'account' && accountSig() === st.sig) return;
+  if (tab === 'desktop' && document.activeElement && document.activeElement.classList.contains('st-range')) return;
+  renderSettings();
+}
+function renderSettings() {
+  if (settingsEl.hidden) return;
+  stNav.replaceChildren(...ST_TABS.filter(([k]) => k !== 'desktop' || desk).map(([k, label, ico]) =>
+    mk('button', {class: 'st-tab', type: 'button', role: 'tab', 'aria-selected': String(k === st.tab), onclick: () => { st.tab = k; st.deleting = false; renderSettings(); }}, icon(ico), label)));
+  if (st.tab === 'account') st.sig = accountSig();
+  const same = stBody.dataset.tab === st.tab, top = stBody.scrollTop;
+  stBody.replaceChildren(...{account: accountPane, look: lookPane, board: boardPane, desktop: deskPane, about: aboutPane}[st.tab]().filter(Boolean));
+  stBody.dataset.tab = st.tab;
+  stBody.scrollTop = same ? top : 0;
+}
+const stGroup = (title, ...kids) => mk('section', {class: 'st-group'}, title ? mk('h3', {}, title) : null, ...kids);
+const stRow = (title, sub, ctl) => mk('div', {class: 'st-row'}, mk('div', {class: 'st-txt'}, mk('b', {}, title), sub ? mk('span', {}, sub) : null), ctl);
+const stSwitch = (on, label, fn) => mk('button', {class: 'st-sw', type: 'button', role: 'switch', 'aria-checked': String(!!on), 'aria-label': label, onclick: async () => { await fn(); renderSettings(); }});
+const stSeg = (label, choices, cur, fn) => mk('div', {class: 'st-seg', role: 'group', 'aria-label': label},
+  ...choices.map(([v, t]) => mk('button', {type: 'button', 'aria-pressed': String(v === cur), onclick: () => fn(v)}, t)));
+const stMsg = () => mk('p', {class: 'st-msg', role: 'status', hidden: true});
+const say = (el, text, ok) => { el.textContent = text; el.className = 'st-msg ' + (ok ? 'ok' : 'bad'); el.hidden = false; };
+const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
+async function stRun(btn, msg, fn) {
+  btn.disabled = true; if (msg) msg.hidden = true;
+  try { await fn(); } catch (e) { if (msg) say(msg, e.message); else toast(e.message, 4000); }
+  btn.disabled = false;
+}
+
+function accountPane() {
+  const u = team.user, host = hostOf(team.server);
+  if (!u) return [
+    stGroup('', mk('p', {class: 'tm-lead'}, `Sign in to share projects with your team on ${host} and build them together, live. Boards on this computer don't need an account.`)),
+    stGroup('Sign in', mk('div', {class: 'st-field'}, ...signInView().slice(1))),
+  ];
+  const verified = u.emailVerified !== false;
+  const profile = mk('div', {class: 'st-profile'}, avatar(u),
+    mk('div', {class: 'st-txt'}, mk('b', {}, u.displayName), mk('span', {}, `@${u.username} · ${host}`)));
+
+  const nameIn = mk('input', {class: 'tm-in', value: u.displayName, maxlength: 40, autocomplete: 'nickname', 'aria-label': 'Display name'});
+  const nameBtn = mk('button', {class: 'tm-btn ok', type: 'submit', disabled: true}, 'Save'), nameMsg = stMsg();
+  nameIn.addEventListener('input', () => { const v = nameIn.value.trim(); nameBtn.disabled = !v || v === u.displayName; });
+  const nameForm = mk('form', {class: 'st-field', onsubmit: e => {
+    e.preventDefault();
+    stRun(nameBtn, nameMsg, async () => { await api('/api/me', 'PATCH', {displayName: nameIn.value.trim()}); toast('Display name saved'); await refreshMe(true); });
+  }}, mk('div', {class: 'st-txt'}, mk('b', {}, 'Display name'), mk('span', {}, 'What your teammates see next to your pointer and in member lists.')),
+    mk('div', {class: 'st-inline'}, nameIn, nameBtn), nameMsg);
+
+  const colors = team.colors && team.colors.length ? team.colors : [u.color];
+  const colorField = mk('div', {class: 'st-field'},
+    mk('div', {class: 'st-txt'}, mk('b', {}, 'Your colour'), mk('span', {}, 'Your pointer, selections and avatar show in this colour for everyone in a live project.')),
+    mk('div', {class: 'st-colors', role: 'group', 'aria-label': 'Your colour'}, ...colors.map(c => mk('button', {class: 'st-color', type: 'button', css: {'--c': col(c)}, title: c, 'aria-label': 'Colour ' + c, 'aria-pressed': String(c === u.color),
+      onclick: e => { if (c !== u.color) stRun(e.currentTarget, null, async () => { await api('/api/me', 'PATCH', {color: c}); await refreshMe(true); }); }}))));
+
+  const email = stRow('Email', u.email || '', mk('span', {class: 'st-badge ' + (verified ? 'ok' : 'warn')}, verified ? 'Confirmed' : 'Not confirmed'));
+  const verify = verified ? null : mk('div', {class: 'tm-verify'},
+    mk('p', {}, `Confirm ${u.email || 'your email'} with the link we sent you, so team invites sent to that address reach you.`),
+    mk('button', {class: 'tm-link', type: 'button', onclick: e => stRun(e.currentTarget, null, async () => {
+      const r = await api('/api/auth/verify/resend', 'POST', {});
+      if (r.verified) { toast('Your email is already confirmed'); await refreshMe(true); } else toast('Sent. Check your inbox and spam folder.', 4000);
+    })}, 'Send the link again'));
+
+  const pass = (ph, ac, label) => mk('input', {class: 'tm-in', type: 'password', placeholder: ph, autocomplete: ac, 'aria-label': label});
+  const cur = pass('Current password', 'current-password', 'Current password'), nw = pass('New password · at least 8 characters', 'new-password', 'New password'), nw2 = pass('New password again', 'new-password', 'Repeat the new password');
+  const pwBtn = mk('button', {class: 'tm-btn ok', type: 'submit'}, 'Change password'), pwMsg = stMsg();
+  const pwForm = mk('form', {class: 'st-field', onsubmit: e => {
+    e.preventDefault();
+    if (nw.value.length < 8) return say(pwMsg, 'Use at least 8 characters for your new password.');
+    if (nw.value !== nw2.value) return say(pwMsg, "The new passwords don't match.");
+    stRun(pwBtn, pwMsg, async () => {
+      await api('/api/me', 'PATCH', {currentPassword: cur.value, newPassword: nw.value});
+      cur.value = nw.value = nw2.value = '';
+      toast('Password changed. Every other device was signed out.', 4000);
+      await refreshMe(true);
+    });
+  }}, mk('input', {type: 'text', autocomplete: 'username', value: u.username, hidden: true, tabindex: -1, 'aria-hidden': 'true'}),
+    mk('div', {class: 'st-txt'}, mk('b', {}, 'Password'), mk('span', {}, 'Changing it signs you out everywhere else.')), cur, nw, nw2, mk('div', {class: 'st-inline'}, pwBtn), pwMsg);
+
+  const others = team.sessionsOthers || 0;
+  const signIns = stGroup('Where you\'re signed in',
+    stRow(others ? `Signed in on ${plural(others, 'other device')} or browser${others === 1 ? '' : 's'}` : 'Only signed in here',
+      "Signed in on a computer that isn't yours? End every other sign-in here.",
+      mk('button', {class: 'tm-btn', type: 'button', disabled: !others, onclick: e => stRun(e.currentTarget, null, async () => {
+        const r = await api('/api/me/sign-out-others', 'POST', {});
+        toast(r.signedOut ? `Signed out ${plural(r.signedOut, 'other sign-in')}` : 'There were no other sign-ins');
+        await refreshMe(true);
+      })}, 'Sign out everywhere else')),
+    stRow('This device', `You stay signed in here until you sign out.`, mk('button', {class: 'tm-btn', type: 'button', onclick: teamSignOut}, 'Sign out')));
+
+  const teams = stGroup('Teams',
+    team.teams.length ? mk('div', {class: 'tm-list'}, ...team.teams.map(t => mk('div', {class: 'tm-row'},
+      mk('button', {class: 'tm-row-main tm-open', type: 'button', title: 'Open in the Team panel', onclick: () => { team.teamId = t.id; closeSettings(); setTeamPanel(true); }},
+        mk('b', {}, t.name), mk('span', {}, `${ROLE_NAME[t.role] || ''} · ${plural(t.members, 'member')} · ${plural(t.projects, 'project')}`)))))
+      : mk('p', {class: 'tm-note'}, "You're not in a team yet. Create one or accept an invite in the Team panel."),
+    mk('div', {class: 'tm-actions'},
+      mk('button', {class: 'tm-btn', type: 'button', onclick: () => { closeSettings(); setTeamPanel(true); }}, 'Open the Team panel'),
+      mk('button', {class: 'tm-btn', type: 'button', onclick: () => openLink(team.server + '/account')}, icon('arrow'), `Your account on ${host}`)));
+
+  const led = team.teams.filter(t => t.role === 'leader'), solo = led.filter(t => t.members <= 1), shared = led.filter(t => t.members > 1);
+  const names = list => list.map(t => `“${t.name}”`).join(', ');
+  const delPass = pass('Your password', 'current-password', 'Your password, to confirm');
+  const delBtn = mk('button', {class: 'tm-btn bad', type: 'submit'}, 'Delete my account'), delMsg = stMsg();
+  const danger = stGroup('Delete account', mk('div', {class: 'st-danger'},
+    mk('p', {}, `This deletes your account on ${host} for good: your sign-ins and your place in every team${solo.length ? `, plus ${names(solo)}, which only you are in, with ${solo.length === 1 ? 'its' : 'their'} projects and images` : ''}. Boards saved on this computer stay where they are.`),
+    shared.length ? mk('p', {class: 'st-warn'}, `You lead ${names(shared)}, and other people are in ${shared.length === 1 ? 'it' : 'them'}. Hand ${shared.length === 1 ? 'it' : 'them'} to a teammate or delete ${shared.length === 1 ? 'it' : 'them'} in the Team panel first.`) : null,
+    st.deleting
+      ? mk('form', {class: 'st-inline', onsubmit: e => {
+          e.preventDefault();
+          if (!delPass.value) return say(delMsg, 'Enter your password to confirm.');
+          stRun(delBtn, delMsg, async () => {
+            await api('/api/me', 'DELETE', {password: delPass.value});
+            st.deleting = false; delete team.devices[team.server];
+            signOutLocal(); toast('Your account was deleted', 4000);
+          });
+        }}, delPass, delBtn, mk('button', {class: 'tm-btn', type: 'button', onclick: () => { st.deleting = false; renderSettings(); }}, 'Cancel'))
+      : mk('button', {class: 'tm-btn bad-line', type: 'button', disabled: !!shared.length, onclick: () => { st.deleting = true; renderSettings(); stBody.querySelector('.st-danger input').focus(); }}, 'Delete account…'),
+    delMsg));
+
+  return [profile, stGroup('Profile', nameForm, colorField, email, verify), stGroup('Security', pwForm), signIns, teams, danger];
+}
+
+function lookPane() {
+  const scale = desk && desk.setUiScale;
+  return [
+    stGroup('Skin', stRow('Colour scheme', 'Venom is dark. Anti-Venom is light, for bright rooms and printouts.',
+      stSeg('Skin', [['venom', 'Venom'], ['anti', 'Anti-Venom']], skin, v => { applySkin(v); renderSettings(); }))),
+    stGroup('Interface size', scale
+      ? stRow('Buttons and text', 'Makes the whole interface bigger or smaller. Board zoom is separate.',
+        stSeg('Interface size', UI_SCALES.map(f => [f, Math.round(f * 100) + '%']), deskState.uiScale || 1,
+          f => desk.setUiScale(f).then(v => { deskState.uiScale = v; document.documentElement.style.setProperty('--ui-scale', v); renderSettings(); })))
+      : stRow('Buttons and text', "Use your browser's zoom (in its menu) to make everything bigger or smaller. The desktop app has its own setting here.", null)),
+  ];
+}
+
+function boardPane() {
+  return [
+    stGroup('Canvas',
+      stRow('Minimap', 'A small map of the whole board in the corner. Shortcut: M.', stSwitch(showMini, 'Minimap', toggleMini)),
+      stRow('Snap to other items', 'Cards line up with their neighbours as you drag. Hold Ctrl to skip it.', stSwitch(snapOn, 'Snap to other items', () => { snapOn = !snapOn; savePref('snap', snapOn); })),
+      stRow('Top bar', 'Hide it for more room. Right-click anywhere or press Ctrl+Shift+B to bring it back.', stSwitch(topbarOn, 'Top bar', toggleTopbar))),
+    stGroup('This board',
+      stRow('Lock board (view only)', 'Stops accidental edits. Pan, zoom, search, copy and export still work. Ctrl+Shift+K.', stSwitch(board.locked, 'Lock board', toggleBoardLock))),
+  ];
+}
+
+function deskPane() {
+  const u = updateInfo, ver = u.current || APP_VERSION;
+  const op = mk('input', {class: 'st-range', type: 'range', min: 20, max: 100, step: 1, value: Math.round(deskState.opacity * 100), 'aria-label': 'Window opacity'});
+  const opVal = mk('b', {class: 'st-val'}, op.value + '%');
+  op.addEventListener('input', () => { opVal.textContent = op.value + '%'; queueOpacity(+op.value); });
+  const upd = u.state === 'ready' ? stRow(`Venom Board ${u.version} is ready`, 'Restart to install it now, or it installs when you close the app.', mk('button', {class: 'tm-btn ok', type: 'button', onclick: installUpdate}, 'Restart to update'))
+    : u.state === 'downloading' || u.state === 'verifying' ? stRow(`Downloading ${u.version || 'an update'} · ${u.percent || 0}%`, "You can keep working. It's checked against the Venom Board signing key before it installs.", null)
+    : stRow(`Version ${ver}`, u.enabled ? 'New versions download in the background and are checked against the Venom Board signing key before they install.' : 'Automatic updates are off in this copy.',
+      u.enabled && desk.checkUpdate ? mk('button', {class: 'tm-btn', type: 'button', onclick: checkForUpdates}, 'Check for updates') : null);
+  return [
+    stGroup('Window',
+      stRow('Pin on top', 'Keep Venom Board above other windows, like a reference board. Ctrl+Shift+A.', stSwitch(pinned, 'Pin on top', togglePin)),
+      stRow('Lock window in place', 'Stops the window from being moved or resized by accident.', stSwitch(deskState.locked, 'Lock window in place', toggleWinLock)),
+      stRow('Opacity', "See through the window to what's behind it.", mk('div', {class: 'st-inline st-op'}, op, opVal)),
+      stRow('Click-through key', `Click-through lets clicks pass to the window behind. ${deskState.keyLabel} turns it off again from any app.`, mk('button', {class: 'tm-btn', type: 'button', onclick: recordShortcut}, 'Change…'))),
+    stGroup('Updates', upd),
+  ];
+}
+
+function aboutPane() {
+  const ver = (desk && updateInfo.current) || APP_VERSION, mark = $('.brand .mark').cloneNode(true);
+  const copySupport = () => navigator.clipboard.writeText('support@venomboard.com').then(() => toast('Copied support@venomboard.com')).catch(() => toast('support@venomboard.com', 4000));
+  return [
+    mk('div', {class: 'st-about'}, mark, mk('div', {class: 'st-txt'}, mk('b', {}, 'Venom Board'), mk('span', {}, `Version ${ver} · ${desk ? 'desktop app' : 'web app'}`),
+      mk('span', {}, 'A planning board for game development: references, tasks, phases and dependencies on one canvas.'))),
+    stGroup('Made by', mk('p', {}, 'Designed and built by 1337VIPER.')),
+    stGroup('Help',
+      mk('div', {class: 'st-links'},
+        mk('button', {class: 'tm-btn', type: 'button', onclick: () => { closeSettings(); $('#help').hidden = false; }}, 'Keyboard shortcuts'),
+        mk('button', {class: 'tm-btn', type: 'button', onclick: () => openLink(REPO_URL + '/issues/new')}, icon('arrow'), 'Report a bug'),
+        mk('button', {class: 'tm-btn', type: 'button', onclick: () => openLink(HOSTED_SERVER)}, icon('arrow'), 'venomboard.com'),
+        mk('button', {class: 'tm-btn', type: 'button', onclick: () => openLink(REPO_URL)}, icon('arrow'), 'Source code')),
+      stRow('Support', 'support@venomboard.com', mk('button', {class: 'tm-btn', type: 'button', onclick: copySupport}, 'Copy address'))),
+  ];
+}
+$('#stClose').onclick = closeSettings;
+// a click that starts and ends on the dimmed backdrop closes it; dragging out of a text box doesn't
+let stDownOnBackdrop = false;
+settingsEl.addEventListener('pointerdown', e => { stDownOnBackdrop = e.target === settingsEl; });
+settingsEl.addEventListener('click', e => { if (e.target === settingsEl && stDownOnBackdrop) closeSettings(); });
 
 /* ---------- sample board ---------- */
 function sampleMood() {

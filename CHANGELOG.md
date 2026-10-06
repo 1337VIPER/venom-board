@@ -2,6 +2,19 @@
 
 All notable changes to Venom Board are listed here. The project follows [Semantic Versioning](https://semver.org).
 
+## [1.1.2] - 2026-10-07
+
+### Settings
+- A new **Settings** window: the gear button in the top bar, `Ctrl+,`, or **Settings** in the Window menu. Account, appearance, board, desktop window and about pages in one place
+- **Account**: change your display name and the colour teammates see your cursor in, change your password, resend the confirmation email, see how many other devices you're signed in on and sign them all out, and delete your account
+- The same sign-in and account options are on your account page at venomboard.com
+
+### Fixes
+- Changing a card's status from its toolbar or the right-click menu did nothing. In a team project it also made the app think its live connection had dropped, so your cursor froze for teammates and editing paused until a reload
+- Your cursor stays live for teammates while it's over the card toolbar, the tools and the menus, and disappears when it leaves the window instead of freezing in place
+- Middle-click panning in Linux browsers no longer drops the last selected text onto the board as a new card
+- A teammate's new name or colour shows straight away in the avatars at the top
+
 ## [1.1.1] - 2026-10-06
 
 ### Fits any screen
