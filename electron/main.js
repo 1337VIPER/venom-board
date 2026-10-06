@@ -256,22 +256,46 @@ ipcMain.handle('vb:open-external', (e, url) => {
 // someone who got into the GitHub account couldn't push an update that installed copies would accept.
 const UPDATE_PUBLIC_KEY = '-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAv0KVrzBpMO3JhOElcEKk3TB7nOHBV6PD1HzbofMM2/k=\n-----END PUBLIC KEY-----\n';
 const SIGNATURES = process.env.VB_UPDATE_SIG_BASE || 'https://github.com/1337VIPER/venom-board/releases/download/v{version}';
+function sha512File(file) {
+  return new Promise((resolve, reject) => {
+    const hash = crypto.createHash('sha512');
+    fs.createReadStream(file).on('data', d => hash.update(d)).on('end', () => resolve(hash.digest('hex'))).on('error', reject);
+  });
+}
+// Returns the installer's SHA-512 if its signature checks out, otherwise null.
 async function verifyUpdate(info) {
   const version = String(info.version);
-  if (!/^\d+\.\d+\.\d+([-.][0-9A-Za-z.]+)?$/.test(version)) return false;
-  const hash = crypto.createHash('sha512');
-  await new Promise((resolve, reject) => fs.createReadStream(info.downloadedFile).on('data', d => hash.update(d)).on('end', resolve).on('error', reject));
+  if (!/^\d+\.\d+\.\d+([-.][0-9A-Za-z.]+)?$/.test(version)) return null;
+  const hash = await sha512File(info.downloadedFile);
   // always fetched fresh: a cached copy could be stale
   const url = SIGNATURES.replace('{version}', version) + `/VenomBoard-Setup-${version}.exe.sig?t=${Date.now()}`;
   const res = await net.fetch(url, { cache: 'no-store' });
-  if (!res.ok) return false;
+  if (!res.ok) return null;
   const signature = Buffer.from((await res.text()).trim(), 'base64');
-  const message = Buffer.from(`venom-board-update\n${version}\n${hash.digest('hex')}\n`);
-  return signature.length === 64 && crypto.verify(null, message, UPDATE_PUBLIC_KEY, signature);
+  const message = Buffer.from(`venom-board-update\n${version}\n${hash}\n`);
+  return signature.length === 64 && crypto.verify(null, message, UPDATE_PUBLIC_KEY, signature) ? hash : null;
 }
 
+// The updater never installs anything by itself. Both ways in, "Restart to update" and closing the app, go
+// through installVerified(), which runs the installer only if it is still exactly the file that passed the
+// signature check (same path, same SHA-512). Anything else is refused, so a later failed download can't
+// slip through on the strength of an earlier good one.
 let updater = null;
 let update = { state: 'idle' };
+let verified = null;  // { file, hash, version } of the download whose signature checked out
+let quitting = false;
+async function installVerified(relaunch) {
+  if (!updater || !verified) return false;
+  const pending = updater.installerPath;
+  const good = pending && path.resolve(pending) === path.resolve(verified.file) && (await sha512File(pending).catch(() => null)) === verified.hash;
+  if (!good) {
+    verified = null;
+    setUpdate({ state: 'error', message: "The downloaded update couldn't be verified, so it wasn't installed." });
+    return false;
+  }
+  updater.quitAndInstall(true, relaunch);  // installs quietly; reopens the app only after "Restart to update"
+  return true;
+}
 function setUpdate(u) {
   update = u;
   if (win && !win.isDestroyed()) win.webContents.send('vb:update', update);
@@ -280,26 +304,33 @@ function startUpdates() {
   if (!app.isPackaged || DEV) return;
   try { updater = require('electron-updater').autoUpdater; } catch (e) { return; }
   updater.autoDownload = true;
-  updater.autoInstallOnAppQuit = false;  // switched on only once the download's signature checks out
+  updater.autoInstallOnAppQuit = false;  // installs only ever happen through installVerified()
   updater.logger = null;
   updater.on('checking-for-update', () => { if (update.state !== 'downloading' && update.state !== 'ready') setUpdate({ state: 'checking' }); });
   updater.on('update-not-available', () => setUpdate({ state: 'current' }));
-  updater.on('update-available', i => setUpdate({ state: 'downloading', version: i.version, percent: 0 }));
+  updater.on('update-available', i => { verified = null; setUpdate({ state: 'downloading', version: i.version, percent: 0 }); });
   updater.on('download-progress', p => setUpdate({ ...update, state: 'downloading', percent: Math.floor(p.percent || 0) }));
   updater.on('update-downloaded', async i => {
+    verified = null;
     setUpdate({ state: 'verifying', version: i.version });
-    const ok = await verifyUpdate(i).catch(() => false);
-    if (!ok) {
-      try { fs.rmSync(i.downloadedFile, { force: true }); } catch (e) { /* not fatal */ }
+    const hash = await verifyUpdate(i).catch(() => null);
+    if (!hash) {
+      try { fs.rmSync(i.downloadedFile, { force: true }); } catch (e) { /* not fatal: it can never be installed anyway */ }
       setUpdate({ state: 'error', message: `The download of version ${i.version} couldn't be verified, so it wasn't installed.` });
       return;
     }
-    updater.autoInstallOnAppQuit = true;
-    if (typeof updater.addQuitHandler === 'function') updater.addQuitHandler();
+    verified = { file: i.downloadedFile, hash, version: i.version };
     setUpdate({ state: 'ready', version: i.version });
-    if (process.env.VB_UPDATE_AUTOINSTALL === '1') updater.quitAndInstall(true, true);  // used by the update test
+    if (process.env.VB_UPDATE_AUTOINSTALL === '1') installVerified(true);  // used by the update test
   });
-  updater.on('error', e => setUpdate({ state: 'error', message: String((e && e.message) || e).slice(0, 200) }));
+  updater.on('error', e => { if (update.state !== 'ready') setUpdate({ state: 'error', message: String((e && e.message) || e).slice(0, 200) }); });
+  // a verified update installs quietly when the app closes, unless "Restart to update" already did it
+  app.on('before-quit', e => {
+    if (quitting || !verified) return;
+    e.preventDefault();
+    quitting = true;
+    installVerified(false).then(ok => { if (!ok) app.quit(); }, () => app.quit());
+  });
   const check = () => { if (!['downloading', 'verifying', 'ready'].includes(update.state)) updater.checkForUpdates().catch(() => {}); };
   setTimeout(check, 4000);
   setInterval(check, 4 * 3600000);
@@ -312,8 +343,9 @@ ipcMain.handle('vb:check-update', () => {
   return true;
 });
 ipcMain.handle('vb:install-update', () => {
-  if (!updater || update.state !== 'ready') return false;
-  setImmediate(() => updater.quitAndInstall(true, true));  // installs quietly, then opens the new version
+  if (!updater || update.state !== 'ready' || !verified) return false;
+  quitting = true;
+  installVerified(true).then(ok => { if (!ok) quitting = false; });
   return true;
 });
 
