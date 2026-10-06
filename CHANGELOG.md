@@ -17,7 +17,8 @@ All notable changes to Venom Board are listed here. The project follows [Semanti
 
 ### Desktop app
 - Windows installer: installs per user in seconds, no admin rights needed, with Start menu and desktop shortcuts
-- Automatic updates: checks for new versions at start-up and every few hours, downloads them in the background (verified against the release checksum) and installs them on restart; *Restart to update* appears in the top bar, and **Check for updates** is in the Window menu
+- Automatic updates: checks for new versions at start-up and every few hours, downloads them in the background and installs them on restart; *Restart to update* appears in the top bar, and **Check for updates** is in the Window menu
+- Every update must carry Venom Board's update signature, made with a key that never leaves the developer's machine; downloads that don't match are thrown away, never installed
 - Before restarting to update, the app saves your board and waits for live edits to reach your team
 
 ## [1.0.0] - 2026-10-06

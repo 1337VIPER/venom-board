@@ -75,7 +75,7 @@ Solo boards need no account, no subscription and no telemetry. They work offline
 - **Pin on top** and an **opacity slider** in the top bar
 - **Click-through**: clicks pass straight through the board to the app underneath. Turn it off from anywhere with a global shortcut (default `Ctrl+Shift+X`, customisable) or the tray icon
 - **Lock window in place**, **hide the top bar**, or hide the whole interface with `\`
-- **Automatic updates**: the app checks for new versions when it starts, downloads them in the background and installs them when you restart. *Restart to update* appears in the top bar when one is ready, and **Check for updates** is in the Window menu
+- **Automatic updates**: the app checks for new versions when it starts, downloads them in the background and installs them when you restart. *Restart to update* appears in the top bar when one is ready, and **Check for updates** is in the Window menu. Every update is checked against Venom Board's update signature before it installs
 - Right-click anywhere for the Window menu
 - Two skins: **Venom** (dark) and **Anti-Venom** (light)
 

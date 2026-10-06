@@ -1,7 +1,8 @@
 // Venom Board desktop shell: frameless window, pin on top, opacity, window lock,
 // click-through with a global "turn it off" shortcut, native file dialogs and automatic updates.
-const { app, BrowserWindow, ipcMain, dialog, shell, globalShortcut, Tray, Menu } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, shell, globalShortcut, Tray, Menu, net } = require('electron');
 const path = require('path');
+const crypto = require('crypto');
 const fs = require('fs');
 
 app.setAppUserModelId('com.venomboard.app');
@@ -247,8 +248,28 @@ ipcMain.handle('vb:open-external', (e, url) => {
 });
 
 // Updates. The installed app checks the GitHub releases for a newer version when it starts and every few
-// hours, downloads it in the background (checked against the release's SHA-512 before it's used) and
-// installs it on restart. The page offers "Restart to update"; otherwise it installs when the app closes.
+// hours, downloads it in the background (checked against the release's SHA-512) and installs it on restart.
+// The page offers "Restart to update"; otherwise it installs when the app closes.
+//
+// Every installer must also carry a signature made with Venom Board's private update key, which is never
+// stored on GitHub. The app only installs an update whose signature matches the public key below, so even
+// someone who got into the GitHub account couldn't push an update that installed copies would accept.
+const UPDATE_PUBLIC_KEY = '-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAv0KVrzBpMO3JhOElcEKk3TB7nOHBV6PD1HzbofMM2/k=\n-----END PUBLIC KEY-----\n';
+const SIGNATURES = process.env.VB_UPDATE_SIG_BASE || 'https://github.com/1337VIPER/venom-board/releases/download/v{version}';
+async function verifyUpdate(info) {
+  const version = String(info.version);
+  if (!/^\d+\.\d+\.\d+([-.][0-9A-Za-z.]+)?$/.test(version)) return false;
+  const hash = crypto.createHash('sha512');
+  await new Promise((resolve, reject) => fs.createReadStream(info.downloadedFile).on('data', d => hash.update(d)).on('end', resolve).on('error', reject));
+  // always fetched fresh: a cached copy could be stale
+  const url = SIGNATURES.replace('{version}', version) + `/VenomBoard-Setup-${version}.exe.sig?t=${Date.now()}`;
+  const res = await net.fetch(url, { cache: 'no-store' });
+  if (!res.ok) return false;
+  const signature = Buffer.from((await res.text()).trim(), 'base64');
+  const message = Buffer.from(`venom-board-update\n${version}\n${hash.digest('hex')}\n`);
+  return signature.length === 64 && crypto.verify(null, message, UPDATE_PUBLIC_KEY, signature);
+}
+
 let updater = null;
 let update = { state: 'idle' };
 function setUpdate(u) {
@@ -259,25 +280,34 @@ function startUpdates() {
   if (!app.isPackaged || DEV) return;
   try { updater = require('electron-updater').autoUpdater; } catch (e) { return; }
   updater.autoDownload = true;
-  updater.autoInstallOnAppQuit = true;
+  updater.autoInstallOnAppQuit = false;  // switched on only once the download's signature checks out
   updater.logger = null;
   updater.on('checking-for-update', () => { if (update.state !== 'downloading' && update.state !== 'ready') setUpdate({ state: 'checking' }); });
   updater.on('update-not-available', () => setUpdate({ state: 'current' }));
   updater.on('update-available', i => setUpdate({ state: 'downloading', version: i.version, percent: 0 }));
   updater.on('download-progress', p => setUpdate({ ...update, state: 'downloading', percent: Math.floor(p.percent || 0) }));
-  updater.on('update-downloaded', i => {
+  updater.on('update-downloaded', async i => {
+    setUpdate({ state: 'verifying', version: i.version });
+    const ok = await verifyUpdate(i).catch(() => false);
+    if (!ok) {
+      try { fs.rmSync(i.downloadedFile, { force: true }); } catch (e) { /* not fatal */ }
+      setUpdate({ state: 'error', message: `The download of version ${i.version} couldn't be verified, so it wasn't installed.` });
+      return;
+    }
+    updater.autoInstallOnAppQuit = true;
+    if (typeof updater.addQuitHandler === 'function') updater.addQuitHandler();
     setUpdate({ state: 'ready', version: i.version });
     if (process.env.VB_UPDATE_AUTOINSTALL === '1') updater.quitAndInstall(true, true);  // used by the update test
   });
   updater.on('error', e => setUpdate({ state: 'error', message: String((e && e.message) || e).slice(0, 200) }));
-  const check = () => { if (update.state !== 'downloading' && update.state !== 'ready') updater.checkForUpdates().catch(() => {}); };
+  const check = () => { if (!['downloading', 'verifying', 'ready'].includes(update.state)) updater.checkForUpdates().catch(() => {}); };
   setTimeout(check, 4000);
   setInterval(check, 4 * 3600000);
 }
 ipcMain.handle('vb:get-update', () => ({ ...update, current: app.getVersion(), enabled: !!updater }));
 ipcMain.handle('vb:check-update', () => {
   if (!updater) return false;
-  if (update.state === 'ready' || update.state === 'downloading') setUpdate(update);
+  if (['downloading', 'verifying', 'ready'].includes(update.state)) setUpdate(update);
   else updater.checkForUpdates().catch(() => {});
   return true;
 });

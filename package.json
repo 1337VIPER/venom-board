@@ -28,7 +28,7 @@
   "private": true,
   "scripts": {
     "start": "electron .",
-    "dist": "electron-builder --win nsis --x64 --publish never"
+    "dist": "electron-builder --win nsis --x64 --publish never && node tools/sign-update.js"
   },
   "devDependencies": {
     "electron": "^44.5.1",

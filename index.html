@@ -3320,9 +3320,11 @@ function applyUpdate(u) {
   if (!u) return;
   updateInfo = {...updateInfo, ...u};
   const s = updateInfo.state, chip = $('#updateChip');
-  chip.hidden = s !== 'downloading' && s !== 'ready';
+  chip.hidden = s !== 'downloading' && s !== 'verifying' && s !== 'ready';
   chip.classList.toggle('ready', s === 'ready');
-  chip.textContent = s === 'ready' ? 'Restart to update' : `Updating ${updateInfo.percent || 0}%`;
+  chip.textContent = s === 'ready' ? 'Restart to update' : s === 'verifying' ? 'Verifying update' : `Updating ${updateInfo.percent || 0}%`;
+  // a download that fails its signature check is thrown away; say so, since it shouldn't ever happen
+  if (s === 'error' && /verified/.test(updateInfo.message || '')) { checkingByHand = false; toast(updateInfo.message, 6000); return; }
   chip.title = s === 'ready' ? `Venom Board ${updateInfo.version} is ready. Restart now to install it, or it installs when you close the app.`
     : `Downloading Venom Board ${updateInfo.version || ''} in the background`;
   if (!checkingByHand) return;
