@@ -3603,6 +3603,8 @@ async function api(path, method = 'GET', body) {
 async function refreshMe(quiet) {
   if (!team.token && !pageServer) { team.user = null; renderTeam(); updateTeamBtn(); return; }
   try {
+    // served by the website with no saved token: ask who's signed in first, so nobody signed out gets an error response
+    if (!team.token && !(await api('/api/session')).user) { team.user = null; renderTeam(); updateTeamBtn(); return; }
     const me = await api('/api/me');
     team.user = me.user; team.teams = me.teams; team.invites = me.invites;
     if (!team.teams.some(t => t.id === team.teamId)) team.teamId = team.teams[0] ? team.teams[0].id : '';
