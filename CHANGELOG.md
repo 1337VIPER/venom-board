@@ -2,6 +2,14 @@
 
 All notable changes to Venom Board are listed here. The project follows [Semantic Versioning](https://semver.org).
 
+## [Unreleased]
+
+### Reference board
+- **Import PureRef boards**: drop a `.pur` file on the board, or choose Import from PureRef, Trello, Jira or CSV in the menu. Boards from PureRef 1.x and 2.x come in with every picture in its place and at its size, rotated, flipped and cropped as it was; notes become text and groups become frames. The board lands next to what's already there, and in a team project its pictures upload for everyone. Pictures PureRef only linked to on disk and its drawings are counted and skipped
+
+### Teams
+- **Connect tools (MCP)**: tools that support the Model Context Protocol can work on your team boards: list projects, read a board with its phases and cards, read the schedule and critical path, create projects, add phases and cards with estimates, priorities, disciplines and dependencies, update and link cards, delete items and comment. Make an access token on your account page at venomboard.com (Settings → Account → Connect tools links there). A token acts as you, with your role in each team, so viewers' tokens can read and comment but not change a board. What a tool changes shows up live and stays in version history, and changing your password or signing out everywhere revokes every token
+
 ## [1.3.1] - 2026-10-07
 
 ### Fixes

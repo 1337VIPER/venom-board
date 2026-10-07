@@ -22,11 +22,12 @@
 
 Game production lives in three places at once: a folder of reference images, a task list, and the plan in your head of *what unlocks what*. Venom Board puts all three on a single canvas.
 
-- **It's a reference board** like PureRef: paste screenshots, drop in concept art, scribble over it with markers.
+- **It's a reference board** like PureRef, and it opens your PureRef boards: paste screenshots, drop in concept art, scribble over it with markers.
 - **It's a roadmap** with real planning data: phases, milestones, estimates, priorities, due dates and bugs.
 - **It's a dependency network**: drag a tendril from one card to the next and the board works out what's blocked and what's ready to start.
 - **It's a schedule**: the timeline turns your estimates and links into a critical path and a finish date, and the Planner tracks a burndown to your next milestone.
 - **It's multiplayer**: make a free account at [venomboard.com](https://venomboard.com), invite your team and edit shared projects together live, with comments, @mentions and assignments.
+- **It connects to your tools**: anything that supports the Model Context Protocol (MCP) can read a team board and map out a project on it, phases, cards and dependencies included.
 - **It's a public roadmap**: publish a page your players can follow and vote on, straight from the board.
 - **It's jam-ready**: a countdown, the theme, and a scope check that tells you what to cut before the deadline does.
 - **It's an overlay**: pin it on top of Unreal, Unity or Godot, turn the opacity down, and let clicks pass straight through to your engine.
@@ -56,6 +57,7 @@ Solo boards need no account, no subscription and no telemetry. They work offline
 - **Marker** (8 colours + custom), **highlighter** and **eraser**. Ink drawn on a card or image moves with it
 - Snap guides, align, distribute, pack into a grid, lock items, bring to front or send to back
 - **Videos and GIFs** as references: GIFs animate on the board, video files play on hover or double-click (loop, autoplay, sound), and YouTube or Vimeo links become players that only load when you click them
+- **Import PureRef boards**: drop a `.pur` file (PureRef 1.x or 2.x) on the board or use Import. Pictures keep their places, sizes, rotation, flips and crops, notes become text and groups become frames, placed next to what's already there
 - Export the whole board or just the selection as a 2× PNG
 - **Timelapse**: turn a board's history into a video of it coming together (landscape, square or vertical, saved as MP4 or WebM), ready for #screenshotsaturday, TikTok or Shorts. Team projects use their version history; boards on your computer keep a snapshot every 20 minutes of work
 
@@ -92,6 +94,7 @@ Solo boards need no account, no subscription and no telemetry. They work offline
 - **View-only links**: anyone with the link can watch a board live without an account, without seeing who's there or changing anything. Posted on Discord, Reddit or X, a link shows a picture of the board
 - **Public roadmaps**: a page your players can follow, with your phases, what's planned, in progress and done, milestone dates, votes on what they want most, an RSS feed and an embed for your own site. Pictures, comments, people and estimates are never shown, and any card can be kept off it
 - **Discord**: post finished tasks, reached milestones, comments, restores and new members to a channel
+- **Connect tools (MCP)**: assistants and planning tools that support the Model Context Protocol can list your team projects, read a board, its schedule and critical path, and map out work on it: new projects, phases, cards with estimates, priorities and disciplines, the dependencies between them, status updates and comments. They act as you, with your role in each team, and what they change shows up live for everyone and stays in version history. Make an access token at [venomboard.com/account](https://venomboard.com/account#mcp) (Settings → Account → Connect tools has a link); changing your password or signing out everywhere revokes every token
 - **Viewers** watch live without being able to change anything
 - **Account settings** (`Ctrl+,`): change your display name, your cursor colour and your password, turn on **two-step sign-in** with an authenticator app (with recovery codes), see where you're signed in and sign out everywhere else, or delete your account
 

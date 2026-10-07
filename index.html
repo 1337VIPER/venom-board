@@ -1063,7 +1063,7 @@ html.watching #tools .tool:not([data-tool=select]):not([data-tool=hand]),html.wa
 
 <input type="file" id="fileOpen" accept=".json,application/json" hidden>
 <input type="file" id="fileImg" accept="image/*,video/mp4,video/webm,video/quicktime,.mp4,.webm,.mov,.m4v" multiple hidden>
-<input type="file" id="fileImport" accept=".json,.csv,.txt,application/json,text/csv" hidden>
+<input type="file" id="fileImport" accept=".json,.csv,.txt,.pur,application/json,text/csv" hidden>
 <input type="color" id="colorPick" class="vh" tabindex="-1" aria-hidden="true">
 
 <script>
@@ -2734,6 +2734,8 @@ stage.addEventListener('drop', async e => {
   const boardFile = files.find(f => /\.json$/i.test(f.name));
   if (boardFile) { openBoardData(boardFile); return; }  // opens a new board, so a locked board doesn't block it
   if (blocked()) return;
+  const pur = files.find(f => /\.pur$/i.test(f.name));
+  if (pur) { importPureRef(pur); return; }
   const imgs = files.filter(isImageFile), vids = files.filter(isVideoFile);
   if (imgs.length) { addImageFiles(imgs, at); return; }
   if (vids.length) { addVideoFiles(vids, at); return; }
@@ -3219,7 +3221,7 @@ function boardsMenu() {
   const list = boards.slice(); if (!board.team && !list.find(b => b.id === board.id)) list.push({id: board.id, name: board.name, updated: Date.now()});
   list.sort((a, b) => b.updated - a.updated).forEach(b => E.push({label: b.id === board.id ? board.name : b.name, kb: b.id === board.id ? 'open' : ago(b.updated), cur: b.id === board.id, run: () => switchBoard(b.id)}));
   E.push('-', {label: 'New empty board', icon: 'plus', run: () => newBoard('Untitled board', false)}, {label: 'New sample roadmap', icon: 'card', run: () => newBoard('Game Roadmap', true)},
-    {label: 'Import from Trello, Jira or CSV…', icon: 'arrow', run: () => { if (!blocked()) $('#fileImport').click(); }},
+    {label: 'Import from PureRef, Trello, Jira or CSV…', icon: 'arrow', run: () => { if (!blocked()) $('#fileImport').click(); }},
     ...(board.team ? [] : ['-', {label: 'Make a timelapse…', icon: 'image', run: openTimelapse}, {label: 'Clear this board', run: clearBoard}, {label: 'Delete this board', danger: true, icon: 'trash', run: deleteBoard}]));
   menuAt($('#boardsBtn'), E);
 }
@@ -5048,7 +5050,11 @@ function accountPane() {
       : mk('button', {class: 'tm-btn bad-line', type: 'button', disabled: !!shared.length, onclick: () => { st.deleting = true; renderSettings(); stBody.querySelector('.st-danger input').focus(); }}, 'Delete account…'),
     delMsg));
 
-  return [profile, stGroup('Profile', nameForm, colorField, email, verify), stGroup('Security', pwForm), securityGroup(), signIns, teams, danger];
+  // tools that support the Model Context Protocol work on team boards with an access token made on the website
+  const tools = stGroup('Connect tools (MCP)', stRow('Assistants and planning tools',
+    'Tools that support the Model Context Protocol can read your team boards and map out phases, cards and dependencies, as you. Make an access token on your account page.',
+    mk('button', {class: 'tm-btn', type: 'button', onclick: () => openLink(team.server + '/account#mcp')}, icon('arrow'), 'Set up')));
+  return [profile, stGroup('Profile', nameForm, colorField, email, verify), stGroup('Security', pwForm), securityGroup(), signIns, teams, tools, danger];
 }
 
 function lookPane() {
@@ -6435,6 +6441,7 @@ function parseCSVImport(text) {
 }
 async function importFile(f) {
   if (!f || blocked()) return;
+  if (/\.pur$/i.test(f.name || '')) { importPureRef(f); return; }
   let res = null;
   try {
     const text = await f.text();
@@ -6462,6 +6469,358 @@ async function importFile(f) {
   setTool('select'); refresh(); commit();
   fitTo(made.map(id => idx.get(id)).filter(Boolean));
   toast(`Imported ${count} card${count === 1 ? '' : 's'} from ${res.source} in ${res.columns.length} phase${res.columns.length === 1 ? '' : 's'}. Undo with Ctrl+Z.`, 5000);
+}
+
+/* ---------- PureRef import ----------
+   PureRef 2 saves a .pur as a short header and a preview picture followed by an SQLite database, with the
+   database's first bytes moved to the end of the file; putting them back gives an ordinary database with tables
+   for the images (in their original format), the items placed on the canvas (images, notes, groups, drawings)
+   and their positions. PureRef 1 files are a Qt data stream of PNG images followed by where each one sits
+   (format notes: github.com/FyorDev/PureRef-format, MIT). Both become a list of placed images, notes and groups,
+   which import lays out on the board: groups become frames, notes become text, crops and rotations are kept. */
+
+// a read-only SQLite reader, just enough to scan whole tables
+function sqliteTables(bytes) {
+  const dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  if (String.fromCharCode(...bytes.subarray(0, 15)) !== 'SQLite format 3') throw new Error('Not an SQLite database');
+  let ps = dv.getUint16(16); if (ps === 1) ps = 65536;
+  const usable = ps - bytes[20], enc = dv.getUint32(56);
+  const text = new TextDecoder(enc === 2 ? 'utf-16le' : enc === 3 ? 'utf-16be' : 'utf-8');
+  const pageAt = n => (n - 1) * ps;
+  const varint = (buf, p) => {
+    let v = 0;
+    for (let i = 0; i < 8; i++) { const b = buf[p + i]; v = v * 128 + (b & 0x7f); if (!(b & 0x80)) return [v, p + i + 1]; }
+    return [v * 256 + buf[p + 8], p + 9];
+  };
+  function payload(p, size) {  // a cell's record, gathered from its overflow pages if it doesn't fit in the page
+    const maxLocal = usable - 35, minLocal = Math.floor((usable - 12) * 32 / 255) - 23;
+    let local = size;
+    if (size > maxLocal) { const k = minLocal + ((size - minLocal) % (usable - 4)); local = k <= maxLocal ? k : minLocal; }
+    if (local === size) return bytes.subarray(p, p + size);
+    const out = new Uint8Array(size);
+    out.set(bytes.subarray(p, p + local));
+    let got = local, next = dv.getUint32(p + local), guard = 0;
+    while (got < size && next && guard++ < 1e6) {
+      const o = pageAt(next), n = Math.min(usable - 4, size - got);
+      if (o + 4 + n > bytes.length) throw new Error('Truncated database');
+      out.set(bytes.subarray(o + 4, o + 4 + n), got);
+      got += n; next = dv.getUint32(o);
+    }
+    return out;
+  }
+  function record(buf) {
+    const d = new DataView(buf.buffer, buf.byteOffset, buf.byteLength);
+    let [hs, p] = varint(buf, 0);
+    const types = [];
+    while (p < hs) { const [t, q] = varint(buf, p); types.push(t); p = q; }
+    const vals = [];
+    let q = hs;
+    const int = n => { let v = 0; for (let i = 0; i < n; i++) v = v * 256 + buf[q + i]; if (buf[q] & 0x80) v -= 2 ** (8 * n); return v; };
+    for (const t of types) {
+      if (t === 0) vals.push(null);
+      else if (t >= 1 && t <= 6) { const n = [0, 1, 2, 3, 4, 6, 8][t]; vals.push(int(n)); q += n; }
+      else if (t === 7) { vals.push(d.getFloat64(q)); q += 8; }
+      else if (t === 8 || t === 9) vals.push(t - 8);
+      else if (t >= 12) {
+        const n = (t - (t % 2 ? 13 : 12)) / 2;
+        vals.push(t % 2 ? text.decode(buf.subarray(q, q + n)) : buf.subarray(q, q + n));
+        q += n;
+      } else vals.push(null);
+    }
+    return vals;
+  }
+  function scan(root, each) {  // every row of a table b-tree, in rowid order
+    const stack = [root], seen = new Set();
+    while (stack.length) {
+      const n = stack.pop();
+      if (seen.has(n) || n < 1 || pageAt(n) >= bytes.length) continue;
+      seen.add(n);
+      const o = pageAt(n), h = n === 1 ? 100 : o, type = bytes[h], cells = dv.getUint16(h + 3);
+      if (type === 13) {
+        for (let i = 0; i < cells; i++) {
+          const c = o + dv.getUint16(h + 8 + i * 2), [size, p] = varint(bytes, c), [rowid, p2] = varint(bytes, p);
+          each(rowid, record(payload(p2, size)));
+        }
+      } else if (type === 5) {
+        const kids = [];
+        for (let i = 0; i < cells; i++) kids.push(dv.getUint32(o + dv.getUint16(h + 12 + i * 2)));
+        kids.push(dv.getUint32(h + 8));
+        for (let i = kids.length - 1; i >= 0; i--) stack.push(kids[i]);
+      }
+    }
+  }
+  const tables = {};
+  scan(1, (rowid, [type, name, , root, sql]) => {
+    if (type !== 'table' || !root || !sql) return;
+    const cols = String(sql).slice(sql.indexOf('(') + 1, sql.lastIndexOf(')')).split(',').map(s => s.trim().split(/\s+/));
+    const names = cols.map(c => c[0].replace(/["`[\]]/g, '')), key = cols.findIndex(c => /^integer$/i.test(c[1] || '') && /primary\s+key/i.test(c.join(' ')));
+    const rows = [];
+    scan(root, (id, vals) => { const r = {}; names.forEach((nm, i) => { r[nm] = i === key && vals[i] == null ? id : vals[i] === undefined ? null : vals[i]; }); rows.push(r); });
+    tables[name] = rows;
+  });
+  return tables;
+}
+
+// Qt's data stream values, big-endian. PureRef keeps them in text columns, one character per byte.
+const qd = b => new DataView(b.buffer, b.byteOffset, b.byteLength);
+const qBytes = v => (v instanceof Uint8Array ? v : typeof v === 'string' ? Uint8Array.from(v, c => c.charCodeAt(0) & 255) : null);
+const ID = {m11: 1, m12: 0, m21: 0, m22: 1, dx: 0, dy: 0};
+function qTransform(b) {  // a QVariant holding a QTransform: type, null flag, then nine doubles
+  if (!b || b.length < 77) return {...ID};
+  const d = qd(b), f = i => d.getFloat64(5 + i * 8);
+  return {m11: f(0), m12: f(1), m21: f(3), m22: f(4), dx: f(6), dy: f(7)};
+}
+function qPathBox(b) {  // a QVariant holding a QPainterPath: the box around its points
+  if (!b || b.length < 40) return null;
+  const d = qd(b), nameLen = d.getUint32(5), p0 = 9 + nameLen;
+  if (p0 + 4 > b.length) return null;
+  const n = d.getUint32(p0);
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  for (let i = 0, p = p0 + 4; i < n && p + 20 <= b.length; i++, p += 20) {
+    const x = d.getFloat64(p + 4), y = d.getFloat64(p + 12);
+    x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y);
+  }
+  return x0 < x1 && y0 < y1 ? {x: x0, y: y0, w: x1 - x0, h: y1 - y0} : null;
+}
+const tMul = (a, b) => ({  // b applied after a
+  m11: a.m11 * b.m11 + a.m12 * b.m21, m12: a.m11 * b.m12 + a.m12 * b.m22,
+  m21: a.m21 * b.m11 + a.m22 * b.m21, m22: a.m21 * b.m12 + a.m22 * b.m22,
+  dx: a.dx * b.m11 + a.dy * b.m21 + b.dx, dy: a.dx * b.m12 + a.dy * b.m22 + b.dy});
+const tMap = (t, x, y) => ({x: t.m11 * x + t.m21 * y + t.dx, y: t.m12 * x + t.m22 * y + t.dy});
+function tInv(t) {
+  const det = t.m11 * t.m22 - t.m12 * t.m21 || 1;
+  const m11 = t.m22 / det, m12 = -t.m12 / det, m21 = -t.m21 / det, m22 = t.m11 / det;
+  return {m11, m12, m21, m22, dx: -(t.dx * m11 + t.dy * m21), dy: -(t.dx * m12 + t.dy * m22)};
+}
+const qColor = s => { const m = /^#?([0-9a-f]{2})?([0-9a-f]{6})$/i.exec(String(s || '').trim()); return m ? '#' + m[2].toLowerCase() : null; };
+function plainNote(s) {  // PureRef notes may be rich text
+  s = String(s || '');
+  if (!/<\/?(html|p|br|span|div)\b/i.test(s)) return s;
+  const doc = new DOMParser().parseFromString(s.replace(/<br\s*\/?>/gi, '\n').replace(/<\/p>/gi, '</p>\n'), 'text/html');
+  return (doc.body.textContent || '').replace(/\n{3,}/g, '\n\n').trim();
+}
+const imgMime = (f, b) => (b[0] === 0x89 && b[1] === 0x50 ? 'image/png' : b[0] === 0xff && b[1] === 0xd8 ? 'image/jpeg' : b[0] === 0x47 && b[1] === 0x49 ? 'image/gif'
+  : b[0] === 0x52 && b[8] === 0x57 ? 'image/webp' : b[0] === 0x42 && b[1] === 0x4d ? 'image/bmp' : /^jpe?g$/i.test(f) ? 'image/jpeg' : /^png$/i.test(f) ? 'image/png' : 'application/octet-stream');
+
+// PureRef 2: the scene from its database
+function pureRef2(bytes) {
+  const d = qd(bytes), vlen = d.getUint32(0);
+  let at = Number(d.getBigUint64(4 + vlen + 4));
+  const sig = 'SQLite format 3';
+  const isSig = o => o > 0 && o + 16 <= bytes.length && String.fromCharCode(...bytes.subarray(o, o + 15)) === sig;
+  if (!isSig(at)) {  // find the database's header if the layout ever moves
+    at = -1;
+    for (let o = bytes.length - 16; o > 0; o--) if (bytes[o] === 0x53 && isSig(o)) { at = o; break; }
+    if (at < 0) throw new Error('No database in this file');
+  }
+  const head = bytes.length - at, db = new Uint8Array(at);
+  db.set(bytes.subarray(at), 0);
+  db.set(bytes.subarray(head, at), head);
+  const t = sqliteTables(db);
+  const images = new Map((t.images || []).map(r => [r.id, r.data && r.data.length ? {data: r.data, mime: imgMime(r.format, r.data), w: r.width | 0, h: r.height | 0, name: ''} : null]));
+  const kind = new Map();
+  for (const r of t.items_images || []) kind.set(r.id, {k: 'image', img: r.image, imgT: qTransform(qBytes(r.image_transform)), box: qPathBox(qBytes(r.image_bounds))});
+  for (const r of t.items_notes || []) kind.set(r.id, {k: 'note', text: plainNote(r.text), color: qColor(r.text_color), bg: qColor(r.background_color)});
+  for (const r of t.items_groups || []) kind.set(r.id, {k: 'group', bg: qColor(r.background_color)});
+  for (const r of t.items_drawings || []) kind.set(r.id, {k: 'drawing'});
+  const items = (t.items || []).map(r => ({id: r.id, parent: r.parent, name: String(r.name || ''), T: qTransform(qBytes(r.transform)), z: Number(r.z) || 0, ...(kind.get(r.id) || {k: 'other'})}));
+  return {images, items};
+}
+
+// PureRef 1: PNG images, then the items that place them, then which image each item shows
+function pureRef1(bytes) {
+  const d = qd(bytes);
+  let p = 0;
+  const u32 = () => { const v = d.getUint32(p); p += 4; return v; }, f64 = () => { const v = d.getFloat64(p); p += 8; return v; };
+  const str = () => { const n = u32(); if (n === 0xffffffff) return ''; const s = new TextDecoder('utf-16be').decode(bytes.subarray(p, p + n)); p += n; return s; };
+  const vlen = d.getUint32(0);
+  p = 4 + vlen + 212;  // the header (224 bytes with its version, always "1.10"): item counts, checksum, canvas and view
+  const PNG = [137, 80, 78, 71, 13, 10, 26, 10], END = [0, 0, 0, 0, 73, 69, 78, 68, 174, 66, 96, 130];
+  const find = (sig, from) => { outer: for (let i = from; i <= bytes.length - sig.length; i++) { for (let j = 0; j < sig.length; j++) if (bytes[i + j] !== sig[j]) continue outer; return i; } return -1; };
+  const isItem = o => o + 12 <= bytes.length && [32, 34].includes(d.getUint32(o + 8));
+  const entries = new Map();  // address -> PNG bytes, or a 4-byte reference to another item's image
+  while (!isItem(p)) {
+    const s = find(PNG, p);
+    if (s < 0) break;
+    if (s - p >= 4) { entries.set(p, bytes.subarray(p, p + 4)); p += 4; continue; }
+    const e = find(END, s);
+    if (e < 0) throw new Error('Truncated image');
+    entries.set(s, bytes.subarray(s, e + 12)); p = e + 12;
+  }
+  while (p + 12 <= bytes.length && !isItem(p)) { entries.set(p, bytes.subarray(p, p + 4)); p += 4; }
+  const items = [], images = new Map();
+  let nextId = 1e6;
+  const matrix = () => { const m11 = f64(), m12 = f64(); p += 8; const m21 = f64(), m22 = f64(); p += 8; return {m11, m12, m21, m22}; };
+  function text(parent) {
+    const end = Number(d.getBigUint64(p)); p += 12 + d.getUint32(p + 8);
+    const t = str(), m = matrix(), x = f64(), y = f64(); p += 8;
+    const id = u32(), z = f64();
+    p += 1; p += 2; const fg = [d.getUint16(p), d.getUint16(p + 2), d.getUint16(p + 4)]; p += 6;
+    const hex = c => '#' + c.map(v => Math.round(v / 257).toString(16).padStart(2, '0')).join('');
+    const kids = d.getUint32(p + 13);  // after a background colour like the text colour
+    p = end;
+    const it = {id: nextId++, legacyId: id, parent, k: 'note', text: t, color: hex(fg), T: {...m, dx: x, dy: y}, z, name: ''};
+    items.push(it);
+    for (let i = 0; i < kids; i++) text(it.id);
+  }
+  function image() {
+    const end = Number(d.getBigUint64(p)); p += 12 + d.getUint32(p + 8);
+    let brute = false;
+    if (d.getUint32(p) === 0) { brute = true; p += 4; }
+    const source = d.getInt32(p) === -1 ? (p += 4, '') : str();
+    const name = brute ? '' : d.getInt32(p) === -1 ? (p += 4, '') : str();
+    p += 8;
+    const m = matrix(), x = f64(), y = f64(); p += 8;
+    const id = u32(), z = f64();
+    matrix();
+    const xCrop = f64(), yCrop = f64(); f64();
+    const n = u32(), pts = [];
+    for (let i = 0; i < n; i++) { p += 4; pts.push([f64(), f64()]); }
+    const kids = d.getUint32(p + 21);
+    p = end;
+    const xs = pts.map(q => q[0]), ys = pts.map(q => q[1]);
+    const box = pts.length ? {x: Math.min(...xs), y: Math.min(...ys), w: Math.max(...xs) - Math.min(...xs), h: Math.max(...ys) - Math.min(...ys)} : null;
+    const it = {id: nextId++, legacyId: id, parent: -1, k: 'image', name: name || source.split(/[\\/]/).pop() || '', T: {...m, dx: x, dy: y}, z, box,
+      imgT: {...ID, dx: xCrop, dy: yCrop}};
+    items.push(it);
+    for (let i = 0; i < kids; i++) text(it.id);
+  }
+  while (isItem(p)) { if (d.getUint32(p + 8) === 34) image(); else text(-1); }
+  str();  // the folder the scene was saved in
+  const byLegacy = new Map(items.filter(i => i.k === 'image').map(i => [i.legacyId, i]));
+  const refs = new Map();
+  for (let i = 0; i < byLegacy.size && p + 20 <= bytes.length; i++) { const id = u32(), a = Number(d.getBigUint64(p)); p += 16; refs.set(id, a); }
+  const pngOf = (it, depth = 0) => {
+    const e = entries.get(refs.get(it.legacyId));
+    if (!e) return null;
+    if (e.length > 4) return e;
+    const ref = qd(e).getUint32(0), other = byLegacy.get(ref);
+    return other && other !== it && depth < 8 ? pngOf(other, depth + 1) : null;  // the same picture used again
+  };
+  for (const it of items) if (it.k === 'image') {
+    const png = pngOf(it);
+    if (png) { const pd = qd(png); images.set(it.id, {data: png, mime: 'image/png', w: pd.getUint32(16), h: pd.getUint32(20)}); }
+    it.img = it.id;
+  }
+  return {images, items};
+}
+
+// where everything goes on the board, in PureRef's own units
+function pureRefLayout(scene) {
+  const byId = new Map(scene.items.map(i => [i.id, i])), world = new Map();
+  const W = (it, depth = 0) => {
+    if (world.has(it.id)) return world.get(it.id);
+    const parent = byId.get(it.parent);
+    const t = parent && depth < 50 ? tMul(it.T, W(parent, depth + 1)) : it.T;
+    world.set(it.id, t);
+    return t;
+  };
+  const out = [];
+  for (const it of scene.items) {
+    const T = W(it);
+    if (it.k === 'image') {
+      const img = scene.images.get(it.img);
+      if (!img) { out.push({k: 'missing', name: it.name}); continue; }
+      const box = it.box || (() => { const a = tMap(it.imgT, 0, 0), b = tMap(it.imgT, img.w, img.h); return {x: Math.min(a.x, b.x), y: Math.min(a.y, b.y), w: Math.abs(b.x - a.x), h: Math.abs(b.y - a.y)}; })();
+      const corners = [[box.x, box.y], [box.x + box.w, box.y], [box.x + box.w, box.y + box.h], [box.x, box.y + box.h]].map(([x, y]) => tMap(T, x, y));
+      const xs = corners.map(c => c.x), ys = corners.map(c => c.y);
+      // which part of the picture shows, in its pixels
+      const inv = tInv(it.imgT), a = tMap(inv, box.x, box.y), b = tMap(inv, box.x + box.w, box.y + box.h);
+      const crop = {x: Math.max(0, Math.min(a.x, b.x)), y: Math.max(0, Math.min(a.y, b.y))};
+      crop.w = Math.min(img.w, Math.max(a.x, b.x)) - crop.x; crop.h = Math.min(img.h, Math.max(a.y, b.y)) - crop.y;
+      const rotated = Math.abs(T.m12) > 1e-6 || Math.abs(T.m21) > 1e-6, flipY = T.m22 < 0, flipX = T.m11 < 0;
+      const cropped = img.w && img.h && (crop.x > 0.5 || crop.y > 0.5 || crop.w < img.w - 0.5 || crop.h < img.h - 0.5);
+      out.push({k: 'image', it, img, T, box, crop, rotated, flipX, flipY, cropped, z: it.z,
+        rect: {x: Math.min(...xs), y: Math.min(...ys), w: Math.max(...xs) - Math.min(...xs), h: Math.max(...ys) - Math.min(...ys)}});
+    } else if (it.k === 'note' && it.text.trim()) {
+      const p = tMap(T, 0, 0), s = Math.sqrt(Math.abs(T.m11 * T.m22 - T.m12 * T.m21)) || 1;
+      out.push({k: 'note', it, z: it.z, x: p.x, y: p.y, s, text: it.text, color: it.color, rect: {x: p.x, y: p.y, w: 200 * s, h: 40 * s}});
+    } else if (it.k === 'group') out.push({k: 'group', it, z: it.z});
+    else if (it.k === 'drawing') out.push({k: 'drawing'});
+  }
+  // a group's frame goes around everything in it
+  const under = g => out.filter(o => o.rect && (() => { for (let x = byId.get(o.it.parent), n = 0; x && n < 50; x = byId.get(x.parent), n++) if (x.id === g.it.id) return true; return false; })());
+  for (const g of out.filter(o => o.k === 'group')) {
+    const kids = under(g).map(o => o.rect);
+    if (!kids.length) continue;
+    const x0 = Math.min(...kids.map(r => r.x)), y0 = Math.min(...kids.map(r => r.y)), x1 = Math.max(...kids.map(r => r.x + r.w)), y1 = Math.max(...kids.map(r => r.y + r.h));
+    const pad = Math.max(24, (x1 - x0) * 0.03);
+    g.rect = {x: x0 - pad, y: y0 - pad * 2.2, w: x1 - x0 + pad * 2, h: y1 - y0 + pad * 3.2};
+  }
+  return out;
+}
+
+// a cropped, rotated or upside-down picture is redrawn as it looks in PureRef
+async function pureRefPixels(o) {
+  const blob = new Blob([o.img.data], {type: o.img.mime});
+  if (!o.cropped && !o.rotated && !o.flipY && o.img.mime !== 'image/bmp') return blob;
+  const bmp = await createImageBitmap(blob);
+  const P = tMul(o.it.imgT, o.T), s = Math.sqrt(Math.abs(P.m11 * P.m22 - P.m12 * P.m21)) || 1;
+  const k = Math.min(1 / s, 4096 / Math.max(o.rect.w, o.rect.h, 1));  // pixels per scene unit, at the picture's own resolution
+  const c = document.createElement('canvas');
+  c.width = Math.max(1, Math.round(o.rect.w * k)); c.height = Math.max(1, Math.round(o.rect.h * k));
+  const g = c.getContext('2d');
+  g.setTransform(k, 0, 0, k, -o.rect.x * k, -o.rect.y * k);
+  g.transform(o.T.m11, o.T.m12, o.T.m21, o.T.m22, o.T.dx, o.T.dy);
+  g.beginPath(); g.rect(o.box.x, o.box.y, o.box.w, o.box.h); g.clip();
+  g.transform(o.it.imgT.m11, o.it.imgT.m12, o.it.imgT.m21, o.it.imgT.m22, o.it.imgT.dx, o.it.imgT.dy);
+  g.drawImage(bmp, 0, 0);
+  bmp.close && bmp.close();
+  const opaque = !o.rotated && o.img.mime === 'image/jpeg';
+  return new Promise(res => c.toBlob(res, opaque ? 'image/jpeg' : 'image/png', 0.92));
+}
+
+async function importPureRef(f) {
+  if (!f || blocked()) return;
+  if (f.size > 1.5e9) { toast('That PureRef file is too big to import here (over 1.5 GB). Split the scene in PureRef first.', 6000); return; }
+  toast('Reading the PureRef file…', 30000);
+  let parts;
+  try {
+    const bytes = new Uint8Array(await f.arrayBuffer());
+    const version = new TextDecoder('utf-16be').decode(bytes.subarray(4, 4 + Math.min(40, new DataView(bytes.buffer).getUint32(0))));
+    if (!/^\d+\.\d+/.test(version)) throw new Error('not pureref');
+    parts = pureRefLayout(version.startsWith('1.') ? pureRef1(bytes) : pureRef2(bytes));
+  } catch (e) {
+    toast("That doesn't look like a PureRef file Venom Board can read. Open it in PureRef and save it again, then try once more.", 7000);
+    return;
+  }
+  const placed = parts.filter(o => o.rect && o.k !== 'group'), missing = parts.filter(o => o.k === 'missing').length, drawings = parts.filter(o => o.k === 'drawing').length;
+  if (!placed.length) { toast(missing ? 'That scene only links to pictures on another computer, so there was nothing to bring in.' : 'That PureRef scene is empty.', 6000); return; }
+  if (placed.length > 1500) { toast(`That scene has ${placed.length} items; Venom Board imports up to 1,500 at a time.`, 6000); return; }
+  // pictures come in at a size that sits well next to cards, keeping the scene's layout
+  const widths = placed.filter(o => o.k === 'image').map(o => o.rect.w).sort((a, b) => a - b);
+  const median = widths.length ? widths[Math.floor(widths.length / 2)] : 480, k = median > 480 ? 480 / median : 1;
+  const all = parts.filter(o => o.rect), bx = Math.min(...all.map(o => o.rect.x)), by = Math.min(...all.map(o => o.rect.y));
+  const b = unionBox(allObjs().map(outerBox)), ox = b ? b.x + b.w + 240 : viewCenter().x - 300, oy = b ? b.y : viewCenter().y - 300;
+  const at = r => ({x: rd(ox + (r.x - bx) * k), y: rd(oy + (r.y - by) * k), w: rd(r.w * k), h: rd(r.h * k)});
+  const made = [];
+  let done = 0, failed = 0;
+  for (const g of parts.filter(o => o.k === 'group' && o.rect)) {
+    const fr = {id: uid(), type: 'frame', ...at(g.rect), title: txt(g.it.name, 200) || 'Group', color: g.it.bg && g.it.bg !== '#000000' ? g.it.bg : '#a66bff'};
+    made.push(fr);
+  }
+  for (const o of placed.sort((p, q) => p.z - q.z)) {
+    if (o.k === 'note') { made.push({id: uid(), type: 'text', x: rd(ox + (o.x - bx) * k), y: rd(oy + (o.y - by) * k), w: 10, h: 10, text: txt(o.text, 4000), size: Math.max(8, Math.min(400, Math.round(18 * o.s * k))), color: okColor(o.color) ? o.color : BONE}); continue; }
+    try {
+      const blob = await pureRefPixels(o);
+      const ref = {};
+      if (board.team) ref.src = await uploadImage(blob);
+      else { const aid = uid(); assets[aid] = await readFile(blob); ref.asset = aid; }
+      made.push({id: uid(), type: 'image', ...at(o.rect), ...ref, name: txt(o.it.name, 200) || 'PureRef image', ...(o.flipX && !o.rotated && !o.flipY ? {flip: true} : {})});
+    } catch (e) {
+      failed++;
+      if (board.team && e && e.message && /storage|space|full|quota/i.test(e.message)) { toast(e.message, 6000); break; }
+    }
+    if (++done % 10 === 0) toast(`Importing from PureRef… ${done} of ${placed.length}`, 30000);
+  }
+  if (!made.length) { toast("Couldn't bring in any of that scene's pictures.", 5000); return; }
+  doc.items.push(...made);
+  sel.clear(); made.forEach(i => sel.add(i.id));
+  setTool('select'); refresh(); commit();
+  fitTo(made.map(i => idx.get(i.id)).filter(Boolean));
+  const imgs = made.filter(i => i.type === 'image').length, notes = made.filter(i => i.type === 'text').length, groups = made.filter(i => i.type === 'frame').length;
+  const extra = [missing && `${missing} linked picture${missing === 1 ? '' : 's'} stayed behind`, drawings && `${drawings} drawing${drawings === 1 ? '' : 's'} skipped`, failed && `${failed} couldn't be read`].filter(Boolean);
+  toast(`Imported ${imgs} picture${imgs === 1 ? '' : 's'}${notes ? `, ${notes} note${notes === 1 ? '' : 's'}` : ''}${groups ? ` and ${groups} group${groups === 1 ? '' : 's'}` : ''} from PureRef${extra.length ? ' (' + extra.join(', ') + ')' : ''}. Undo with Ctrl+Z.`, 6500);
 }
 
 /* ---------- videos ---------- */
