@@ -12,9 +12,10 @@
 //  2. Linux: the same AppImage is assembled here, and every file inside the downloaded one (the app, the
 //     Electron runtime, the launcher, the icons, the bundled libraries) must be identical to it. The start-up
 //     program in front must be the official one, and the update map on the end must describe the file exactly.
-//  3. macOS: the app inside (its code and update settings) must be identical to the one made here. The Electron
-//     engine around it can only be rebuilt on a Mac. macOS copies never install updates (they only show a link to
-//     the release page), so macOS builds are never signed.
+//  3. macOS: the app inside must hold exactly the same files as the one made here (macOS packs them in a different
+//     order), match the fingerprint Electron checks it against, and look for updates on this repository. The
+//     Electron engine around it can only be rebuilt on a Mac. macOS copies never install updates (they only show
+//     a link to the release page), so macOS builds are never signed.
 //
 // Archives are read strictly. Anything another reader could take differently (names repeated or out of order,
 // lookup indexes, links that differ in any way, extended attributes, special permissions, an app archive header
@@ -157,11 +158,13 @@ function asarParts(buf) {
   need(JSON.stringify(header) === text, "the header isn't plain JSON");
   return { header, data: buf.subarray(8 + headerSize) };
 }
-// files in an archive by path, with each file's SHA-256 (or what it links to)
+// files in an archive by path, with each file's SHA-256 (or what it links to). Names must be plain (no slashes,
+// dots or empty names), so a path always means one entry, however a reader looks it up.
 function asarFiles(buf) {
   const { header, data } = asarParts(buf), out = new Map();
   (function walk(node, prefix) {
     for (const [name, e] of Object.entries(node.files || {})) {
+      if (!name || name === '.' || name === '..' || /[/\\\0]/.test(name)) throw new Error(`app.asar: bad name ${JSON.stringify(prefix + name)}`);
       const p = prefix + name;
       if (e.files) walk(e, p + '/');
       else if (e.link) out.set(p, 'link ' + e.link);
@@ -178,6 +181,11 @@ function sameArchive(theirs, ours) {
   const a = asarParts(theirs), b = asarParts(ours);
   const strip = node => { for (const e of Object.values(node.files || {})) { if (e.files) strip(e); else delete e.executable; } return node; };
   return JSON.stringify(strip(a.header)) === JSON.stringify(strip(b.header)) && a.data.equals(b.data);
+}
+// The same files with exactly the same contents, packed in any order (the macOS build packs them differently).
+function sameFiles(theirs, ours) {
+  const a = asarFiles(theirs), b = asarFiles(ours);
+  return a.size === b.size && [...a].every(([p, h]) => b.get(p) === h);
 }
 
 /* ---------- zip files (the macOS build) ---------- */
@@ -354,8 +362,12 @@ async function main() {
       check(zip.names.length > 0 && zip.names.every(n => n.startsWith('Venom Board.app/')), `it holds only Venom Board.app (${zip.names.length} entries)`);
       const asar = zip.read('Venom Board.app/Contents/Resources/app.asar');
       let same = false;
-      try { same = !!asar && sameArchive(asar, refAsar); } catch (e) { bad(e.message); }
-      check(same, 'the app inside (Contents/Resources/app.asar) is identical to this computer\'s build');
+      try { same = !!asar && sameFiles(asar, refAsar); } catch (e) { bad(e.message); }
+      check(same, `the app inside (Contents/Resources/app.asar) holds exactly the same files as this computer's build (${asarFiles(refAsar).size})`);
+      // Electron checks the archive against the fingerprint in Info.plist before loading it
+      const plist = (zip.read('Venom Board.app/Contents/Info.plist') || '').toString('utf8');
+      const print = (plist.match(/<key>Resources\/app\.asar<\/key>\s*<dict>[\s\S]*?<key>hash<\/key>\s*<string>([0-9a-f]{64})<\/string>/) || [])[1];
+      check(!!asar && print === sha(asar.subarray(16, 16 + asar.readUInt32LE(12))), "the app's built-in fingerprint matches that archive");
       check(!zip.names.some(n => n.includes('app.asar.unpacked')), 'nothing is kept outside the app archive');
       const yml = zip.read('Venom Board.app/Contents/Resources/app-update.yml');
       check(yml && /^owner: 1337VIPER$/m.test(yml) && /^repo: venom-board$/m.test(yml) && /^provider: github$/m.test(yml), 'it looks for new versions on this repository');
@@ -367,4 +379,4 @@ async function main() {
   console.log(`\nEverything matches. Sign the AppImage with:\n  node tools/sign-update.js "${path.relative(root, appImage)}"`);
 }
 if (require.main === module) main().catch(e => { console.error('\n' + (e.stack || e)); process.exit(1); });
-module.exports = { squashfs, asarFiles, sameArchive, zipFiles, referenceLinux, elfEnd };
+module.exports = { squashfs, asarFiles, sameArchive, sameFiles, zipFiles, referenceLinux, elfEnd };
