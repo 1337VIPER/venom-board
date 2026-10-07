@@ -38,10 +38,10 @@ Solo boards need no account, no subscription and no telemetry. They work offline
 
 | | |
 |---|---|
-| **Windows** | Download `VenomBoard-Setup-1.3.1.exe` from the [latest release](https://github.com/1337VIPER/venom-board/releases/latest) and run it. It installs for your Windows account in a few seconds (no admin rights needed) and adds Start menu and desktop shortcuts. **It keeps itself up to date**: new versions download in the background and install when you restart. |
-| **macOS** | Download `VenomBoard-1.3.1-mac.zip` (Apple silicon and Intel), open it (Safari unzips it for you) and drag Venom Board into Applications. When a new version is out, *Get 1.x.x* appears in the top bar. |
-| **Linux** | Download `VenomBoard-1.3.1.AppImage`, make it executable (`chmod +x VenomBoard-1.3.1.AppImage`, or Properties → Allow executing) and run it. It keeps itself up to date like the Windows app. |
-| **Browser** | Use the web app at [venomboard.com/app](https://venomboard.com/app), try it on [itch.io](https://1337viper.itch.io/venom-board), or download `VenomBoard-1.3.1-web.zip`, unzip it and open `index.html` in Chrome, Edge or Firefox. Pin on top, click-through and window opacity need a desktop app. |
+| **Windows** | Download `VenomBoard-Setup-1.4.0.exe` from the [latest release](https://github.com/1337VIPER/venom-board/releases/latest) and run it. It installs for your Windows account in a few seconds (no admin rights needed) and adds Start menu and desktop shortcuts. **It keeps itself up to date**: new versions download in the background and install when you restart. |
+| **macOS** | Download `VenomBoard-1.4.0-mac.zip` (Apple silicon and Intel), open it (Safari unzips it for you) and drag Venom Board into Applications. When a new version is out, *Get 1.x.x* appears in the top bar. |
+| **Linux** | Download `VenomBoard-1.4.0.AppImage`, make it executable (`chmod +x VenomBoard-1.4.0.AppImage`, or Properties → Allow executing) and run it. It keeps itself up to date like the Windows app. |
+| **Browser** | Use the web app at [venomboard.com/app](https://venomboard.com/app), try it on [itch.io](https://1337viper.itch.io/venom-board), or download `VenomBoard-1.4.0-web.zip`, unzip it and open `index.html` in Chrome, Edge or Firefox. Pin on top, click-through and window opacity need a desktop app. |
 
 > **Windows SmartScreen:** the installer isn't code-signed yet, so Windows may show *"Windows protected your PC"* the first time. Click **More info → Run anyway**. Updates after that install without the warning.
 >

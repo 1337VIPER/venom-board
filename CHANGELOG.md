@@ -2,7 +2,7 @@
 
 All notable changes to Venom Board are listed here. The project follows [Semantic Versioning](https://semver.org).
 
-## [Unreleased]
+## [1.4.0] - 2026-10-07
 
 ### Reference board
 - **Import PureRef boards**: drop a `.pur` file on the board, or choose Import from PureRef, Trello, Jira or CSV in the menu. Boards from PureRef 1.x and 2.x come in with every picture in its place and at its size, rotated, flipped and cropped as it was; notes become text and groups become frames. The board lands next to what's already there, and in a team project its pictures upload for everyone. Pictures PureRef only linked to on disk and its drawings are counted and skipped
