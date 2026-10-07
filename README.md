@@ -1,21 +1,22 @@
 <p align="center">
-  <img src="docs/banner.png" alt="Venom Board: the reference board and roadmap planner for game developers" width="100%">
+  <img src="docs/banner.png" alt="Venom Board: the planning board for game developers" width="100%">
 </p>
 
 <p align="center">
   <a href="https://github.com/1337VIPER/venom-board/releases/latest"><img src="https://img.shields.io/github/v/release/1337VIPER/venom-board?style=for-the-badge&color=ff2a4f&labelColor=0e0e15&label=download" alt="Latest release"></a>
-  <img src="https://img.shields.io/badge/windows-10%20%7C%2011-0e0e15?style=for-the-badge&logo=windows&logoColor=f1eef2" alt="Windows 10 and 11">
-  <img src="https://img.shields.io/badge/browser-chrome%20%7C%20edge%20%7C%20firefox-0e0e15?style=for-the-badge" alt="Runs in modern browsers">
+  <img src="https://img.shields.io/badge/desktop-windows%20%7C%20macos%20%7C%20linux-0e0e15?style=for-the-badge&labelColor=0e0e15" alt="Windows, macOS and Linux">
+  <a href="https://venomboard.com/app"><img src="https://img.shields.io/badge/browser-chrome%20%7C%20edge%20%7C%20firefox-0e0e15?style=for-the-badge" alt="Runs in modern browsers"></a>
+  <a href="https://1337viper.itch.io/venom-board"><img src="https://img.shields.io/badge/itch.io-try%20it%20in%20your%20browser-fa5c5c?style=for-the-badge&logo=itchdotio&logoColor=white&labelColor=0e0e15" alt="Try it on itch.io"></a>
   <a href="LICENSE"><img src="https://img.shields.io/github/license/1337VIPER/venom-board?style=for-the-badge&color=9a3dff&labelColor=0e0e15" alt="MIT license"></a>
 </p>
 
 <p align="center">
-  <b>Pin your references, mark them up, and map your whole production as a living network of tasks, milestones and bugs, all on one infinite canvas that can float on top of your engine.</b>
+  <b>Pin your references, map your whole production as a living network of tasks, milestones and bugs, and build it with your team live, all on one infinite canvas that can float on top of your engine.</b>
 </p>
 
 ---
 
-![The sample game roadmap in Venom Board](docs/screenshots/board.png)
+![A live team project in Venom Board: two teammates working on the same game roadmap](docs/screenshots/team.png)
 
 ## Why Venom Board?
 
@@ -24,9 +25,11 @@ Game production lives in three places at once: a folder of reference images, a t
 - **It's a reference board** like PureRef: paste screenshots, drop in concept art, scribble over it with markers.
 - **It's a roadmap** with real planning data: phases, milestones, estimates, priorities, due dates and bugs.
 - **It's a dependency network**: drag a tendril from one card to the next and the board works out what's blocked and what's ready to start.
+- **It's a schedule**: the timeline turns your estimates and links into a critical path and a finish date, and the Planner tracks a burndown to your next milestone.
+- **It's multiplayer**: make a free account at [venomboard.com](https://venomboard.com), invite your team and edit shared projects together live, with comments, @mentions and assignments.
+- **It's a public roadmap**: publish a page your players can follow and vote on, straight from the board.
+- **It's jam-ready**: a countdown, the theme, and a scope check that tells you what to cut before the deadline does.
 - **It's an overlay**: pin it on top of Unreal, Unity or Godot, turn the opacity down, and let clicks pass straight through to your engine.
-
-- **It's multiplayer**: make a free account at [venomboard.com](https://venomboard.com), invite your team and edit shared projects together live.
 
 Solo boards need no account, no subscription and no telemetry. They work offline, and they're plain `.json` files you can back up or commit to your game's repo.
 
@@ -37,7 +40,7 @@ Solo boards need no account, no subscription and no telemetry. They work offline
 | **Windows** | Download `VenomBoard-Setup-1.3.1.exe` from the [latest release](https://github.com/1337VIPER/venom-board/releases/latest) and run it. It installs for your Windows account in a few seconds (no admin rights needed) and adds Start menu and desktop shortcuts. **It keeps itself up to date**: new versions download in the background and install when you restart. |
 | **macOS** | Download `VenomBoard-1.3.1-mac.zip` (Apple silicon and Intel), open it (Safari unzips it for you) and drag Venom Board into Applications. When a new version is out, *Get 1.x.x* appears in the top bar. |
 | **Linux** | Download `VenomBoard-1.3.1.AppImage`, make it executable (`chmod +x VenomBoard-1.3.1.AppImage`, or Properties → Allow executing) and run it. It keeps itself up to date like the Windows app. |
-| **Browser** | Use the web app at [venomboard.com/app](https://venomboard.com/app), or download `VenomBoard-1.3.1-web.zip`, unzip it and open `index.html` in Chrome, Edge or Firefox. Pin on top, click-through and window opacity need a desktop app. |
+| **Browser** | Use the web app at [venomboard.com/app](https://venomboard.com/app), try it on [itch.io](https://1337viper.itch.io/venom-board), or download `VenomBoard-1.3.1-web.zip`, unzip it and open `index.html` in Chrome, Edge or Firefox. Pin on top, click-through and window opacity need a desktop app. |
 
 > **Windows SmartScreen:** the installer isn't code-signed yet, so Windows may show *"Windows protected your PC"* the first time. Click **More info → Run anyway**. Updates after that install without the warning.
 >
@@ -78,6 +81,7 @@ Solo boards need no account, no subscription and no telemetry. They work offline
 - **Teams** with a leader, team admins, editors and viewers. Invite people by username or email; they accept from the app or the website
 - **Shared projects**: each team has a project list. **Share this board** turns any board into a team project
 - **Live editing**: every card, connector, frame, image, ink stroke and text appears for everyone as it happens, including drags, resizes and typing in progress
+- **Always up to date**: the Team panel shows new, renamed and deleted projects, answered invites and people joining, leaving or changing role the moment it happens, and notifications arrive straight away, even between projects. An invite that arrives while you work says so
 - **Presence**: teammates' avatars in the top bar, their cursors and selections on the canvas, and *is typing…* labels
 - **Assign cards** to teammates: their avatars on the card, *Mine* in the Planner, and a notification for whoever you assign
 - **Comments and @mentions** on every card, live, with suggestions as you type. Viewers can comment too, so reviewers and playtesters can leave feedback
@@ -104,12 +108,18 @@ Solo boards need no account, no subscription and no telemetry. They work offline
 
 | | |
 |---|---|
-| ![Planner panel with filters](docs/screenshots/planner.png) | ![Close-up of task cards](docs/screenshots/cards.png) |
-| **Planner** · progress, milestone countdowns and filters that dim the rest of the board | **Cards** · discipline, priority, estimates, due dates, checklists and dependencies |
-| ![Place next picker](docs/screenshots/place-next.png) | ![Template gallery](docs/screenshots/templates.png) |
-| **Place next** · drag a tendril into empty space to choose the next card | **Templates** · twelve ready-made game production structures |
-| ![Window menu](docs/screenshots/window-menu.png) | ![Anti-Venom light skin](docs/screenshots/anti-venom.png) |
-| **Overlay controls** · pin, lock, click-through, opacity, board lock | **Anti-Venom** · the light skin |
+| ![Comments and mentions on a card](docs/screenshots/comments.png) | ![Planner panel with a burndown](docs/screenshots/planner.png) |
+| **Comments and @mentions** · talk right on the card; teammates' cursors and selections show live | **Planner** · progress, a burndown to the next milestone, and filters that dim the rest of the board |
+| ![Timeline with the critical path](docs/screenshots/timeline.png) | ![A public roadmap page](docs/screenshots/roadmap.png) |
+| **Timeline** · every task scheduled from its estimate and what it waits on, with the critical path | **Public roadmap** · a page players follow and vote on, made from your board |
+| ![Game jam clock](docs/screenshots/jam.png) | ![Template gallery](docs/screenshots/templates.png) |
+| **Game jam clock** · the countdown, the theme, a scope check and Cut scope | **Templates** · twelve ready-made game production structures |
+| ![Close-up of task cards](docs/screenshots/cards.png) | ![Place next picker](docs/screenshots/place-next.png) |
+| **Cards** · discipline, priority, estimates, due dates, checklists and dependencies | **Place next** · drag a tendril into empty space to choose the next card |
+| ![The sample game roadmap](docs/screenshots/board.png) | ![Window menu](docs/screenshots/window-menu.png) |
+| **Boards on your computer** · the sample roadmap, no account needed | **Overlay controls** · pin, lock, click-through, opacity, board lock |
+| ![Anti-Venom light skin](docs/screenshots/anti-venom.png) | |
+| **Anti-Venom** · the light skin | |
 
 ## Keyboard shortcuts
 
@@ -164,11 +174,13 @@ The Linux AppImage and the macOS app are built on those systems with `npx electr
 ### Project layout
 
 ```
-index.html        the entire app: UI, canvas engine, planner, templates and export
-electron/         desktop shell: window, pin, opacity, click-through, file dialogs
+index.html        the entire app: UI, canvas engine, planner, timeline, templates, team client and export
+electron/         desktop shell: window, pin, opacity, click-through, file dialogs and signed updates
   dev/            self-test and screenshot generator used during development
+tools/            release checks: check-build.js and sign-update.js
+.github/          the workflow that builds the Linux and macOS apps
 assets/           app icon
-docs/             banner and screenshots
+docs/             banner, screenshots and template pictures
 ```
 
 Because the whole app is one HTML file, the browser version and the desktop app always behave the same.
