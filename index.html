@@ -5711,25 +5711,72 @@ async function loadShare() {
   renderTeam();
 }
 // a shared project with no picture yet, or an old one, gets a new one
-function stalePreview() { if ((team.share || team.roadmap) && Date.now() - previewAt > 86400000) previewSoon(true); }
+function stalePreview() { if ((team.share && Date.now() - previewAt > 86400000) || (team.roadmap && Date.now() - rmPreviewAt > 86400000)) previewSoon(true); }
 // The picture a share link shows when it's posted somewhere: made when the link is, then again at most every half
 // hour while the board changes (by editors and above). The server keeps one per project.
-let previewT = 0, previewAt = 0;
+// Two pictures, kept apart: the board itself for its view-only link (whose viewers see everything anyway), and a
+// public roadmap's own picture, drawn only from what the roadmap shows, so it never reveals the board.
+let previewT = 0, previewAt = 0, rmPreviewAt = 0;
 function previewSoon(now) {
   if (!board.team || !team.project || team.watch || !(team.share || team.roadmap) || ROLE_RANK[team.role] < ROLE_RANK.editor || (previewT && !now)) return;
   clearTimeout(previewT);
-  previewT = setTimeout(sendPreview, now ? 1500 : Math.max(60000, 1800000 - (Date.now() - previewAt)));
+  previewT = setTimeout(sendPreview, now ? 1500 : Math.max(60000, 1800000 - (Date.now() - Math.max(previewAt, rmPreviewAt))));
 }
 async function sendPreview(manual) {
   previewT = 0;
   if (!board.team || !team.project || !(team.share || team.roadmap) || team.status !== 'live') return;
+  const id = team.project.id;
   try {
-    const blob = await previewImage();
-    if (!blob) return;
-    await api(`/api/projects/${team.project.id}/preview`, 'PUT', blob);
-    previewAt = Date.now();
+    if (team.share) { const blob = await previewImage(); if (blob) { await api(`/api/projects/${id}/preview`, 'PUT', blob); previewAt = Date.now(); } }
+    if (team.roadmap) { const blob = await roadmapPreviewImage(team.roadmap); if (blob) { await api(`/api/projects/${id}/roadmap/preview`, 'PUT', blob); rmPreviewAt = Date.now(); } }
     if (manual) toast('Preview picture updated. Sites can take a while to show the new one.');
   } catch (e) { if (manual) toast(e.message, 4000); }  // a preview is a nicety: the link works without one
+}
+// A roadmap's picture: its name, the next milestones and how much is planned, in progress and done, chosen by the
+// same rules as the public page (no hidden or cut cards, bugs and ideas only if shown). Nothing from the board's
+// canvas is drawn, so no picture, note or estimate can slip out. Always in the dark skin, like the public page.
+async function roadmapPreviewImage(rm) {
+  const W = 1200, H = 630, {F} = drawTokens();
+  const pal = {'--void': '#060609', '--bone': '#f1eef2', '--bone-dim': '#9d99aa', '--fang': '#ff2a4f', '--run': '#2fd6ff', '--ok': '#3dff8b', '--warn': '#ffd23d'}, tok = n => pal[n] || '#f1eef2';
+  const shown = doc.items.filter(c => c.type === 'node' && !c.nopub && c.prio !== 'wont' && (c.kind === 'task' || c.kind === 'milestone' || (c.kind === 'bug' && rm.showBugs) || (c.kind === 'idea' && rm.showIdeas)));
+  const work = shown.filter(c => c.kind !== 'idea' && c.kind !== 'milestone');
+  const counts = [['Planned', work.filter(c => c.status === 'todo' || c.status === 'blocked').length, tok('--bone')], ['In progress', work.filter(c => c.status === 'doing').length, tok('--run')], ['Done', work.filter(c => c.status === 'done').length, tok('--ok')]];
+  if (rm.showIdeas) counts.unshift(['Ideas', shown.filter(c => c.kind === 'idea').length, tok('--warn')]);
+  const next = shown.filter(c => c.kind === 'milestone' && c.status !== 'done').sort((a, b) => (a.due || '9999').localeCompare(b.due || '9999')).slice(0, 3);
+  const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+  const g = cv.getContext('2d'), L = 64;
+  g.fillStyle = tok('--void'); g.fillRect(0, 0, W, H);
+  const glow = g.createRadialGradient(W * 0.86, -80, 10, W * 0.86, -80, 760);
+  glow.addColorStop(0, 'rgba(154,61,255,.30)'); glow.addColorStop(1, 'rgba(154,61,255,0)');
+  g.fillStyle = glow; g.fillRect(0, 0, W, H);
+  g.fillStyle = 'rgba(241,238,242,.07)';
+  for (let x = 12; x < W; x += 24) for (let y = 12; y < H; y += 24) g.fillRect(x - 0.75, y - 0.75, 1.5, 1.5);
+  g.textAlign = 'left'; g.textBaseline = 'alphabetic';
+  if ('letterSpacing' in g) g.letterSpacing = '3px';
+  g.font = `700 15px ${F.mono}`; g.fillStyle = tok('--fang'); g.fillText('PUBLIC ROADMAP', L, 104);
+  if ('letterSpacing' in g) g.letterSpacing = '0px';
+  g.font = `800 56px ${F.display}`; g.fillStyle = tok('--bone'); g.fillText(clipText(g, board.name || 'Untitled', W - L * 2), L, 172);
+  let y = 244;
+  if (next.length) for (const m of next) {
+    g.save(); g.translate(L + 8, y - 9); g.rotate(Math.PI / 4); g.fillStyle = tok('--fang'); g.fillRect(-6, -6, 12, 12); g.restore();
+    g.font = `800 22px ${F.display}`; g.fillStyle = tok('--bone'); g.fillText(clipText(g, (m.title || 'Milestone').toUpperCase(), 620), L + 32, y);
+    if (isDate(m.due)) { g.font = `600 17px ${F.mono}`; g.fillStyle = tok('--bone-dim'); g.textAlign = 'right'; g.fillText(`${fmtDate(m.due)} · ${countdown(daysUntil(m.due))}`, W - L, y); g.textAlign = 'left'; }
+    y += 44;
+  } else { g.font = `600 22px ${F.ui}`; g.fillStyle = tok('--bone-dim'); g.fillText('What the team is planning, working on and has finished.', L, y); }
+  let x = L;
+  for (const [label, n, c] of counts) {
+    g.font = `800 46px ${F.display}`; g.fillStyle = c; g.fillText(String(n), x, H - 112);
+    const w1 = g.measureText(String(n)).width;
+    g.font = `700 14px ${F.mono}`; g.fillStyle = tok('--bone-dim'); g.fillText(label.toUpperCase(), x, H - 84);
+    x += Math.max(w1, g.measureText(label.toUpperCase()).width) + 54;
+  }
+  g.font = `700 12px ${F.mono}`; g.fillStyle = tok('--bone-dim'); g.textAlign = 'right';
+  if ('letterSpacing' in g) g.letterSpacing = '2px';
+  g.fillText('MADE WITH', W - L, H - 116);
+  if ('letterSpacing' in g) g.letterSpacing = '0px';
+  drawWordmark(g, W - L, H - 92, 24, tok, F);
+  g.fillStyle = tok('--fang'); g.fillRect(0, H - 4, W, 4);
+  return new Promise(r => cv.toBlob(r, 'image/jpeg', 0.88));
 }
 async function makeShare(replace) {
   if (replace && !(await ask('Make a new link?', 'The current link stops working straight away for everyone who has it.', 'New link'))) return;
@@ -5766,6 +5813,7 @@ async function loadRoadmap() {
   if (!board.team || !team.project) return;
   team.roadmap = (r && r.roadmap) || null;
   team.votes = new Map(Object.entries((r && r.votes) || {}));
+  rmPreviewAt = (r && r.previewAt) || 0;
   stalePreview();
   renderTeam(); render();
 }
@@ -5773,7 +5821,8 @@ setInterval(() => { if (board.team && team.roadmap && !document.hidden) loadRoad
 async function setRoadmap(change) {
   try {
     team.roadmap = (await api(`/api/projects/${team.project.id}/roadmap`, 'POST', change || {})).roadmap;
-    if (!change) { navigator.clipboard.writeText(team.roadmap.url).then(() => toast('Public roadmap published. Link copied.'), () => toast('Public roadmap published')); previewSoon(true); }
+    if (!change) navigator.clipboard.writeText(team.roadmap.url).then(() => toast('Public roadmap published. Link copied.'), () => toast('Public roadmap published'));
+    previewSoon(true);
   } catch (e) { toast(e.message, 4000); }
   renderTeam(); render();
 }
