@@ -615,6 +615,9 @@ select.tm-in{padding-right:6px;cursor:pointer}
 .vr-row.named .tm-row-main b{color:var(--fang)}
 .pm-in{margin:0 0 16px;min-height:38px}
 textarea.pm-in{height:auto;padding:9px 12px;resize:vertical;line-height:1.45}
+.tm-opts{display:flex;flex-direction:column;gap:6px;margin:6px 0 10px}
+.tm-opt{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--bone-dim);cursor:pointer}
+.tm-opt input{accent-color:var(--fang);margin:0}
 .watchbar{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);z-index:36;display:flex;align-items:center;gap:14px;padding:8px 16px;border-radius:99px;background:var(--hide-2);border:1px solid var(--line-2);box-shadow:0 18px 40px -14px var(--shadow);font:600 12.5px var(--font-ui);white-space:nowrap;max-width:calc(100% - 32px)}
 .watchbar span{overflow:hidden;text-overflow:ellipsis}
 .watchbar a{color:var(--fang);font-weight:800;text-decoration:none}
@@ -1323,6 +1326,7 @@ const ICON = {
   ghost: '<path d="M7 4.5l8.5 4.8-3.8 1 2.3 4.2-1.7 1-2.3-4.2-3 2.6z"/><path d="M3.5 6.5h1.5M3.5 10h1.5M3.5 13.5h1.5" stroke-dasharray="1 2"/>',
   topbar: '<rect x="3" y="3.5" width="14" height="13" rx="2"/><path d="M3 7.5h14"/>',
   key: '<circle cx="6.8" cy="12.8" r="3.3"/><path d="M9.2 10.4 16 3.6M13.6 6l2 2M11.8 7.8l1.4 1.4"/>',
+  heart: '<path d="M10 16.4s-6.4-3.8-6.4-8.5A3.5 3.5 0 0 1 10 5.7a3.5 3.5 0 0 1 6.4 2.2c0 4.7-6.4 8.5-6.4 8.5z"/>',
   eye: '<path d="M2.5 10s2.8-5 7.5-5 7.5 5 7.5 5-2.8 5-7.5 5-7.5-5-7.5-5z"/><circle cx="10" cy="10" r="2.2"/>',
   update: '<path d="M16 10a6 6 0 1 1-1.8-4.3"/><path d="M16.3 3.2v3.6h-3.6"/><path d="M10 7v3.4l2.2 1.4"/>',
   play: '<path d="M6.5 4.5v11l9-5.5z" fill="currentColor"/>',
@@ -1346,6 +1350,11 @@ function headHTML(it) {
 }
 function footChips(it, deps) {
   const k = it.kind || 'task', out = [];
+  if (board.team && team.roadmap) {  // a project with a public roadmap: players' votes, and cards kept off it
+    const v = team.votes.get(it.id);
+    if (v) out.push({i: 'heart', t: String(v), c: ''});
+    if (it.nopub) out.push({i: 'eye', t: 'off the roadmap', c: ''});
+  }
   if (k === 'idea') return out;
   const open = it.status !== 'done';
   if (k === 'milestone') {
@@ -1423,7 +1432,8 @@ function syncEl(el, it) {
     el.style.setProperty('--tag', col(it.color));
     if (k === 'bug') el.style.setProperty('--sev', (SEV_MAP[it.sev] || SEV_MAP.major)[2]);
     const deps = openDeps.get(it.id) || 0, cl = checklist(it.body);
-    const sig = [k, it.status, it.prio, it.disc, it.est, it.due, it.sev, deps, cl.done, cl.total, isoDay(new Date()), skin, (it.assignees || []).join(','), board.team ? commentCounts.get(it.id) || 0 : 0, team.membersSig || ''].join('|');
+    const sig = [k, it.status, it.prio, it.disc, it.est, it.due, it.sev, deps, cl.done, cl.total, isoDay(new Date()), skin, (it.assignees || []).join(','), board.team ? commentCounts.get(it.id) || 0 : 0, team.membersSig || '',
+      board.team && team.roadmap ? `${team.votes.get(it.id) || 0}${it.nopub ? 'h' : ''}` : ''].join('|');
     if (el._sig !== sig) { el._sig = sig; el.children[0].innerHTML = headHTML(it); el.children[3].innerHTML = footHTML(it, deps); }
     if (ed !== 'title') { const t = el.children[1]; if (t.textContent !== it.title) t.textContent = it.title; }
     if (ed !== 'body') { const b = el.children[2], key = (it.body || '') + '|' + skin; if (b._k !== key) { b._k = key; b.innerHTML = bodyHTML(it.body || ''); } }
@@ -1833,6 +1843,7 @@ function cleanItem(i) {
       if (who.length) n.assignees = who;
       if (okTime(i.createdAt)) n.createdAt = i.createdAt;  // when it was added and finished, for the burndown chart
       if (okTime(i.doneAt) && n.status === 'done') n.doneAt = i.doneAt;
+      if (i.nopub === true) n.nopub = true;  // kept off the project's public roadmap
       return n;
     }
     case 'text': return {...base, text: txt(i.text, 4000), size: clamp(num(i.size, 32), 4, 800), color: colorOr(i.color, BONE)};
@@ -3095,6 +3106,7 @@ function contextEntries(hit, w) {
     if (hit.type === 'node') {
       if (board.team) E.push({label: 'Comments', icon: 'label', kb: (commentCounts.get(hit.id) || '') + '', run: () => openComments(hit.id)});
       if (board.team && team.members.length && !teamReadOnly()) E.push({label: 'Assign people…', icon: 'user', run: () => showMenu(lastMenuPt.x, lastMenuPt.y, assignEntries())});
+      if (board.team && team.roadmap && !teamReadOnly()) { const off = list.filter(o => o.type === 'node').every(n => n.nopub); E.push({label: off ? 'Show on the public roadmap' : 'Hide from the public roadmap', icon: 'eye', run: () => setNopub(!off)}); }
       E.push({label: 'Edit title', kb: 'Enter', run: () => startEdit(hit.id, 'title', true)}, {label: 'Edit notes', run: () => startEdit(hit.id, 'body', false)},
         {label: 'Add connected task', kb: 'Tab', icon: 'plus', run: addNextCard}, {label: trace === hit.id ? 'Stop tracing' : 'Trace dependencies', icon: 'trace', run: () => { trace = trace === hit.id ? null : hit.id; refresh(); }}, {head: 'Status'});
       STATUS.forEach(([v]) => E.push({label: statusLabel(hit.kind || 'task', v).replace('✓ ', ''), cur: hit.status === v, run: () => setStatus(selObjs(), v)}));
@@ -4165,7 +4177,7 @@ const HOSTED_SERVER = 'https://venomboard.com';
 const pageServer = /^https?:$/.test(location.protocol) && /^\/(app\/?|v\/[\w-]{20,64})$/.test(location.pathname) ? location.origin : '';
 const team = {server: pageServer || HOSTED_SERVER, token: '', devices: {}, user: null, teams: [], invites: [], teamId: '', detail: null, panelOpen: false, ui: {},
   project: null, role: 'viewer', status: 'off', ws: null, retry: 0, retryT: 0, peers: new Map(), pending: new Map(), unacked: [], batch: 0,
-  afterJoin: null, selSig: '', renameT: 0, members: [], membersSig: '', share: undefined, watch: '', presenting: false, focusAfterJoin: null,
+  afterJoin: null, selSig: '', renameT: 0, members: [], membersSig: '', share: undefined, roadmap: undefined, votes: new Map(), watch: '', presenting: false, focusAfterJoin: null,
   notify: null, security: null, colors: [], limits: null, sessionsOthers: 0};
 const canGrantRole = (actor, role) => (actor === 'leader' ? ['admin', 'editor', 'viewer'] : actor === 'admin' ? ['editor', 'viewer'] : []).includes(role);
 const canManageRole = (actor, target) => actor === 'leader' ? target !== 'leader' : actor === 'admin' ? ROLE_RANK[target] < ROLE_RANK.admin : false;
@@ -4335,6 +4347,7 @@ function liveCard() {
     people.length ? mk('div', {class: 'tm-people'}, ...people.map(p => mk('button', {class: 'tm-person', type: 'button', title: follow.cid === p.cid ? 'Stop following' : 'Follow their view', onclick: () => follow.cid === p.cid ? stopFollowing(true) : startFollowing(p.cid)}, avatar(p), p.name, follow.cid === p.cid ? mk('em', {}, 'following') : null))) : null,
     mk('div', {class: 'tm-actions'}, presentRow(), mk('button', {class: 'tm-btn', type: 'button', onclick: openVersions}, icon('clock'), 'Version history')),
     shareSection(),
+    roadmapSection(),
     feedSection(),
     mk('button', {class: 'tb tm-wide', type: 'button', onclick: () => leaveProject()}, 'Leave project'));
 }
@@ -4455,7 +4468,7 @@ function connectLive() {
 }
 function resetLive() {
   closeSocket(); clearTimeout(team.retryT);
-  Object.assign(team, {project: null, status: 'off', unacked: [], afterJoin: null, members: [], membersSig: '', share: undefined, presenting: false});
+  Object.assign(team, {project: null, status: 'off', unacked: [], afterJoin: null, members: [], membersSig: '', share: undefined, roadmap: undefined, votes: new Map(), presenting: false});
   team.peers.clear(); team.pending.clear(); stopFollowing(); closeComments(); $('#followBar').hidden = true;
   updatePeerDock(); applyBoardLock(); updateCtx(); renderTeam();
 }
@@ -4523,7 +4536,7 @@ function applySnapshot(m) {
   if (team.afterJoin) { const ops = team.afterJoin; team.afterJoin = null; applyOps(ops); captureBase(); teamSend(ops); }
   setLiveStatus('live'); refresh(); syncPanels();
   if (team.watch) { $('#wbText').textContent = `${team.project.name} · view only, live`; document.title = team.project.name + ' · Venom Board'; }
-  else if (first) { toast(`Joined ${team.project.name} as ${ROLE_NAME[team.role].toLowerCase()}`); loadFeed(); loadShare(); }
+  else if (first) { toast(`Joined ${team.project.name} as ${ROLE_NAME[team.role].toLowerCase()}`); loadFeed(); loadShare(); loadRoadmap(); }
   if (team.presenting || team.user) sendView();
   if (team.focusAfterJoin) { const f = team.focusAfterJoin; team.focusAfterJoin = null; setTimeout(() => focusCard(f.cardId, f.comments), 80); }
 }
@@ -5307,20 +5320,22 @@ async function loadShare() {
   try { r = await api(`/api/projects/${team.project.id}/share`); } catch (e) { /* treated as no link */ }
   team.share = (r && r.url) || null;
   previewAt = (r && r.previewAt) || 0;
-  if (team.share && Date.now() - previewAt > 86400000) previewSoon(true);  // no picture yet, or an old one
+  stalePreview();
   renderTeam();
 }
+// a shared project with no picture yet, or an old one, gets a new one
+function stalePreview() { if ((team.share || team.roadmap) && Date.now() - previewAt > 86400000) previewSoon(true); }
 // The picture a share link shows when it's posted somewhere: made when the link is, then again at most every half
 // hour while the board changes (by editors and above). The server keeps one per project.
 let previewT = 0, previewAt = 0;
 function previewSoon(now) {
-  if (!board.team || !team.project || team.watch || !team.share || ROLE_RANK[team.role] < ROLE_RANK.editor || (previewT && !now)) return;
+  if (!board.team || !team.project || team.watch || !(team.share || team.roadmap) || ROLE_RANK[team.role] < ROLE_RANK.editor || (previewT && !now)) return;
   clearTimeout(previewT);
   previewT = setTimeout(sendPreview, now ? 1500 : Math.max(60000, 1800000 - (Date.now() - previewAt)));
 }
 async function sendPreview(manual) {
   previewT = 0;
-  if (!board.team || !team.project || !team.share || team.status !== 'live') return;
+  if (!board.team || !team.project || !(team.share || team.roadmap) || team.status !== 'live') return;
   try {
     const blob = await previewImage();
     if (!blob) return;
@@ -5353,6 +5368,53 @@ function shareSection() {
     url ? mk('p', {class: 'tm-note'}, 'Posted on Discord, Reddit or X, the link shows a picture of this board. ', ROLE_RANK[team.role] >= ROLE_RANK.editor ? mk('button', {class: 'tm-link', type: 'button', onclick: () => sendPreview(true)}, 'Update the picture') : null) : null,
     admin ? mk('div', {class: 'tm-actions'}, url ? [mk('button', {class: 'tm-btn', type: 'button', onclick: () => makeShare(true)}, 'New link'), mk('button', {class: 'tm-link danger', type: 'button', onclick: stopShare}, 'Turn off')]
       : mk('button', {class: 'tm-btn', type: 'button', onclick: () => makeShare(false)}, icon('link'), 'Create a view-only link')) : null);
+}
+/* ---------- public roadmaps ---------- */
+// A page players can follow: the phases, what's planned, in progress and done, and milestone dates, with votes.
+// Pictures, comments, people and estimates are never on it, nor cards hidden from it.
+async function loadRoadmap() {
+  if (!team.project || team.watch || !team.project.id) return;
+  let r = null;
+  try { r = await api(`/api/projects/${team.project.id}/roadmap`); } catch (e) { /* treated as none */ }
+  if (!board.team || !team.project) return;
+  team.roadmap = (r && r.roadmap) || null;
+  team.votes = new Map(Object.entries((r && r.votes) || {}));
+  stalePreview();
+  renderTeam(); render();
+}
+setInterval(() => { if (board.team && team.roadmap && !document.hidden) loadRoadmap(); }, 300000);  // players' votes
+async function setRoadmap(change) {
+  try {
+    team.roadmap = (await api(`/api/projects/${team.project.id}/roadmap`, 'POST', change || {})).roadmap;
+    if (!change) { navigator.clipboard.writeText(team.roadmap.url).then(() => toast('Public roadmap published. Link copied.'), () => toast('Public roadmap published')); previewSoon(true); }
+  } catch (e) { toast(e.message, 4000); }
+  renderTeam(); render();
+}
+async function stopRoadmap() {
+  if (!(await ask('Take the roadmap down?', 'The public page stops working straight away, and its votes are cleared.', 'Take it down'))) return;
+  try { await api(`/api/projects/${team.project.id}/roadmap`, 'DELETE'); team.roadmap = null; team.votes = new Map(); toast('Public roadmap taken down'); } catch (e) { toast(e.message, 4000); }
+  renderTeam(); render();
+}
+function setNopub(off) {
+  if (blocked()) return;
+  for (const n of selObjs()) if (n.type === 'node') { if (off) n.nopub = true; else delete n.nopub; }
+  refresh(); commit();
+  toast(off ? 'Hidden from the public roadmap' : 'Shown on the public roadmap');
+}
+function roadmapSection() {
+  if (!team.project || team.watch || team.roadmap === undefined) return null;
+  const admin = ROLE_RANK[team.role] >= ROLE_RANK.admin, rm = team.roadmap;
+  if (!rm) return mk('div', {class: 'tm-share'}, mk('h5', {}, 'Public roadmap'),
+    mk('p', {class: 'tm-note'}, 'A page players can follow: your phases, what’s planned, in progress and done, and milestone dates, with votes for what they want most. Pictures, comments, people and estimates are never shown.'),
+    admin ? mk('div', {class: 'tm-actions'}, mk('button', {class: 'tm-btn', type: 'button', onclick: () => setRoadmap()}, icon('eye'), 'Publish a public roadmap')) : mk('p', {class: 'tm-note'}, 'A team admin can publish one.'));
+  const copy = (t, what) => navigator.clipboard.writeText(t).then(() => toast(what + ' copied'), () => toast(t, 6000));
+  const opt = (key, label) => mk('label', {class: 'tm-opt'}, mk('input', {type: 'checkbox', checked: !!rm[key], disabled: !admin, onchange: e => setRoadmap({[key]: e.target.checked})}), label);
+  return mk('div', {class: 'tm-share'}, mk('h5', {}, 'Public roadmap'),
+    mk('div', {class: 'tm-inline'}, mk('input', {class: 'tm-in', readonly: true, value: rm.url, 'aria-label': 'Public roadmap link', onfocus: e => e.target.select()}),
+      mk('button', {class: 'tm-btn', type: 'button', onclick: () => copy(rm.url, 'Link')}, 'Copy'), mk('button', {class: 'tm-btn', type: 'button', onclick: () => openLink(rm.url)}, 'Open')),
+    mk('p', {class: 'tm-note'}, `${rm.indexable ? (rm.listed ? 'Search engines can find it.' : 'Search engines hear about it after its first few days.') : 'Kept out of search engines.'} To keep a card off it, right-click the card.`),
+    admin ? mk('div', {class: 'tm-opts'}, opt('showIdeas', 'Show ideas as “under consideration”'), opt('showBugs', 'Show bug fixes'), opt('showDetails', 'Show descriptions and checklists'), opt('indexable', 'Let search engines list it')) : null,
+    admin ? mk('div', {class: 'tm-actions'}, mk('button', {class: 'tm-btn', type: 'button', onclick: () => copy(rm.embed, 'Embed code')}, 'Copy embed code'), mk('button', {class: 'tm-link danger', type: 'button', onclick: stopRoadmap}, 'Take it down')) : null);
 }
 // a share link (/v/<token>) opens the board read-only, live, without an account
 const watchToken = (location.pathname.match(/^\/v\/([\w-]{20,64})$/) || [])[1] || '';
