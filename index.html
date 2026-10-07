@@ -211,6 +211,8 @@ html.ct-on body::after{content:"";position:fixed;inset:0;border:2px solid color-
 @keyframes grow{to{stroke-dashoffset:0}}
 .l-label rect{fill:var(--hide-2)}
 .l-label text{fill:var(--bone);font:600 12px var(--font-ui)}
+.l-knot{stroke:var(--void);stroke-width:1.5}
+.u-knot{fill:var(--void);stroke:var(--bone);stroke-width:2;cursor:move}
 
 /* ---------- screen overlay ---------- */
 .u-sel{fill:none;stroke:var(--bone);stroke-width:1.5}
@@ -1565,50 +1567,92 @@ function roundedPath(pts, r) {
   const z = pts[pts.length - 1];
   return d + `L${rd(z.x)} ${rd(z.y)}`;
 }
+// Where a connector leaves box A heading for B: the side that faces it, and the direction it leaves in.
+function port(A, ca, B, cb, gap) {
+  const dx = cb.x - ca.x, dy = cb.y - ca.y;
+  const gx = Math.abs(dx) - (A.w + B.w) / 2, gy = Math.abs(dy) - (A.h + B.h) / 2;
+  if (gx >= gy) { const s = dx >= 0 ? 1 : -1; return {p: {x: ca.x + s * (A.w / 2 + (A.solid ? gap : 0)), y: ca.y}, n: {x: s, y: 0}}; }
+  const s = dy >= 0 ? 1 : -1; return {p: {x: ca.x, y: ca.y + s * (A.h / 2 + (A.solid ? gap : 0))}, n: {x: 0, y: s}};
+}
+// The bends between two points, like wiring in a node editor: elbow turns at right angles, circuit runs
+// straight and takes a 45° diagonal in the middle (like Electric Nodes' subway wires in Unreal).
+function bends(a, b, horiz, style) {
+  const H = (x, y) => (horiz ? {x, y} : {x: y, y: x});
+  const ax = horiz ? a.x : a.y, ay = horiz ? a.y : a.x, bx = horiz ? b.x : b.y, by = horiz ? b.y : b.x;
+  const dx = bx - ax, dy = by - ay, sx = dx >= 0 ? 1 : -1, sy = dy >= 0 ? 1 : -1, adx = Math.abs(dx), ady = Math.abs(dy);
+  if (style === 'elbow') { const m = ax + dx / 2; return [H(m, ay), H(m, by)]; }
+  if (adx >= ady) { const run = (adx - ady) / 2; return [H(ax + sx * run, ay), H(bx - sx * run, by)]; }
+  // more across than along: a short straight start, diagonals, and a straight run across the middle
+  const stub = Math.min(18, adx / 4), k = (adx - 2 * stub) / 2;
+  return [H(ax + sx * stub, ay), H(ax + sx * (stub + k), ay + sy * k), H(bx - sx * (stub + k), by - sy * k), H(bx - sx * stub, by)];
+}
+const tidyPts = pts => pts.filter((q, i) => i === 0 || dist(q, pts[i - 1]) > 0.5);
+function halfway(poly) {
+  let total = 0; for (let i = 1; i < poly.length; i++) total += dist(poly[i - 1], poly[i]);
+  let left = total / 2;
+  for (let i = 1; i < poly.length; i++) { const d = dist(poly[i - 1], poly[i]); if (d >= left && d) { const t = left / d; return {x: poly[i - 1].x + (poly[i].x - poly[i - 1].x) * t, y: poly[i - 1].y + (poly[i].y - poly[i - 1].y) * t}; } left -= d; }
+  return poly[0];
+}
 function linkGeom(l) {
   const A = endBox(l.from), B = endBox(l.to); if (!A || !B) return null;
   const ca = {x: A.x + A.w / 2, y: A.y + A.h / 2}, cb = {x: B.x + B.w / 2, y: B.y + B.h / 2};
   const w = clamp(Number(l.width) || 2.5, 1, 12), hasEnd = l.head === 'end' || l.head === 'both', hasStart = l.head === 'both';
-  const cut = (9 + w * 2.2) * 0.55, GAP = 7;
+  const cut = (9 + w * 2.2) * 0.55, GAP = 7, via = l.via || [], K = via.length;
+  // each end faces the next point along the way: a reroute knot, or the other end
+  const toA = K ? {...via[0], w: 0, h: 0} : B, toB = K ? {...via[K - 1], w: 0, h: 0} : A;
+  const ta = K ? via[0] : cb, tb = K ? via[K - 1] : ca;
   let p0, p1, n0, n1;
   if (l.style === 'straight') {
-    p0 = A.solid ? edgePoint(A, ca, cb, GAP) : ca;
-    p1 = B.solid ? edgePoint(B, cb, ca, GAP) : cb;
-    const u = unit(p1.x - p0.x, p1.y - p0.y); n0 = u; n1 = {x: -u.x, y: -u.y};
+    p0 = A.solid ? edgePoint(A, ca, ta, GAP) : ca;
+    p1 = B.solid ? edgePoint(B, cb, tb, GAP) : cb;
+    n0 = unit(ta.x - p0.x, ta.y - p0.y); n1 = unit(tb.x - p1.x, tb.y - p1.y);
+    if (!K) { const u = unit(p1.x - p0.x, p1.y - p0.y); n0 = u; n1 = {x: -u.x, y: -u.y}; }
   } else {
-    const dx = cb.x - ca.x, dy = cb.y - ca.y;
-    const gx = Math.abs(dx) - (A.w + B.w) / 2, gy = Math.abs(dy) - (A.h + B.h) / 2;
-    if (gx >= gy) {
-      const s = dx >= 0 ? 1 : -1;
-      p0 = {x: ca.x + s * (A.w / 2 + (A.solid ? GAP : 0)), y: ca.y};
-      p1 = {x: cb.x - s * (B.w / 2 + (B.solid ? GAP : 0)), y: cb.y};
-      n0 = {x: s, y: 0}; n1 = {x: -s, y: 0};
-    } else {
-      const s = dy >= 0 ? 1 : -1;
-      p0 = {x: ca.x, y: ca.y + s * (A.h / 2 + (A.solid ? GAP : 0))};
-      p1 = {x: cb.x, y: cb.y - s * (B.h / 2 + (B.solid ? GAP : 0))};
-      n0 = {x: 0, y: s}; n1 = {x: 0, y: -s};
-    }
+    const a = port(A, ca, toA, ta, GAP), b = port(B, cb, toB, tb, GAP);
+    p0 = a.p; n0 = a.n; p1 = b.p; n1 = b.n;
   }
   const q0 = hasStart ? {x: p0.x + n0.x * cut, y: p0.y + n0.y * cut} : p0;
   const q1 = hasEnd ? {x: p1.x + n1.x * cut, y: p1.y + n1.y * cut} : p1;
-  let d, poly, mid;
+  const P = [p0, ...via, p1];
+  let d, poly, mid, seg = [];
   if (l.style === 'straight') {
-    d = `M${rd(q0.x)} ${rd(q0.y)}L${rd(q1.x)} ${rd(q1.y)}`; poly = [p0, p1]; mid = {x: (p0.x + p1.x) / 2, y: (p0.y + p1.y) / 2};
-  } else if (l.style === 'elbow') {
-    let pts;
-    if (n0.x !== 0) { const mx = (p0.x + p1.x) / 2; pts = [q0, {x: mx, y: p0.y}, {x: mx, y: p1.y}, q1]; }
-    else { const my = (p0.y + p1.y) / 2; pts = [q0, {x: p0.x, y: my}, {x: p1.x, y: my}, q1]; }
-    d = roundedPath(pts, 14); poly = [p0, pts[1], pts[2], p1];
-    mid = {x: (pts[1].x + pts[2].x) / 2, y: (pts[1].y + pts[2].y) / 2};
-  } else {
+    const pts = [q0, ...via, q1];
+    d = 'M' + pts.map(q => rd(q.x) + ' ' + rd(q.y)).join('L'); poly = P; seg = P.map((_, i) => Math.max(0, i - 1));
+    mid = K ? halfway(poly) : {x: (p0.x + p1.x) / 2, y: (p0.y + p1.y) / 2};
+  } else if (l.style === 'elbow' || l.style === 'circuit') {
+    let pts = [q0]; poly = [p0];
+    for (let i = 0; i < P.length - 1; i++) {
+      const a = P[i], b = P[i + 1];
+      // the ends leave and arrive the way their sides face; between knots the longer direction leads
+      const horiz = i === 0 ? n0.x !== 0 : i === P.length - 2 ? n1.x !== 0 : Math.abs(b.x - a.x) >= Math.abs(b.y - a.y);
+      const mids = bends(a, b, horiz, l.style), next = i === P.length - 2 ? q1 : b;
+      pts.push(...mids, next); poly.push(...mids, b); seg.push(...mids.map(() => i), i);
+    }
+    seg.unshift(0);
+    d = roundedPath(tidyPts(pts), l.style === 'circuit' ? 10 : 14);
+    mid = !K && l.style === 'elbow' ? {x: (poly[1].x + poly[2].x) / 2, y: (poly[1].y + poly[2].y) / 2} : halfway(poly);
+  } else if (!K) {
     const L = clamp(dist(p0, p1) * 0.45, 30, 280);
     const c0 = {x: p0.x + n0.x * L, y: p0.y + n0.y * L}, c1 = {x: p1.x + n1.x * L, y: p1.y + n1.y * L};
     d = `M${rd(q0.x)} ${rd(q0.y)}C${rd(c0.x)} ${rd(c0.y)} ${rd(c1.x)} ${rd(c1.y)} ${rd(q1.x)} ${rd(q1.y)}`;
     poly = []; for (let i = 0; i <= 24; i++) poly.push(bez(p0, c0, c1, p1, i / 24));
-    mid = bez(p0, c0, c1, p1, 0.5);
+    seg = poly.map(() => 0); mid = bez(p0, c0, c1, p1, 0.5);
+  } else {
+    // a smooth tendril through every knot: tangents follow the neighbouring points, the ends leave straight out
+    const T = P.map((q, i) => {
+      if (i === 0) { const L = clamp(dist(p0, P[1]) * 0.45, 30, 280) * 3; return {x: n0.x * L, y: n0.y * L}; }
+      if (i === P.length - 1) { const L = clamp(dist(P[i - 1], p1) * 0.45, 30, 280) * 3; return {x: -n1.x * L, y: -n1.y * L}; }
+      return {x: (P[i + 1].x - P[i - 1].x) / 2, y: (P[i + 1].y - P[i - 1].y) / 2};
+    });
+    d = `M${rd(q0.x)} ${rd(q0.y)}`; poly = [];
+    for (let i = 0; i < P.length - 1; i++) {
+      const a = P[i], b = P[i + 1], c0 = {x: a.x + T[i].x / 3, y: a.y + T[i].y / 3}, c1 = {x: b.x - T[i + 1].x / 3, y: b.y - T[i + 1].y / 3}, e = i === P.length - 2 ? q1 : b;
+      d += `C${rd(c0.x)} ${rd(c0.y)} ${rd(c1.x)} ${rd(c1.y)} ${rd(e.x)} ${rd(e.y)}`;
+      for (let j = i ? 1 : 0; j <= 16; j++) { poly.push(bez(a, c0, c1, b, j / 16)); seg.push(i); }
+    }
+    mid = halfway(poly);
   }
-  return {d, poly, mid, p0, p1, dir0: {x: -n0.x, y: -n0.y}, dir1: {x: -n1.x, y: -n1.y}, w};
+  return {d, poly, seg, mid, p0, p1, dir0: {x: -n0.x, y: -n0.y}, dir1: {x: -n1.x, y: -n1.y}, w};
 }
 function headPath(t, d, w) {  // a barbed fang
   const L = 9 + w * 2.2, W = 7 + w * 1.8, n = {x: -d.y, y: d.x};
@@ -1637,6 +1681,7 @@ function renderLinks() {
     if (l.flow) s += `<path d="${g.d}" class="l-flow" stroke="${l.color === BONE ? 'var(--fang)' : 'var(--bone)'}" stroke-width="${w + 1.6}"/>`;
     if (l.head === 'end' || l.head === 'both') s += `<path d="${headPath(g.p1, g.dir1, w)}" fill="${c}"/>`;
     if (l.head === 'both') s += `<path d="${headPath(g.p0, g.dir0, w)}" fill="${c}"/>`;
+    for (const k of l.via || []) s += `<circle class="l-knot" cx="${rd(k.x)}" cy="${rd(k.y)}" r="${rd(w + 2.5)}" fill="${c}"/>`;
     if (l.label) {
       const tw = mctx.measureText(l.label).width, pw = tw + 18, ph = 22;
       g.lab = {x: g.mid.x - pw / 2, y: g.mid.y - ph / 2, w: pw, h: ph};
@@ -1697,6 +1742,7 @@ function renderUI() {
   const one = list.length === 1 && tool === 'select' && !editing && !busy && !pending && !viewOnly() ? list[0] : null;
   if (one && one.type === 'link') {
     const g = geom.get(one.id);
+    (one.via || []).forEach((k, i) => { const q = toScreen(k.x, k.y); handles.push({kind: 'knot', i, x: q.x, y: q.y}); s += `<circle class="u-knot" cx="${rd(q.x)}" cy="${rd(q.y)}" r="6"/>`; });
     if (g) for (const [end, pt] of [['from', g.p0], ['to', g.p1]]) {
       const q = toScreen(pt.x, pt.y); handles.push({kind: 'end', end, x: q.x, y: q.y});
       s += `<circle class="u-end" cx="${rd(q.x)}" cy="${rd(q.y)}" r="6"/>`;
@@ -1952,9 +1998,11 @@ function cleanEnd(e) {
 function cleanLink(l) {
   const from = l && cleanEnd(l.from), to = l && cleanEnd(l.to);
   if (!from || !to || !okId(l.id)) return null;
-  const out = {id: l.id, type: 'link', from, to, color: colorOr(l.color, BONE), style: oneOf(l.style, ['curve', 'straight', 'elbow'], 'curve'),
+  const out = {id: l.id, type: 'link', from, to, color: colorOr(l.color, BONE), style: oneOf(l.style, ['curve', 'straight', 'elbow', 'circuit'], 'curve'),
     head: oneOf(l.head, ['end', 'both', 'none'], 'end'), dash: !!l.dash, flow: !!l.flow, label: txt(l.label, 60)};
   if (l.width !== undefined) out.width = clamp(num(l.width, 2.5), 1, 12);
+  const via = (Array.isArray(l.via) ? l.via : []).slice(0, 24).filter(k => k && isFinite(k.x) && isFinite(k.y) && Math.abs(k.x) < 1e7 && Math.abs(k.y) < 1e7).map(k => ({x: num(k.x), y: num(k.y)}));
+  if (via.length) out.via = via;  // reroute points the wire runs through
   return out;
 }
 function cleanStroke(s) {
@@ -2362,6 +2410,7 @@ function carrySet() {
       for (const s of doc.strokes) if (containsBox(hb, strokeBox(s), 4 / cam.z)) set.add(s.id);  // ink drawn on it rides along
     }
   }
+  for (const l of doc.links) if (l.via && l.from.id && l.to.id && set.has(l.from.id) && set.has(l.to.id)) set.add(l.id);  // and the knots between them
   return set;
 }
 function moveBy(set, dx, dy) {
@@ -2369,7 +2418,7 @@ function moveBy(set, dx, dy) {
   for (const id of set) {
     const o = idx.get(id); if (!o || o.locked) continue;
     if (o.type === 'stroke') { for (let i = 0; i < o.pts.length; i += 2) { o.pts[i] += dx; o.pts[i+1] += dy; } }
-    else if (o.type === 'link') { if (!o.from.id) { o.from.x += dx; o.from.y += dy; } if (!o.to.id) { o.to.x += dx; o.to.y += dy; } }
+    else if (o.type === 'link') { if (!o.from.id) { o.from.x += dx; o.from.y += dy; } if (!o.to.id) { o.to.x += dx; o.to.y += dy; } if (o.via) o.via.forEach(k => { k.x += dx; k.y += dy; }); }
     else { o.x += dx; o.y += dy; }
   }
 }
@@ -2377,7 +2426,7 @@ function roundSet(set) {
   for (const id of set) {
     const o = idx.get(id); if (!o) continue;
     if (o.type === 'stroke') o.pts = o.pts.map(rd);
-    else if (o.type === 'link') { for (const e of [o.from, o.to]) if (!e.id) { e.x = rd(e.x); e.y = rd(e.y); } }
+    else if (o.type === 'link') { for (const e of [o.from, o.to, ...(o.via || [])]) if (!e.id) { e.x = rd(e.x); e.y = rd(e.y); } }
     else { o.x = rd(o.x); o.y = rd(o.y); }
   }
 }
@@ -2505,6 +2554,7 @@ function downSelect(e, p, w) {
     if (h.kind === 'resize') { drag = {type: 'resize', id: it.id, corner: h.corner, o: {...it}}; return; }
     if (h.kind === 'port') { startLink({id: it.id}, w, true); return; }
     if (h.kind === 'end') { drag = {type: 'relink', id: it.id, end: h.end, target: null}; return; }
+    if (h.kind === 'knot') { drag = {type: 'knot', id: it.id, i: h.i}; return; }
   }
   const hit = hitTest(w);
   if (hit) {
@@ -2586,6 +2636,15 @@ stage.addEventListener('pointermove', e => {
       drag.target = t; drag.cur = w; drag.temp.to = t ? {id: t.id} : {x: rd(w.x), y: rd(w.y)};
       renderLinks(); renderUI(); break;
     }
+    case 'knot': {
+      const l = idx.get(drag.id), g = geom.get(drag.id); if (!l || !l.via || !l.via[drag.i]) break;
+      // lines up with the point before or after it, so wires run straight
+      const prev = drag.i ? l.via[drag.i - 1] : g && g.p0, next = drag.i < l.via.length - 1 ? l.via[drag.i + 1] : g && g.p1, snap = 8 / cam.z, q = {x: w.x, y: w.y};
+      if (!(e.ctrlKey || e.metaKey)) for (const nb of [prev, next]) if (nb) { if (Math.abs(q.x - nb.x) < snap) q.x = nb.x; if (Math.abs(q.y - nb.y) < snap) q.y = nb.y; }
+      l.via[drag.i] = {x: rd(q.x), y: rd(q.y)};
+      teamPreview([drag.id]);
+      renderLinks(); renderUI(); break;
+    }
     case 'relink': {
       const l = idx.get(drag.id); if (!l) break;
       const other = drag.end === 'from' ? l.to : l.from;
@@ -2651,7 +2710,7 @@ function onUp(e) {
       }
       break;
     }
-    case 'relink': commit(); break;
+    case 'relink': case 'knot': commit(); break;
     case 'frame': {
       const f = idx.get(d.id);
       if (f.w < 30 / cam.z || f.h < 30 / cam.z) Object.assign(f, {w: 600, h: 400, x: rd(d.a.x - 300), y: rd(d.a.y - 40)});
@@ -2670,7 +2729,7 @@ function cancelDrag() {
   const d = drag; drag = null; stage.classList.remove('panning');
   if (d.type === 'stroke') d.el.remove();
   if (d.type === 'stroke' && d.sid) queuePreview({k: 'strokes', op: 'del', id: d.sid});
-  if (['frame', 'move', 'resize', 'relink', 'erase'].includes(d.type)) {
+  if (['frame', 'move', 'resize', 'relink', 'knot', 'erase'].includes(d.type)) {
     doc = docFromBase(); reindex();
     for (const id of [...sel]) if (!idx.has(id)) sel.delete(id);
     if (board.team) teamPreview(d.carry ? [...d.carry] : d.id ? [d.id] : []);  // put teammates' view back too
@@ -2688,6 +2747,8 @@ stage.addEventListener('wheel', e => {
 }, {passive: false});
 stage.addEventListener('dblclick', e => {
   if (editing || tool !== 'select' || e.target.closest('.chk')) return;
+  const kh = viewOnly() ? null : hitHandle(screenPt(e));
+  if (kh && kh.kind === 'knot') { const l = selObjs()[0]; if (l && l.type === 'link') removeKnot(l, kh.i); return; }
   const w = toWorld(screenPt(e)), hit = hitTest(w);
   if (viewOnly()) { if (hit && hit.type === 'image') fitTo([hit]); else if (hit && hit.type === 'video') playVideo(hit); else if (hit) blocked(); return; }
   if (!hit) { newNode(w); return; }
@@ -2831,7 +2892,10 @@ function pasteClip(c, at, offset = 24 / cam.z) {
   for (const o of [...fresh.items, ...fresh.strokes, ...fresh.links]) { const n = uid(); map.set(o.id, n); o.id = n; }
   for (const it of fresh.items) { it.x = rd(it.x + dx); it.y = rd(it.y + dy); delete it.locked; }
   for (const s of fresh.strokes) s.pts = s.pts.map((v, i) => rd(v + (i % 2 ? dy : dx)));
-  for (const l of fresh.links) for (const k of ['from', 'to']) { const en = l[k]; if (en.id) en.id = map.get(en.id); else { en.x = rd(en.x + dx); en.y = rd(en.y + dy); } }
+  for (const l of fresh.links) {
+    for (const k of ['from', 'to']) { const en = l[k]; if (en.id) en.id = map.get(en.id); else { en.x = rd(en.x + dx); en.y = rd(en.y + dy); } }
+    if (l.via) l.via = l.via.map(q => ({x: rd(q.x + dx), y: rd(q.y + dy)}));
+  }
   doc.items.push(...fresh.items); doc.strokes.push(...fresh.strokes); doc.links.push(...fresh.links);
   sel.clear(); map.forEach(id => sel.add(id));
   refresh(); commit();
@@ -2902,7 +2966,35 @@ function nudge(dx, dy) {
   const set = carrySet(); moveBy(set, dx, dy); roundSet(set); renderMove();
   clearTimeout(nudgeT); nudgeT = setTimeout(commit, 350);
 }
-function reverseLink(l) { if (blocked()) return; const t = l.from; l.from = l.to; l.to = t; refresh(); commit(); }
+function reverseLink(l) { if (blocked()) return; const t = l.from; l.from = l.to; l.to = t; if (l.via) l.via.reverse(); refresh(); commit(); }
+/* ---------- reroute knots: points a connector runs through, for tidy wiring ---------- */
+const MAX_KNOTS = 24;
+let knotTip = false;
+function addKnot(l, w) {
+  if (blocked()) return;
+  const g = geom.get(l.id); if (!g) return;
+  if ((l.via || []).length >= MAX_KNOTS) { toast(`A connector can have up to ${MAX_KNOTS} reroute points`); return; }
+  // which stretch of the wire is nearest decides where the knot goes in the list
+  let best = 0, bd = Infinity, at = w || g.mid;
+  for (let i = 0; i < g.poly.length - 1; i++) { const dd = segDist(at.x, at.y, g.poly[i].x, g.poly[i].y, g.poly[i + 1].x, g.poly[i + 1].y); if (dd < bd) { bd = dd; best = g.seg[i + 1] || 0; } }
+  l.via = l.via || []; l.via.splice(best, 0, {x: rd(at.x), y: rd(at.y)});
+  sel.clear(); sel.add(l.id); refresh(); commit();
+  if (!knotTip) { knotTip = true; toast('Reroute point added · drag it to route the wire, double-click it to remove it', 4500); }
+}
+function removeKnot(l, i) {
+  if (blocked() || !l.via) return;
+  l.via.splice(i, 1); if (!l.via.length) delete l.via;
+  refresh(); commit();
+}
+function clearKnots(list) {
+  if (blocked()) return;
+  list.forEach(l => { delete l.via; }); refresh(); commit();
+}
+function styleAllLinks(v) {
+  if (blocked()) return;
+  doc.links.forEach(l => { l.style = v; }); opts.link.style = v;
+  refresh(); commit(); toast(`Every connector is ${STYLE_OPTS.find(o => o[0] === v)[1].toLowerCase()} now`);
+}
 function setStatus(list, v) {
   if (blocked()) return;
   for (const o of list) {
@@ -3024,7 +3116,7 @@ const seg = (act, list, cur, label) => `<div class="seg" role="group" aria-label
 const chip = (act, t, on) => `<button class="chip" data-act="${act}" aria-pressed="${!!on}">${t}</button>`;
 const cbtn = (act, title, icon, danger, pressed) => `<button class="cb${danger ? ' danger' : ''}" data-act="${act}" title="${title}" aria-label="${title}"${pressed === undefined ? '' : ` aria-pressed="${pressed}"`}>${ic(icon)}</button>`;
 const ddbtn = (act, title, inner) => `<button class="dd" data-act="${act}" title="${title}">${inner}<svg class="chev" viewBox="0 0 20 20" aria-hidden="true">${ICON.chev}</svg></button>`;
-const STYLE_OPTS = [['curve', 'Tendril'], ['straight', 'Straight'], ['elbow', 'Elbow']];
+const STYLE_OPTS = [['curve', 'Tendril'], ['straight', 'Straight'], ['elbow', 'Elbow'], ['circuit', 'Circuit']];
 const HEAD_OPTS = [['end', '→'], ['both', '↔'], ['none', '—']];
 function toolCtx(t) {
   const o = opts[t];
@@ -3073,7 +3165,7 @@ function selCtx(list) {
     }
     if (only('stroke')) h += vsep + range(1, list.every(s => s.kind === 'hl') ? 80 : 40, list[0].size * cam.z);
     if (only('text')) h += vsep + range(8, 200, list[0].size * cam.z);
-    if (only('link')) h += vsep + seg('lstyle', STYLE_OPTS, common(list.map(o => o.style)), 'Line style') + seg('head', HEAD_OPTS, common(list.map(o => o.head)), 'Arrowheads') + chip('dash', 'Dashed', list.every(o => o.dash)) + chip('flow', 'Flow', list.every(o => o.flow)) + (one ? cbtn('label', 'Edit label', 'label') + cbtn('reverse', 'Reverse direction', 'swap') : '');
+    if (only('link')) h += vsep + seg('lstyle', STYLE_OPTS, common(list.map(o => o.style)), 'Line style') + seg('head', HEAD_OPTS, common(list.map(o => o.head)), 'Arrowheads') + chip('dash', 'Dashed', list.every(o => o.dash)) + chip('flow', 'Flow', list.every(o => o.flow)) + (one ? cbtn('label', 'Edit label', 'label') + cbtn('reverse', 'Reverse direction', 'swap') + cbtn('knot', 'Add a reroute point', 'plus') : '') + (list.some(o => o.via) ? chip('unknot', 'Straighten', false) : '');
     if (one && one.type === 'jam') h += vsep + cbtn('jamedit', 'Edit the jam', 'clock') + cbtn('jamcut', 'Cut scope', 'trash');
     if (only('image')) h += vsep + chip('flip', 'Flip', list.every(o => o.flip)) + chip('gray', 'Greyscale', list.every(o => o.gray)) + (one ? cbtn('orig', 'Original size', 'orig') + cbtn('replace', 'Replace with another picture or video', 'swap') : '');
     if (one && one.type === 'video') {
@@ -3169,6 +3261,8 @@ function act(a, v, btn) {
     case 'more': menuAt(btn, moreEntries()); break;
     case 'arrange': menuAt(btn, arrangeEntries()); break;
     case 'replace': if (list.length === 1) menuAt(btn, replaceEntries(list[0])); break;
+    case 'knot': if (links.length === 1) addKnot(links[0], null); break;
+    case 'unknot': clearKnots(links); break;
     case 'kindMenu': menuAt(btn, KINDS.map(([k, t]) => ({label: t, icon: KIND_ICON[k], cur: nodes.every(n => (n.kind || 'task') === k), run: () => setKind(selObjs(), k)}))); break;
     case 'colorMenu': menuAt(btn, [...PEN.map(([n, c]) => ({label: n, dot: col(c), run: () => applyProp('color', c)})), '-', {label: 'Custom colour…', icon: 'palette', run: () => { const cp = $('#colorPick'); cp.value = hex6(col(nodes[0] && nodes[0].color)); cp.click(); }}]); break;
     case 'discMenu': menuAt(btn, [{head: 'Discipline'}, ...DISC.map(d => ({label: d[1], dot: col(d[2]), cur: nodes.every(n => n.disc === d[0]), run: () => { selObjs().forEach(n => { if (n.type === 'node') { n.disc = d[0]; if (n.kind === 'task') n.color = d[2]; } }); refresh(); commit(); }})), '-', {label: 'No discipline', run: () => { selObjs().forEach(n => { n.disc = ''; }); refresh(); commit(); }}]); break;
@@ -3257,7 +3351,11 @@ function contextEntries(hit, w) {
     } else if (hit.type === 'video') {
       E.push({label: 'Zoom to video', run: () => fitTo([hit])}, ...replaceEntries(hit), '-');
     } else if (hit.type === 'link') {
-      E.push({label: hit.label ? 'Edit label' : 'Add label', run: () => editLinkLabel(hit)}, {label: 'Reverse direction', run: () => reverseLink(hit)}, '-');
+      const near = (hit.via || []).findIndex(k => dist(k, w) <= 10 / cam.z);
+      E.push({label: hit.label ? 'Edit label' : 'Add label', run: () => editLinkLabel(hit)}, {label: 'Reverse direction', run: () => reverseLink(hit)},
+        near >= 0 ? {label: 'Remove this reroute point', run: () => removeKnot(hit, near)} : {label: 'Add a reroute point here', icon: 'plus', run: () => addKnot(hit, w)},
+        ...(hit.via ? [{label: 'Straighten (remove reroute points)', run: () => clearKnots([hit])}] : []), {head: 'Style'},
+        ...STYLE_OPTS.map(([v, t]) => ({label: t, cur: hit.style === v, run: () => { (sel.has(hit.id) ? selObjs().filter(o => o.type === 'link') : [hit]).forEach(o => { o.style = v; }); opts.link.style = v; refresh(); commit(); }})), '-');
     } else if (hit.type === 'text' || hit.type === 'frame') {
       E.push({label: hit.type === 'frame' ? 'Rename phase' : 'Edit text', run: () => startEdit(hit.id, null, true)}, '-');
     }
@@ -3273,6 +3371,7 @@ function contextEntries(hit, w) {
       {label: 'Image…', icon: 'image', kb: 'I', run: () => { lastPtr = w; ptrInStage = true; $('#fileImg').click(); }},
       {label: 'Game jam clock', icon: 'clock', run: () => addJam(w)},
       {label: 'Template…', icon: 'arrange', run: openTemplates},
+      ...(doc.links.length ? [{label: 'Style every connector…', icon: 'link', run: () => showMenu(lastMenuPt.x, lastMenuPt.y, [{head: 'Every connector'}, ...STYLE_OPTS.map(([v, t]) => ({label: t, cur: doc.links.every(l => l.style === v), run: () => styleAllLinks(v)}))])}] : []),
       '-', {label: 'Zoom to fit', kb: 'Shift 1', run: () => fitTo(allObjs())},
       {label: 'Select all', kb: 'Ctrl A', run: selectAll});
   }

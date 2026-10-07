@@ -66,7 +66,7 @@ Solo boards need no account, no subscription and no telemetry. They work offline
 - Four card types: **Task**, **Milestone**, **Bug** (crash / major / minor / polish) and **Idea note**
 - Status, **discipline** (Code, Art, Design, Level, Audio, UI/UX, VFX, Narrative, QA, Tech/build, Marketing), **MoSCoW priority** for scope cuts, **estimates** (`4h`, `2d`, `1w`) and **due dates** that turn red when overdue
 - Checklists inside notes: any line starting with `[ ]` becomes a clickable checkbox, with progress on the card
-- **Tendril connectors**: curved, straight or elbow, with arrowheads, dashes, labels and an animated flow
+- **Tendril connectors**: curved, straight, elbow or **circuit** (straight runs with 45° bends, like Electric Nodes in Unreal), with arrowheads, dashes, labels and an animated flow. Right-click a wire to add **reroute points** and drag them to route your noodles tidily (they snap into line with their neighbours); double-click one to remove it. Right-click the board → *Style every connector* switches every wire at once
 - **Place next**: drag a connector out of a card into empty space and choose what comes next, Blueprint-style. `Tab` adds the next connected task instantly
 - **Dependency awareness**: cards show *waits on N* while anything feeding into them is unfinished, the *Ready to start* filter lists what you can pick up today, and **Trace** highlights a card's whole chain of dependencies
 - **Phase frames** carry everything inside them when moved and show finished tasks, progress and remaining estimate in their header

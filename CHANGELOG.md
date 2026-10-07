@@ -2,6 +2,12 @@
 
 All notable changes to Venom Board are listed here. The project follows [Semantic Versioning](https://semver.org).
 
+## [Unreleased]
+
+### Planning
+- **Circuit connectors**: a new wire style with straight runs and 45° bends, like Electric Nodes in Unreal. Pick it in the connector toolbar or the connector tool, or right-click the board → *Style every connector* to switch every wire at once
+- **Reroute points**: right-click a connector → *Add a reroute point here* (or use + in its toolbar) and drag the dot to route the wire around things, Blueprint-style. Points snap into line with their neighbours so wires run straight (hold Ctrl to place freely), ride along when you move what the wire joins, and come with copies. Double-click a point to remove it, or *Straighten* to remove them all. Every connector style runs through them, and tools that support MCP can set them too
+
 ## [1.4.1] - 2026-10-08
 
 ### Reference board
