@@ -1063,6 +1063,7 @@ html.watching #tools .tool:not([data-tool=select]):not([data-tool=hand]),html.wa
 
 <input type="file" id="fileOpen" accept=".json,application/json" hidden>
 <input type="file" id="fileImg" accept="image/*,video/mp4,video/webm,video/quicktime,.mp4,.webm,.mov,.m4v" multiple hidden>
+<input type="file" id="fileReplace" accept="image/*,video/mp4,video/webm,video/quicktime,.mp4,.webm,.mov,.m4v" hidden>
 <input type="file" id="fileImport" accept=".json,.csv,.txt,.pur,application/json,text/csv" hidden>
 <input type="color" id="colorPick" class="vh" tabindex="-1" aria-hidden="true">
 
@@ -1445,7 +1446,7 @@ function bodyHTML(text) {
 function makeEl(it) {
   const el = document.createElement('div');
   el.className = 'item ' + it.type;
-  el.dataset.id = it.id;
+  el.dataset.id = it.id; el._type = it.type;
   if (it.type === 'image') { const img = new Image(); img.draggable = false; img.alt = it.name || 'Reference image'; el.appendChild(img); }
   else if (it.type === 'video') el.innerHTML = '<div class="v-box"></div><div class="v-tag"></div>';
   else if (it.type === 'node') el.innerHTML = '<div class="n-head"></div><div class="n-title"></div><div class="n-body" data-ph="Notes… start a line with [ ] for a checkbox"></div><div class="n-foot"></div>';
@@ -1512,6 +1513,7 @@ function renderItems() {
   const seen = new Set(), prev = {f: null, i: null};
   for (const it of doc.items) {
     let el = els.get(it.id);
+    if (el && el._type !== it.type) { el.remove(); el = null; }
     if (!el) { el = makeEl(it); els.set(it.id, el); }
     seen.add(it.id);
     syncEl(el, it);
@@ -1761,7 +1763,10 @@ function diffBase() {
     }
     for (const [id, old] of b.json) if (!now.has(id)) { fwd.push({k, op: 'del', id}); inv.push({k, op: 'put', obj: JSON.parse(old)}); membership = true; }
     const reordered = ids.filter(id => b.json.has(id)).join() !== b.order.filter(id => now.has(id)).join();
-    if (reordered) fwd.push({k, op: 'order', ids});
+    let lastOld = -1;
+    ids.forEach((id, i) => { if (b.json.has(id)) lastOld = i; });
+    const inserted = ids.some((id, i) => i < lastOld && !b.json.has(id));
+    if (reordered || inserted) fwd.push({k, op: 'order', ids});
     if (reordered || membership) inv.push({k, op: 'order', ids: b.order.slice()});
   }
   return {fwd, inv};
@@ -2095,34 +2100,28 @@ function placeImages(placed, at) {
   const vids = placed.filter(p => p.type === 'video').length, imgs = placed.length - vids;
   toast(vids && imgs ? `${placed.length} references pinned` : vids ? (vids === 1 ? 'Video pinned · double-click to play' : `${vids} videos pinned`) : imgs === 1 ? 'Image pinned' : `${imgs} images pinned`);
 }
-async function addImageFiles(files, at) {
-  if (blocked()) return;
-  const placed = [];
-  for (const f of files) {
-    try {
-      let ref;
-      if (board.team) ref = {src: await uploadImage(f)};
-      else { const data = await readFile(f), aid = uid(); assets[aid] = data; ref = {asset: aid}; }
-      const img = await loadImg(ref.src || assets[ref.asset], !!ref.src), sz = fitSize(img.naturalWidth, img.naturalHeight);
-      placed.push({id: uid(), type: 'image', x: 0, y: 0, w: sz.w, h: sz.h, ...ref, name: f.name || 'Pasted image'});
-    } catch (e) { toast(board.team && e.message ? e.message : `Couldn't read ${f.name || 'that image'}`, 4000); }
-  }
-  placeImages(placed, at);
+// A picture or video file kept for this board: uploaded to the team server, or stored with the board on this computer.
+async function mediaFromFile(f) {
+  const video = !isImageFile(f) && isVideoFile(f);
+  let ref;
+  if (board.team) ref = {src: await uploadImage(f)};
+  else { const aid = uid(); assets[aid] = await readFile(f); ref = {asset: aid}; }
+  const src = ref.src || assets[ref.asset];
+  if (video) { const v = await videoMeta(src); return {ref, video, nw: v.videoWidth || 640, nh: v.videoHeight || 360}; }
+  const img = await loadImg(src, !!ref.src);
+  return {ref, video, nw: img.naturalWidth, nh: img.naturalHeight};
 }
-async function addImageURL(url, at) {
-  if (blocked()) return;
+// A picture from a link: copied to the team server or this computer, or linked when the site won't let it be copied.
+async function imageFromURL(url) {
   if (board.team) {  // shared boards only show pictures stored on the team server, so outside images are copied there
-    try {
-      let src = url;
-      if (!teamAsset(url)) {
-        const blob = url.startsWith('data:') ? dataUrlBlob(url) : await fetchImageBlob(url);
-        if (!blob) throw new Error("That site doesn't allow copying its images. Save the image, then drop the file in.");
-        src = await uploadImage(blob);
-      }
-      const img = await loadImg(src, teamAsset(src)), sz = fitSize(img.naturalWidth, img.naturalHeight);
-      placeImages([{id: uid(), type: 'image', x: 0, y: 0, w: sz.w, h: sz.h, src, name: url.slice(0, 80)}], at);
-    } catch (e) { toast(e && e.message ? e.message : "That image couldn't be loaded.", 4000); }
-    return;
+    let src = url;
+    if (!teamAsset(url)) {
+      const blob = url.startsWith('data:') ? dataUrlBlob(url) : await fetchImageBlob(url);
+      if (!blob) throw new Error("That site doesn't allow copying its images. Save the image, then drop the file in.");
+      src = await uploadImage(blob);
+    }
+    const img = await loadImg(src, teamAsset(src));
+    return {ref: {src}, nw: img.naturalWidth, nh: img.naturalHeight};
   }
   let data = url.startsWith('data:') ? url : null;
   if (!data) {
@@ -2132,13 +2131,80 @@ async function addImageURL(url, at) {
       data = await readFile(b);
     } catch (e) { data = null; }
   }
+  let img;
+  try { img = await loadImg(data || url); } catch (e) { throw new Error("That image couldn't be loaded. Save it, then drop the file in."); }
+  if (data) { const aid = uid(); assets[aid] = data; return {ref: {asset: aid}, nw: img.naturalWidth, nh: img.naturalHeight}; }
+  return {ref: {src: url}, nw: img.naturalWidth, nh: img.naturalHeight, linked: true};
+}
+async function addImageFiles(files, at) {
+  if (blocked()) return;
+  const placed = [];
+  for (const f of files) {
+    try {
+      const m = await mediaFromFile(f), sz = fitSize(m.nw, m.nh);
+      placed.push({id: uid(), type: 'image', x: 0, y: 0, w: sz.w, h: sz.h, ...m.ref, name: f.name || 'Pasted image'});
+    } catch (e) { toast(board.team && e.message ? e.message : `Couldn't read ${f.name || 'that image'}`, 4000); }
+  }
+  placeImages(placed, at);
+}
+async function addImageURL(url, at) {
+  if (blocked()) return;
   try {
-    const img = await loadImg(data || url), sz = fitSize(img.naturalWidth, img.naturalHeight);
-    const it = {id: uid(), type: 'image', x: 0, y: 0, w: sz.w, h: sz.h, name: url.slice(0, 80)};
-    if (data) { const aid = uid(); assets[aid] = data; it.asset = aid; }
-    else { it.src = url; setTimeout(() => toast('Linked image: that site blocks copying, so it needs internet to show'), 1400); }
-    placeImages([it], at);
-  } catch (e) { toast("That image couldn't be loaded. Save it, then drop the file in."); }
+    const m = await imageFromURL(url), sz = fitSize(m.nw, m.nh);
+    placeImages([{id: uid(), type: 'image', x: 0, y: 0, w: sz.w, h: sz.h, ...m.ref, name: url.slice(0, 80)}], at);
+    if (m.linked) setTimeout(() => toast('Linked image: that site blocks copying, so it needs internet to show'), 1400);
+  } catch (e) { toast(e && e.message ? e.message : "That image couldn't be loaded.", 4000); }
+}
+
+/* ---------- replacing a picture or video ---------- */
+// Another file or link takes its place: the same centre and width in the new shape, connectors still attached,
+// and its own settings (flip, greyscale, loop) kept. A picture can become a video and back.
+function replaceEntries(it) {
+  return [{head: it.type === 'video' ? 'Replace video' : 'Replace image'},
+    {label: 'With a file…', icon: 'image', run: () => replaceFromFile(it)},
+    {label: 'With a link…', icon: 'link', run: () => replaceFromLink(it)}];
+}
+let replaceId = null;
+function replaceFromFile(it) { if (blocked()) return; replaceId = it.id; $('#fileReplace').click(); }
+$('#fileReplace').addEventListener('change', async e => {
+  const f = e.target.files[0], id = replaceId;
+  e.target.value = ''; replaceId = null;
+  if (!f || !id) return;
+  if (!isImageFile(f) && !isVideoFile(f)) { toast('Choose a picture or a video', 3000); return; }
+  if (!board.team && !isImageFile(f) && f.size > 60 * 1048576) { toast(`${f.name} is over 60 MB. Trim it or export it smaller.`, 4000); return; }
+  try { swapMedia(id, await mediaFromFile(f), f.name || 'Pasted image'); }
+  catch (err) { toast(board.team && err.message ? err.message : `Couldn't read ${f.name || 'that file'}. Pictures and MP4 or WebM videos work best.`, 5000); }
+});
+async function replaceFromLink(it) {
+  if (blocked()) return;
+  const url = await askText(it.type === 'video' ? 'Replace video' : 'Replace image', 'Paste a YouTube or Vimeo link, or the address of a picture.', 'Replace', {placeholder: 'https://…', max: 2000});
+  if (!url) return;
+  const e = parseVideoURL(url);
+  if (e) { swapMedia(it.id, {ref: {embed: e}, video: true, nw: 640, nh: 360}, url); return; }
+  if (!/^(https?:|data:image\/)/i.test(url)) { toast("That isn't a link to a picture or a YouTube or Vimeo video.", 4000); return; }
+  try {
+    const m = await imageFromURL(url);
+    swapMedia(it.id, m, url.slice(0, 80));
+    if (m.linked) setTimeout(() => toast('Linked image: that site blocks copying, so it needs internet to show'), 1400);
+  } catch (err) { toast(err && err.message ? err.message : "That image couldn't be loaded.", 4000); }
+}
+function swapMedia(id, m, name) {
+  const i = doc.items.findIndex(o => o.id === id), it = doc.items[i];
+  if (!it || blocked()) return;
+  const type = m.video ? 'video' : 'image', w = it.w, h = rd(w * (m.nw > 0 && m.nh > 0 ? m.nh / m.nw : 9 / 16));
+  // the same kind keeps its id; a new kind gets a new one, so copies of the app that know only the old kind draw it right
+  const next = {id: type === it.type ? it.id : uid(), type, x: it.x, y: rd(it.y + it.h / 2 - h / 2), w, h, ...m.ref, name: txt(name, 200)};
+  if (it.locked) next.locked = true;
+  if (type === 'image') { next.flip = it.type === 'image' && !!it.flip; next.gray = it.type === 'image' && !!it.gray; }
+  else { next.loop = it.type === 'video' ? it.loop !== false : true; next.autoplay = it.type === 'video' && !!it.autoplay; }
+  if (it.type === 'video') playVideo(it, false);
+  doc.items[i] = next;
+  if (next.id !== id) {
+    for (const l of doc.links) { if (l.from.id === id) l.from = {id: next.id}; if (l.to.id === id) l.to = {id: next.id}; }
+    if (sel.has(id)) { sel.delete(id); sel.add(next.id); }
+  }
+  refresh(); commit();
+  toast(type !== it.type ? (type === 'video' ? 'Replaced with a video' : 'Replaced with a picture') : type === 'video' ? 'Video replaced' : 'Image replaced');
 }
 const isImageFile = f => f.type.startsWith('image/') || /\.(png|jpe?g|gif|webp|avif|bmp|svg)$/i.test(f.name || '');
 async function fetchImageBlob(url) {  // null when the site doesn't allow its pictures to be copied
@@ -3009,12 +3075,13 @@ function selCtx(list) {
     if (only('text')) h += vsep + range(8, 200, list[0].size * cam.z);
     if (only('link')) h += vsep + seg('lstyle', STYLE_OPTS, common(list.map(o => o.style)), 'Line style') + seg('head', HEAD_OPTS, common(list.map(o => o.head)), 'Arrowheads') + chip('dash', 'Dashed', list.every(o => o.dash)) + chip('flow', 'Flow', list.every(o => o.flow)) + (one ? cbtn('label', 'Edit label', 'label') + cbtn('reverse', 'Reverse direction', 'swap') : '');
     if (one && one.type === 'jam') h += vsep + cbtn('jamedit', 'Edit the jam', 'clock') + cbtn('jamcut', 'Cut scope', 'trash');
-    if (only('image')) h += vsep + chip('flip', 'Flip', list.every(o => o.flip)) + chip('gray', 'Greyscale', list.every(o => o.gray)) + (one ? cbtn('orig', 'Original size', 'orig') : '');
+    if (only('image')) h += vsep + chip('flip', 'Flip', list.every(o => o.flip)) + chip('gray', 'Greyscale', list.every(o => o.gray)) + (one ? cbtn('orig', 'Original size', 'orig') + cbtn('replace', 'Replace with another picture or video', 'swap') : '');
     if (one && one.type === 'video') {
       const el = els.get(one.id), v = el && el.querySelector('video'), playing = one.embed ? !!(el && el.classList.contains('live')) : !!(v && !v.paused);
       h += vsep + chip('vplay', playing ? (one.embed ? 'Stop' : 'Pause') : 'Play', playing);
       if (one.embed) h += chip('vopen', one.embed.p === 'yt' ? 'Open on YouTube' : 'Open on Vimeo', false);
       else h += chip('loop', 'Loop', one.loop !== false) + chip('autoplay', 'Autoplay', !!one.autoplay) + chip('vsound', 'Sound', !!(v && !v.muted));
+      h += cbtn('replace', 'Replace with another video or picture', 'swap');
     }
   }
   const movable = list.filter(o => o.type !== 'link' && o.type !== 'stroke').length;
@@ -3101,6 +3168,7 @@ function act(a, v, btn) {
     case 'unlockBoard': toggleBoardLock(); break;
     case 'more': menuAt(btn, moreEntries()); break;
     case 'arrange': menuAt(btn, arrangeEntries()); break;
+    case 'replace': if (list.length === 1) menuAt(btn, replaceEntries(list[0])); break;
     case 'kindMenu': menuAt(btn, KINDS.map(([k, t]) => ({label: t, icon: KIND_ICON[k], cur: nodes.every(n => (n.kind || 'task') === k), run: () => setKind(selObjs(), k)}))); break;
     case 'colorMenu': menuAt(btn, [...PEN.map(([n, c]) => ({label: n, dot: col(c), run: () => applyProp('color', c)})), '-', {label: 'Custom colour…', icon: 'palette', run: () => { const cp = $('#colorPick'); cp.value = hex6(col(nodes[0] && nodes[0].color)); cp.click(); }}]); break;
     case 'discMenu': menuAt(btn, [{head: 'Discipline'}, ...DISC.map(d => ({label: d[1], dot: col(d[2]), cur: nodes.every(n => n.disc === d[0]), run: () => { selObjs().forEach(n => { if (n.type === 'node') { n.disc = d[0]; if (n.kind === 'task') n.color = d[2]; } }); refresh(); commit(); }})), '-', {label: 'No discipline', run: () => { selObjs().forEach(n => { n.disc = ''; }); refresh(); commit(); }}]); break;
@@ -3185,7 +3253,9 @@ function contextEntries(hit, w) {
       KINDS.forEach(([k, t]) => { if ((hit.kind || 'task') !== k) E.push({label: t, icon: KIND_ICON[k], run: () => setKind(selObjs(), k)}); });
       E.push('-');
     } else if (hit.type === 'image') {
-      E.push({label: hit.flip ? 'Unflip' : 'Flip horizontal', run: () => act('flip')}, {label: hit.gray ? 'Show in colour' : 'Show in greyscale', run: () => act('gray')}, {label: 'Original size', run: () => originalSize(hit)}, {label: 'Zoom to image', run: () => fitTo([hit])}, '-');
+      E.push({label: hit.flip ? 'Unflip' : 'Flip horizontal', run: () => act('flip')}, {label: hit.gray ? 'Show in colour' : 'Show in greyscale', run: () => act('gray')}, {label: 'Original size', run: () => originalSize(hit)}, {label: 'Zoom to image', run: () => fitTo([hit])}, ...replaceEntries(hit), '-');
+    } else if (hit.type === 'video') {
+      E.push({label: 'Zoom to video', run: () => fitTo([hit])}, ...replaceEntries(hit), '-');
     } else if (hit.type === 'link') {
       E.push({label: hit.label ? 'Edit label' : 'Add label', run: () => editLinkLabel(hit)}, {label: 'Reverse direction', run: () => reverseLink(hit)}, '-');
     } else if (hit.type === 'text' || hit.type === 'frame') {
@@ -6851,11 +6921,8 @@ async function addVideoFiles(files, at) {
   for (const f of files) {
     if (!board.team && f.size > 60 * 1048576) { toast(`${f.name} is over 60 MB. Trim it or export it smaller.`, 4000); continue; }
     try {
-      let ref;
-      if (board.team) ref = {src: await uploadImage(f)};
-      else { const aid = uid(); assets[aid] = await readFile(f); ref = {asset: aid}; }
-      const v = await videoMeta(ref.src || assets[ref.asset]), sz = fitSize(v.videoWidth || 640, v.videoHeight || 360);
-      placed.push({id: uid(), type: 'video', x: 0, y: 0, w: sz.w, h: sz.h, ...ref, name: f.name || 'Video', loop: true, autoplay: false});
+      const m = await mediaFromFile(f), sz = fitSize(m.nw, m.nh);
+      placed.push({id: uid(), type: 'video', x: 0, y: 0, w: sz.w, h: sz.h, ...m.ref, name: f.name || 'Video', loop: true, autoplay: false});
     } catch (e) { toast(board.team && e.message ? e.message : `Couldn't play ${f.name || 'that video'}. MP4 and WebM work best.`, 6000); }
   }
   placeImages(placed, at);

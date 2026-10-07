@@ -4,8 +4,11 @@ All notable changes to Venom Board are listed here. The project follows [Semanti
 
 ## [Unreleased]
 
+### Reference board
+- **Replace pictures and videos**: right-click a picture or video (or use ⇄ in its toolbar) → Replace, with a file or a link. The new one takes its place at the same width in its own shape, keeps its connectors and its settings (flip, greyscale, loop), and a picture can become a YouTube, Vimeo or video file and back. Undo puts the old one back, and in a team project everyone sees the swap straight away
+
 ### Teams
-- **Connect tools (MCP) can do everything on a board**: besides planning, tools now lay out the board itself: text, frames (also wrapped around things), pictures and GIFs from a web address or the user's computer, YouTube and Vimeo videos, marker and highlighter ink (freehand, lines, arrows, rectangles, ellipses), connectors with every style, and the game jam clock. They can change, move (frames carry what's inside), align, distribute, pack, stack, duplicate and delete anything, start projects from templates or add a template to a board, assign cards to teammates, trace dependencies, read comments, activity and search, look at the pictures on a board, rename projects, and save and restore versions. Inviting people, sharing, publishing and deleting projects stay in the app
+- **Connect tools (MCP) can do everything on a board**: besides planning, tools now lay out the board itself: text, frames (also wrapped around things), pictures and GIFs from a web address or the user's computer, YouTube and Vimeo videos, marker and highlighter ink (freehand, lines, arrows, rectangles, ellipses), connectors with every style, and the game jam clock, and replace any picture or video with another. They can change, move (frames carry what's inside), align, distribute, pack, stack, duplicate and delete anything, start projects from templates or add a template to a board, assign cards to teammates, trace dependencies, read comments, activity and search, look at the pictures on a board, rename projects, and save and restore versions. Inviting people, sharing, publishing and deleting projects stay in the app
 
 ## [1.4.0] - 2026-10-07
 
