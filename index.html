@@ -4298,12 +4298,21 @@ async function api(path, method = 'GET', body) {
 }
 
 /* --- account --- */
-async function refreshMe(quiet) {
-  if (!team.token && !pageServer) { team.user = null; renderTeam(); updateTeamBtn(); return; }
+// Refreshes can overlap (a teammate's change, the panel opening, an action finishing): only the newest one counts,
+// and whoever waits on an older one waits for the newest. A background refresh that finds nothing new redraws nothing.
+let meSeq = 0, meAt = 0, meLatest = null;
+function refreshMe(quiet, background) { meAt = Date.now(); return (meLatest = loadMe(++meSeq, quiet, background)); }
+async function loadMe(seq, quiet, background) {
+  const stale = () => seq !== meSeq;
+  if (!team.token && !pageServer) { team.user = null; acctClose(); renderTeam(); updateTeamBtn(); return; }
   try {
     // served by the website with no saved token: ask who's signed in first, so nobody signed out gets an error response
-    if (!team.token && !(await api('/api/session')).user) { team.user = null; renderTeam(); updateTeamBtn(); return; }
+    if (!team.token && !(await api('/api/session')).user) { if (stale()) return meLatest; team.user = null; acctClose(); renderTeam(); updateTeamBtn(); return; }
     const me = await api('/api/me');
+    if (stale()) return meLatest;
+    // an invite that arrives while you're working says so, even with the Team panel closed
+    const had = new Set(team.invites.map(i => i.id));
+    if (background && !team.panelOpen) for (const i of me.invites || []) if (!had.has(i.id)) toast(`${txt(i.from, 40) || 'Someone'} invited you to ${txt(i.team.name, 60)}. Open the Team panel to answer.`, 6000);
     team.user = me.user; team.teams = me.teams; team.invites = me.invites;
     team.sessionsOthers = me.sessions ? me.sessions.others : 0;
     team.colors = Array.isArray(me.colors) ? me.colors.filter(okColor) : [];
@@ -4313,10 +4322,15 @@ async function refreshMe(quiet) {
     const tz = (() => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch (e) { return ''; } })();
     if (team.notify && tz && team.notify.timezone !== tz) { team.notify.timezone = tz; api('/api/me', 'PATCH', {timezone: tz}).catch(() => {}); }
     if (!team.teams.some(t => t.id === team.teamId)) team.teamId = team.teams[0] ? team.teams[0].id : '';
-    team.detail = team.teamId ? await api('/api/teams/' + team.teamId).catch(() => null) : null;
-  } catch (e) { if (e.status === 401) team.user = null; else if (!quiet) toast(e.message); }
-  renderTeam(); updateTeamBtn(); refreshSettings('account'); refreshSettings('notify');
-  if (team.user && !notes.items.length) loadNotes(); else renderBell();
+    const detail = team.teamId ? await api('/api/teams/' + team.teamId).catch(() => null) : null;
+    if (stale()) return meLatest;
+    team.detail = detail;
+  } catch (e) { if (stale()) return meLatest; if (e.status === 401) team.user = null; else if (!quiet) toast(e.message); }
+  const sig = JSON.stringify([team.user, team.teams, team.invites, team.detail, team.teamId, team.notify, team.security, team.sessionsOthers, team.limits, team.colors]);
+  if (!background || sig !== team.meSig) { renderTeam(); updateTeamBtn(); refreshSettings('account'); refreshSettings('notify'); }
+  team.meSig = sig;
+  if (team.user && !notes.items.length && !background) loadNotes(); else renderBell();
+  if (team.user) acctConnect(); else acctClose();
 }
 async function teamSignIn(login, password) {
   team.server = pageServer || HOSTED_SERVER;
@@ -4338,13 +4352,47 @@ async function finishSignIn(r) {
 async function teamSignOut() { try { await api('/api/auth/logout', 'POST'); } catch (e) {} signOutLocal(); toast('Signed out'); }
 function signOutLocal() {
   if (team.project) leaveProject();
+  acctClose();
   Object.assign(team, {token: '', user: null, teams: [], invites: [], detail: null, teamId: '', notify: null, security: null});
   notes.items = []; notes.unread = 0; renderBell(); $('#notePanel').hidden = true;
   saveAccount(); renderTeam(); updateTeamBtn(); refreshSettings('account'); refreshSettings('notify');
 }
 async function teamAction(fn, okMsg) {  // run an API call from the panel, then refresh what the panel shows
-  try { await fn(); if (okMsg) toast(okMsg); } catch (e) { toast(e.message, 4000); }
+  // a form that goes through starts empty again; one that doesn't keeps what you typed, to fix and send again
+  const form = sentForm; sentForm = null;
+  if (form) form.dataset.sent = '';
+  try { await fn(); if (okMsg) toast(okMsg); } catch (e) { toast(e.message, 4000); if (form) delete form.dataset.sent; }
   await refreshMe(true);
+}
+// the form being sent, for the teamAction its submit handler starts (and nothing after that)
+let sentForm = null;
+$('#tmBody').addEventListener('submit', e => { sentForm = e.target; }, true);
+$('#tmBody').addEventListener('submit', () => { sentForm = null; });
+// Panels are redrawn whenever something changes on the server, which can be while you're typing in them. Fields you
+// typed in (and choices in a form you haven't sent) keep what you put there, and the field you're in keeps the focus
+// and cursor. Only fields that are clearly the same before and after (by their label) are matched.
+function keepTyped(root) {
+  const FIELDS = 'input, select, textarea';
+  const tick = el => el.type === 'checkbox' || el.type === 'radio';
+  const key = el => el.tagName + ':' + (el.getAttribute('aria-label') || el.placeholder || (tick(el) ? el.name + '=' + el.value : ''));
+  const typed = el => !el.closest('form[data-sent]') && (tick(el) || el.tagName === 'SELECT'
+    ? !!el.closest('form') && (tick(el) ? el.checked !== el.defaultChecked : !!el.options[el.selectedIndex] && !el.options[el.selectedIndex].defaultSelected)
+    : (el.tagName === 'TEXTAREA' || /^(text|email|search|url|password|tel|number)$/.test(el.type)) && el.value !== el.defaultValue);
+  const count = els => { const n = new Map(); for (const el of els) n.set(key(el), (n.get(key(el)) || 0) + 1); return n; };
+  const old = [...root.querySelectorAll(FIELDS)], oldN = count(old), active = document.activeElement;
+  const saved = old.filter(el => oldN.get(key(el)) === 1 && (el === active || typed(el)))
+    .map(el => ({k: key(el), value: el.value, checked: el.checked, typed: typed(el), focus: el === active, start: el.selectionStart, end: el.selectionEnd}));
+  return () => {
+    if (!saved.length) return;
+    const now = [...root.querySelectorAll(FIELDS)], nowN = count(now);
+    for (const sv of saved) {
+      const el = nowN.get(sv.k) === 1 ? now.find(x => key(x) === sv.k) : null;
+      if (!el) continue;
+      if (sv.typed && tick(el)) el.checked = sv.checked;
+      else if (sv.typed && el.value !== sv.value) { el.value = sv.value; el.dispatchEvent(new Event('input', {bubbles: true})); }
+      if (sv.focus) { el.focus({preventScroll: true}); try { if (sv.start != null) el.setSelectionRange(sv.start, sv.end); } catch (e) {} }
+    }
+  };
 }
 
 /* --- panel --- */
@@ -4380,8 +4428,9 @@ function updateTeamBtn() {
 }
 function renderTeam() {
   if (!team.panelOpen) return;
-  const body = $('#tmBody'), top = body.scrollTop;
+  const body = $('#tmBody'), top = body.scrollTop, kept = keepTyped(body);
   body.replaceChildren(...(team.user ? signedInView() : signInView()).filter(Boolean));
+  kept();
   body.scrollTop = top;
 }
 function signInView() {
@@ -4542,6 +4591,7 @@ async function teamOpen(projectId) {
 function connectLive() {
   closeSocket(); clearTimeout(team.retryT);
   if (!team.project) return;
+  acctClose();  // the project's connection hears everything the account one would
   let ws;
   try { ws = new WebSocket(team.server.replace(/^http/, 'ws') + '/ws'); } catch (e) { toast("Couldn't open the live connection."); resetLive(); return; }
   team.ws = ws;
@@ -4561,6 +4611,7 @@ function resetLive() {
   Object.assign(team, {project: null, status: 'off', unacked: [], afterJoin: null, members: [], membersSig: '', share: undefined, roadmap: undefined, votes: new Map(), presenting: false});
   team.peers.clear(); team.pending.clear(); stopFollowing(); closeComments(); $('#followBar').hidden = true;
   updatePeerDock(); applyBoardLock(); updateCtx(); renderTeam();
+  setTimeout(acctConnect);  // after whatever led here (signing out, opening another project) has finished
 }
 function leaveProject(loadLocal = true) {
   if (!team.project) return;
@@ -4579,7 +4630,10 @@ async function openLastLocalBoard() {
 }
 function onLive(m) {
   switch (m.t) {
-    case 'ready': team.retry = 0; if (team.project) wsSend({t: 'join', project: team.project.id}); break;
+    case 'ready': if (team.retry) teamChangedSoon(); team.retry = 0; if (team.project) wsSend({t: 'join', project: team.project.id}); break;
+    case 'team': teamChangedSoon(); break;
+    case 'invites': teamChangedSoon(true); break;
+    case 'shared': loadShare(); loadRoadmap(); break;
     case 'snapshot': applySnapshot(m); break;
     case 'ops': applyRemote(m.ops, m.by, false); break;
     case 'preview': applyRemote(m.ops, m.by, true); break;
@@ -4608,6 +4662,59 @@ function onLive(m) {
       break;
   }
 }
+/* --- between projects ---
+   Signed in but not in a team project, a small live connection still hears when your teams change (new projects,
+   people joining or leaving, invites) and when a notification arrives, so nothing waits for a restart. In a project,
+   the project's own connection hears the same things. */
+const acct = {ws: null, retry: 0, next: 0, t: 0, missed: false};
+function acctConnect() {
+  clearTimeout(acct.t);
+  if (acct.ws || team.project || team.watch || !team.user) return;
+  const wait = acct.next - Date.now();
+  if (wait > 0) { acct.t = setTimeout(acctConnect, wait); return; }
+  let ws;
+  try { ws = new WebSocket(team.server.replace(/^http/, 'ws') + '/ws'); } catch (e) { return; }
+  acct.ws = ws;
+  ws.onopen = () => { if (team.token) ws.send(JSON.stringify({t: 'auth', token: team.token})); };
+  ws.onmessage = e => { let m; try { m = JSON.parse(e.data); } catch (x) { return; } if (m && typeof m === 'object') onAcct(m); };
+  ws.onclose = e => {
+    if (acct.ws !== ws) return;
+    acct.ws = null; acct.missed = true;
+    acct.next = Date.now() + Math.min(60000, 1000 * 2 ** acct.retry++);
+    if (e.code === 4001) refreshMe(true, true); else acctConnect();  // turned away: the refresh finds out whether we're still signed in
+  };
+}
+function acctClose() {
+  clearTimeout(acct.t);
+  const ws = acct.ws; acct.ws = null;
+  if (ws) { acct.missed = true; ws.onclose = ws.onmessage = null; try { ws.close(); } catch (e) {} }
+}
+function onAcct(m) {
+  switch (m.t) {
+    case 'ready': acct.retry = 0; if (acct.missed) { acct.missed = false; teamChangedSoon(); } break;  // catch up on anything said while away
+    case 'team': teamChangedSoon(); break;
+    case 'invites': teamChangedSoon(true); break;  // fetched even with the panel closed, to say an invite arrived
+    case 'notify': gotNote(m.n); break;
+    case 'error': if (m.code === 'auth') { toast(txt(m.message, 200), 4000); signOutLocal(); } break;
+  }
+}
+// A team changed: fetch it again if the Team panel or settings show it (opening either fetches it anyway), a moment
+// later so a burst of changes is one fetch, and not at all if a fetch has started since.
+let teamChangeT = 0, teamChangeAll = false;
+function teamChangedSoon(always) {
+  const at = Date.now();
+  teamChangeAll = teamChangeAll || !!always;
+  clearTimeout(teamChangeT);
+  teamChangeT = setTimeout(() => {
+    const all = teamChangeAll; teamChangeAll = false;
+    if (team.user && (all || team.panelOpen || !settingsEl.hidden) && meAt <= at) refreshMe(true, true);
+  }, 300);
+}
+// in case the live connection can't get through: the open Team panel also catches up every 30 seconds while it's
+// showing, and when you come back to the window
+setInterval(() => { if (team.panelOpen && team.user && !document.hidden && Date.now() - meAt > 20000) refreshMe(true, true); }, 30000);
+window.addEventListener('focus', () => { if (team.panelOpen && team.user && Date.now() - meAt > 5000) refreshMe(true, true); });
+
 function applySnapshot(m) {
   const id = 'team-' + m.project.id, first = board.id !== id;
   team.role = ROLE_RANK[m.role] ? m.role : 'viewer';
@@ -4827,9 +4934,10 @@ function renderSettings() {
   stNav.replaceChildren(...ST_TABS.filter(([k]) => k !== 'desktop' || desk).map(([k, label, ico]) =>
     mk('button', {class: 'st-tab', type: 'button', role: 'tab', 'aria-selected': String(k === st.tab), onclick: () => { st.tab = k; st.deleting = false; renderSettings(); }}, icon(ico), label)));
   if (st.tab === 'account') st.sig = accountSig();
-  const same = stBody.dataset.tab === st.tab, top = stBody.scrollTop;
+  const same = stBody.dataset.tab === st.tab, top = stBody.scrollTop, kept = same ? keepTyped(stBody) : null;
   stBody.replaceChildren(...{account: accountPane, notify: notifyPane, look: lookPane, board: boardPane, desktop: deskPane, about: aboutPane}[st.tab]().filter(Boolean));
   stBody.dataset.tab = st.tab;
+  if (kept) kept();
   stBody.scrollTop = same ? top : 0;
 }
 const stGroup = (title, ...kids) => mk('section', {class: 'st-group'}, title ? mk('h3', {}, title) : null, ...kids);
@@ -5901,10 +6009,10 @@ function discordSection() {
   }, 'Discord settings saved');
   return section('Discord',
     mk('p', {class: 'tm-note'}, info.connected ? `Posting to a Discord channel (${info.hint}).` : 'Post this team’s progress in a Discord channel. In Discord: Server Settings → Integrations → Webhooks → New Webhook → Copy Webhook URL, then paste it here.'),
-    input, mk('div', {class: 'tm-checks'}, ...boxes),
-    mk('div', {class: 'tm-actions'}, mk('button', {class: 'tm-btn ok', type: 'button', onclick: save}, 'Save'),
-      info.connected ? mk('button', {class: 'tm-btn', type: 'button', onclick: () => teamAction(() => api(`/api/teams/${d.team.id}/integrations/test`, 'POST'), 'Test message sent. Check your Discord channel.')}, 'Send a test') : null,
-      info.connected ? mk('button', {class: 'tm-link danger', type: 'button', onclick: () => teamAction(() => api(`/api/teams/${d.team.id}/integrations`, 'PATCH', {discordWebhook: ''}), 'Disconnected from Discord')}, 'Disconnect') : null));
+    mk('form', {onsubmit: e => { e.preventDefault(); save(); }}, input, mk('div', {class: 'tm-checks'}, ...boxes),
+      mk('div', {class: 'tm-actions'}, mk('button', {class: 'tm-btn ok', type: 'submit'}, 'Save'),
+        info.connected ? mk('button', {class: 'tm-btn', type: 'button', onclick: () => teamAction(() => api(`/api/teams/${d.team.id}/integrations/test`, 'POST'), 'Test message sent. Check your Discord channel.')}, 'Send a test') : null,
+        info.connected ? mk('button', {class: 'tm-link danger', type: 'button', onclick: () => teamAction(() => api(`/api/teams/${d.team.id}/integrations`, 'PATCH', {discordWebhook: ''}), 'Disconnected from Discord')}, 'Disconnect') : null)));
 }
 
 /* ---------- QR codes ---------- */

@@ -2,6 +2,15 @@
 
 All notable changes to Venom Board are listed here. The project follows [Semantic Versioning](https://semver.org).
 
+## [Unreleased]
+
+### Fixes
+- The Team panel keeps up live: projects your teammates make, rename or delete, invites being accepted, declined or withdrawn, and people joining, leaving or changing role show straight away, without restarting the app. Signed in, the app stays connected between projects for this, so notifications arrive straight away too
+- An invite that arrives while you're working says so, even with the Team panel closed
+- A view-only link or public roadmap made by another admin shows for everyone in the project at once, so nobody replaces a link without knowing it exists
+- What you're typing in the Team panel or Settings stays put when it updates; a form that fails keeps what you typed so you can fix it
+- Pressing Enter in the Discord webhook box saves it
+
 ## [1.3.0] - 2026-10-07
 
 ### Sharing
