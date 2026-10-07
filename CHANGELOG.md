@@ -2,7 +2,7 @@
 
 All notable changes to Venom Board are listed here. The project follows [Semantic Versioning](https://semver.org).
 
-## [Unreleased]
+## [1.3.0] - 2026-10-07
 
 ### Sharing
 - **Public roadmaps**: publish a page players can follow from the Team panel: phases, what's planned, in progress and done, ideas if you want, and milestone dates with countdowns. Players vote for what they want most (the team sees the votes on the cards), follow it with RSS, and you can embed it on your own site. Pictures, comments, people and estimates are never shown; right-click a card to keep it off. Admins choose what shows and can take it down at any time
