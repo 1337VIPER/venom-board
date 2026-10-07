@@ -14,6 +14,7 @@ All notable changes to Venom Board are listed here. The project follows [Semanti
 - **View-only links**: share a board with anyone, live and without an account. Watchers can't see who's there or change anything, and can report a board; admins can replace or turn off the link at any time
 - **Discord**: a team admin can post finished tasks, reached milestones, comments, restores and new members to a channel
 - **Two-step sign-in** with an authenticator app, with ten one-time recovery codes, in the app and on the website
+- Comments and notifications show the writer's @username next to their name
 
 ### Planning
 - **Timeline** (`Shift+G`): a schedule in working days from estimates and dependencies, the critical path, late due dates and finished work
@@ -28,7 +29,6 @@ All notable changes to Venom Board are listed here. The project follows [Semanti
 ### Desktop
 - **macOS** (Apple silicon and Intel) and **Linux** (AppImage) apps. Linux updates itself like Windows; macOS shows when a new version is out
 - Each system only installs updates made for it: the signature check also confirms the file is a Windows installer or an AppImage
-- Comments and notifications show the writer's @username next to their name
 
 ### Fair use
 - Accounts, teams and shared projects have allowances, so nobody can fill the service or flood it with spam: how many teams you lead or are in, how many projects and people a team has, how big a shared board can grow, and how much storage (pictures, boards and their version history) a team and its leader use
