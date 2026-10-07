@@ -5052,7 +5052,7 @@ function accountPane() {
 
   // tools that support the Model Context Protocol work on team boards with an access token made on the website
   const tools = stGroup('Connect tools (MCP)', stRow('Assistants and planning tools',
-    'Tools that support the Model Context Protocol can read your team boards and map out phases, cards and dependencies, as you. Make an access token on your account page.',
+    'Tools that support the Model Context Protocol can work on your team boards as you: plan with phases, cards and dependencies, and lay out text, pictures, videos, ink, connectors and templates. Make an access token on your account page.',
     mk('button', {class: 'tm-btn', type: 'button', onclick: () => openLink(team.server + '/account#mcp')}, icon('arrow'), 'Set up')));
   return [profile, stGroup('Profile', nameForm, colorField, email, verify), stGroup('Security', pwForm), securityGroup(), signIns, teams, tools, danger];
 }

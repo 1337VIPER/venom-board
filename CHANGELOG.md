@@ -2,6 +2,11 @@
 
 All notable changes to Venom Board are listed here. The project follows [Semantic Versioning](https://semver.org).
 
+## [Unreleased]
+
+### Teams
+- **Connect tools (MCP) can do everything on a board**: besides planning, tools now lay out the board itself: text, frames (also wrapped around things), pictures and GIFs from a web address or the user's computer, YouTube and Vimeo videos, marker and highlighter ink (freehand, lines, arrows, rectangles, ellipses), connectors with every style, and the game jam clock. They can change, move (frames carry what's inside), align, distribute, pack, stack, duplicate and delete anything, start projects from templates or add a template to a board, assign cards to teammates, trace dependencies, read comments, activity and search, look at the pictures on a board, rename projects, and save and restore versions. Inviting people, sharing, publishing and deleting projects stay in the app
+
 ## [1.4.0] - 2026-10-07
 
 ### Reference board
