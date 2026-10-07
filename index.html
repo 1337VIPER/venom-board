@@ -914,7 +914,7 @@ html.watching #tools .tool:not([data-tool=select]):not([data-tool=hand]),html.wa
 
 <div id="help" class="modal" hidden>
   <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
-    <h2 id="helpTitle">Venom<em>/</em>Board shortcuts <span class="ver" data-ver>v1.4.0</span></h2>
+    <h2 id="helpTitle">Venom<em>/</em>Board shortcuts <span class="ver" data-ver>v1.4.1</span></h2>
     <p>Boards autosave on this computer. Save writes a .json file you can back up, put in your repo or open on another PC.</p>
     <div class="keys">
       <section><h3>Tools</h3><dl>
@@ -4975,7 +4975,7 @@ function drawPeers() {
 /* ---------- settings ----------
    One place for your account and every preference. Each control calls the same function as its shortcut or
    menu entry, so the two can never disagree. */
-const APP_VERSION = '1.4.0';
+const APP_VERSION = '1.4.1';
 const REPO_URL = 'https://github.com/1337VIPER/venom-board';
 document.querySelectorAll('[data-ver]').forEach(e => { e.textContent = 'v' + APP_VERSION; });
 const settingsEl = $('#settings'), stNav = $('#stNav'), stBody = $('#stBody');
