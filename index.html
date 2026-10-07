@@ -396,6 +396,10 @@ html.ui-off #top,html.ui-off #dock,html.ui-off #ctx,html.ui-off #hud,html.ui-off
 .updchip.ready:hover{filter:brightness(1.1)}
 .livechip{position:relative;flex:none;margin-left:6px;padding:5px 10px 5px 21px;border-radius:99px;border:1px solid var(--line-2);font:700 10px var(--font-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--bone-dim);white-space:nowrap}
 .livechip::before{content:"";position:absolute;left:9px;top:50%;width:7px;height:7px;margin-top:-3.5px;border-radius:50%;background:var(--bone-faint)}
+.jamchip{flex:none;margin-left:6px;padding:4px 10px;border-radius:99px;border:1px solid color-mix(in srgb,var(--fang) 50%,transparent);background:color-mix(in srgb,var(--fang) 10%,transparent);color:var(--bone);font:700 11px var(--font-mono);letter-spacing:.04em;white-space:nowrap;cursor:pointer;font-variant-numeric:tabular-nums}
+.jamchip:hover{border-color:var(--fang)}
+.jamchip.soon{color:var(--fang)}
+.jamchip.over{color:var(--bone-dim);border-color:var(--line-2);background:none}
 .livechip.live{color:var(--ok);border-color:color-mix(in srgb,var(--ok) 45%,transparent)}
 .livechip.live::before{background:var(--ok);box-shadow:0 0 8px var(--ok);animation:vbpulse 1.8s ease-in-out infinite}
 .livechip.connecting,.livechip.reconnecting{color:var(--warn);border-color:color-mix(in srgb,var(--warn) 45%,transparent)}
@@ -604,6 +608,25 @@ select.tm-in{padding-right:6px;cursor:pointer}
 .tm-checks{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:8px}
 .tm-check{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--bone-dim);cursor:pointer}
 .tm-check input{accent-color:var(--fang);margin:0}
+.jam{--jc:#ff2a4f;padding:16px 18px 14px;border-radius:22px 22px 22px 6px;background:linear-gradient(180deg,color-mix(in srgb,var(--jc) 13%,var(--card)),var(--card));border:1.5px solid color-mix(in srgb,var(--jc) 55%,transparent);box-shadow:0 20px 50px -24px color-mix(in srgb,var(--jc) 60%,transparent);color:var(--bone)}
+.j-top{display:flex;align-items:baseline;gap:8px;font:700 10.5px var(--font-mono);letter-spacing:.12em;text-transform:uppercase;color:var(--jc);white-space:nowrap}
+.j-name{font:800 13px var(--font-display);letter-spacing:.04em;color:var(--bone);overflow:hidden;text-overflow:ellipsis}
+.j-theme{margin-top:8px;font:600 13px/1.4 var(--font-ui);color:var(--bone-dim)}
+.j-theme b{color:var(--bone)}
+.j-time{margin-top:6px;display:flex;align-items:baseline;gap:8px}
+.j-time b{font:800 42px/1.05 var(--font-display);font-variant-numeric:tabular-nums;white-space:nowrap}
+.j-time span{font:700 11px var(--font-mono);color:var(--bone-dim);text-transform:uppercase;letter-spacing:.1em}
+.jam.soon .j-time b{color:var(--jc)}
+.jam.over .j-time b{color:var(--bone-dim)}
+.j-bar{margin-top:8px;height:6px;border-radius:99px;background:color-mix(in srgb,var(--jc) 18%,transparent);overflow:hidden}
+.j-bar i{display:block;height:100%;width:0;background:var(--jc)}
+.j-scope{margin-top:10px;font:600 12px/1.45 var(--font-ui);color:var(--bone-dim)}
+.j-scope b{color:var(--bone)}
+.j-scope.bad b{color:var(--bad)}
+.j-scope.ok b{color:var(--ok)}
+.jm-sheet{width:min(440px,100%);display:flex;flex-direction:column;gap:12px}
+.jm-f{display:flex;flex-direction:column;gap:6px;font:700 12px var(--font-ui);color:var(--bone-dim)}
+.jm-f em{font-style:normal;font-weight:500;color:var(--bone-faint)}
 .tx-sheet{width:min(780px,100%);max-height:calc(100% - 16px);display:flex;flex-direction:column;padding:0;overflow:hidden}
 .tx-body{flex:1;min-height:0;overflow:auto;padding:16px 24px 24px;display:flex;flex-direction:column;gap:14px}
 .tx-body p{margin:0}
@@ -780,6 +803,7 @@ html.watching #tools .tool:not([data-tool=select]):not([data-tool=hand]),html.wa
     </div>
     <span id="saveState" class="savestate">Saved</span>
     <span id="liveChip" class="livechip" hidden></span>
+    <button id="jamChip" class="jamchip" type="button" hidden title="Show the jam clock"></button>
     <div id="peerDock" class="peers" hidden></div>
     <div class="spacer"></div>
     <div class="grp">
@@ -972,6 +996,18 @@ html.watching #tools .tool:not([data-tool=select]):not([data-tool=hand]),html.wa
     <div class="st-head"><h2 id="vrTitle">Version history<em>.</em></h2><button id="vrClose" class="ib" aria-label="Close version history" title="Close (Esc)"><svg viewBox="0 0 20 20"><path d="M5 5l10 10M15 5 5 15"/></svg></button></div>
     <div id="vrBody" class="vr-body"></div>
   </div>
+</div>
+
+<div id="jamModal" class="modal" hidden>
+  <form id="jamForm" class="sheet jm-sheet" role="dialog" aria-modal="true" aria-labelledby="jmTitle">
+    <div class="st-head"><h2 id="jmTitle">Game jam<em>.</em></h2></div>
+    <label class="jm-f">Jam name<input class="tm-in" name="jamname" maxlength="80" placeholder="e.g. Ludum Dare 60"></label>
+    <label class="jm-f">Submission deadline<input class="tm-in" name="end" type="datetime-local" required></label>
+    <label class="jm-f">Theme revealed at <em>optional</em><input class="tm-in" name="reveal" type="datetime-local"></label>
+    <label class="jm-f">Theme <em>fill it in once it's out</em><input class="tm-in" name="theme" maxlength="120"></label>
+    <label class="jm-f">People making the game<input class="tm-in" name="people" type="number" min="1" max="50" step="1"></label>
+    <div class="tm-actions"><button class="tm-btn ok" type="submit">Save</button><button class="tm-btn" type="button" id="jmCancel">Cancel</button></div>
+  </form>
 </div>
 
 <div id="tlapse" class="modal" hidden>
@@ -1414,6 +1450,7 @@ function makeEl(it) {
   else if (it.type === 'video') el.innerHTML = '<div class="v-box"></div><div class="v-tag"></div>';
   else if (it.type === 'node') el.innerHTML = '<div class="n-head"></div><div class="n-title"></div><div class="n-body" data-ph="Notes… start a line with [ ] for a checkbox"></div><div class="n-foot"></div>';
   else if (it.type === 'frame') el.innerHTML = '<div class="f-title"></div><div class="f-meta"></div>';
+  else if (it.type === 'jam') el.innerHTML = '<div class="j-top"><span>Game jam</span><b class="j-name"></b></div><div class="j-theme"></div><div class="j-time"><b></b><span></span></div><div class="j-bar"><i></i></div><div class="j-scope"></div>';
   return el;
 }
 function syncEl(el, it) {
@@ -1465,6 +1502,10 @@ function syncEl(el, it) {
     const st = frameStats.get(it.id), pct = st && st.total ? Math.round(st.done / st.total * 100) : 0;
     const meta = st && st.total ? `<span>${st.done}/${st.total}</span><span class="f-bar"><i style="width:${pct}%"></i></span><span>${pct}%</span>${st.est ? `<span>· ${fmtDays(st.est)} left</span>` : ''}` : '';
     if (el.children[1]._m !== meta) { el.children[1]._m = meta; el.children[1].innerHTML = meta; }
+  } else if (it.type === 'jam') {
+    el.style.width = it.w + 'px';
+    el.style.setProperty('--jc', col(it.color));
+    jamPaint(el, it);
   }
 }
 function renderItems() {
@@ -1484,7 +1525,7 @@ function renderItems() {
 function measure() {
   for (const it of doc.items) {
     const el = els.get(it.id); if (!el) continue;
-    if (it.type === 'node') it.h = el.offsetHeight;
+    if (it.type === 'node' || it.type === 'jam') it.h = el.offsetHeight;
     else if (it.type === 'text') { it.w = el.offsetWidth; it.h = el.offsetHeight; }
     else if (it.type === 'frame') {
       const t = el.firstChild, m = el.children[1];
@@ -1865,6 +1906,12 @@ function cleanItem(i) {
     }
     case 'text': return {...base, text: txt(i.text, 4000), size: clamp(num(i.size, 32), 4, 800), color: colorOr(i.color, BONE)};
     case 'frame': return {...base, title: txt(i.title, 200), color: colorOr(i.color, '#a66bff')};
+    case 'jam': {  // a game jam's clock: deadline, theme and a scope check
+      if (!okTime(i.end)) return null;
+      const j = {...base, w: clamp(num(i.w, 360), 280, 720), title: txt(i.title, 80), theme: txt(i.theme, 120), end: i.end, people: clamp(Math.round(num(i.people, 1)), 1, 50), color: colorOr(i.color, '#ff2a4f')};
+      if (okTime(i.reveal)) j.reveal = i.reveal;
+      return j;
+    }
     case 'image': {
       const img = {...base, name: txt(i.name, 200), flip: !!i.flip, gray: !!i.gray};
       if (okId(i.asset)) img.asset = i.asset;
@@ -2585,6 +2632,7 @@ stage.addEventListener('dblclick', e => {
     startEdit(hit.id, onBody ? 'body' : 'title', true);
   } else if (hit.type === 'text' || hit.type === 'frame') startEdit(hit.id, null, true);
   else if (hit.type === 'link') editLinkLabel(hit);
+  else if (hit.type === 'jam') editJam(hit);
   else if (hit.type === 'image') fitTo([hit]);
   else if (hit.type === 'video') playVideo(hit);
 });
@@ -2945,7 +2993,7 @@ function nodeCtx(list, one) {
 }
 function selCtx(list) {
   const types = new Set(list.map(o => o.type)), one = list.length === 1 ? list[0] : null, only = t => types.size === 1 && types.has(t);
-  const NAMES = {node: 'Card', image: 'Image', video: 'Video', text: 'Text', frame: 'Phase', link: 'Connector', stroke: 'Ink'};
+  const NAMES = {node: 'Card', image: 'Image', video: 'Video', text: 'Text', frame: 'Phase', link: 'Connector', stroke: 'Ink', jam: 'Jam clock'};
   let h;
   if (only('node')) h = nodeCtx(list, one);
   else {
@@ -2958,6 +3006,7 @@ function selCtx(list) {
     if (only('stroke')) h += vsep + range(1, list.every(s => s.kind === 'hl') ? 80 : 40, list[0].size * cam.z);
     if (only('text')) h += vsep + range(8, 200, list[0].size * cam.z);
     if (only('link')) h += vsep + seg('lstyle', STYLE_OPTS, common(list.map(o => o.style)), 'Line style') + seg('head', HEAD_OPTS, common(list.map(o => o.head)), 'Arrowheads') + chip('dash', 'Dashed', list.every(o => o.dash)) + chip('flow', 'Flow', list.every(o => o.flow)) + (one ? cbtn('label', 'Edit label', 'label') + cbtn('reverse', 'Reverse direction', 'swap') : '');
+    if (one && one.type === 'jam') h += vsep + cbtn('jamedit', 'Edit the jam', 'clock') + cbtn('jamcut', 'Cut scope', 'trash');
     if (only('image')) h += vsep + chip('flip', 'Flip', list.every(o => o.flip)) + chip('gray', 'Greyscale', list.every(o => o.gray)) + (one ? cbtn('orig', 'Original size', 'orig') : '');
     if (one && one.type === 'video') {
       const el = els.get(one.id), v = el && el.querySelector('video'), playing = one.embed ? !!(el && el.classList.contains('live')) : !!(v && !v.paused);
@@ -3032,6 +3081,8 @@ function act(a, v, btn) {
     }
     case 'flip': case 'gray': { const on = !imgs.every(o => o[a]); imgs.forEach(o => { o[a] = on; }); refresh(); commit(); break; }
     case 'orig': if (imgs[0]) originalSize(imgs[0]); break;
+    case 'jamedit': if (list[0] && list[0].type === 'jam') editJam(list[0]); break;
+    case 'jamcut': if (list[0] && list[0].type === 'jam') { const r = (btn || ctxBar).getBoundingClientRect(); lastMenuPt = {x: r.left, y: r.top - 8}; cutScope(list[0]); } break;
     case 'vplay': if (list[0] && list[0].type === 'video') playVideo(list[0]); break;
     case 'vopen': if (list[0] && list[0].embed) openLink(watchURL(list[0].embed)); break;
     case 'loop': case 'autoplay': { const vids = list.filter(o => o.type === 'video' && !o.embed); if (blocked()) break; const on = !vids.every(o => a === 'loop' ? o.loop !== false : o.autoplay); vids.forEach(o => { o[a] = on; }); refresh(); commit(); break; }
@@ -3120,6 +3171,7 @@ function contextEntries(hit, w) {
   if (board.locked) return lockedEntries(hit);
   const E = [], list = selObjs();
   if (hit) {
+    if (hit.type === 'jam') E.push({label: 'Edit the jam…', icon: 'clock', run: () => editJam(hit)}, {label: 'Cut scope…', icon: 'trash', run: () => cutScope(hit)}, '-');
     if (hit.type === 'node') {
       if (board.team) E.push({label: 'Comments', icon: 'label', kb: (commentCounts.get(hit.id) || '') + '', run: () => openComments(hit.id)});
       if (board.team && team.members.length && !teamReadOnly()) E.push({label: 'Assign people…', icon: 'user', run: () => showMenu(lastMenuPt.x, lastMenuPt.y, assignEntries())});
@@ -3147,6 +3199,7 @@ function contextEntries(hit, w) {
     E.push({label: 'Text', icon: 'text', run: () => newText(w)},
       {label: 'Phase frame', icon: 'frame', run: () => { const f = newFrame({x: w.x - 300, y: w.y - 40}); Object.assign(f, {w: 600, h: 400}); sel.clear(); sel.add(f.id); refresh(); startEdit(f.id, null, true); }},
       {label: 'Image…', icon: 'image', kb: 'I', run: () => { lastPtr = w; ptrInStage = true; $('#fileImg').click(); }},
+      {label: 'Game jam clock', icon: 'clock', run: () => addJam(w)},
       {label: 'Template…', icon: 'arrange', run: openTemplates},
       '-', {label: 'Zoom to fit', kb: 'Shift 1', run: () => fitTo(allObjs())},
       {label: 'Select all', kb: 'Ctrl A', run: selectAll});
@@ -3594,6 +3647,19 @@ function paintBoard(g, d, info, ids, imgs, tok, F, area) {
         g.beginPath(); g.moveTo(cx - r * 0.6, cy - r); g.lineTo(cx + r, cy); g.lineTo(cx - r * 0.6, cy + r); g.closePath(); g.fillStyle = '#f1eef2'; g.fill();
       }
     } else if (it.type === 'node') drawCard(g, it, tok, F, info.openDeps);
+    else if (it.type === 'jam') {
+      const c = col(it.color), j = jamState(it, d);
+      rrect(g, it.x, it.y, it.w, it.h, [22, 22, 22, 6]); g.fillStyle = tok('--card'); g.fill();
+      g.save(); g.globalAlpha = 0.12; g.fillStyle = c; g.fill(); g.restore();
+      g.lineWidth = 1.5; g.strokeStyle = c; g.globalAlpha = 0.6; g.stroke(); g.globalAlpha = 1;
+      g.textBaseline = 'middle'; g.font = `700 10.5px ${F.mono}`; g.fillStyle = c; g.fillText('GAME JAM', it.x + 18, it.y + 24);
+      g.font = `800 13px ${F.display}`; g.fillStyle = tok('--bone'); g.fillText(clipText(g, (it.title || '').toUpperCase(), it.w - 110), it.x + 92, it.y + 24);
+      g.font = `600 13px ${F.ui}`; g.fillStyle = tok('--bone-dim'); g.fillText(clipText(g, j.themeText, it.w - 36), it.x + 18, it.y + 48);
+      g.font = `800 40px ${F.display}`; g.fillStyle = j.over ? tok('--bone-dim') : j.soon ? c : tok('--bone'); g.fillText(j.clock, it.x + 18, it.y + 88);
+      rrect(g, it.x + 18, it.y + 116, it.w - 36, 6, 3); g.fillStyle = tok('--hide-3'); g.fill();
+      rrect(g, it.x + 18, it.y + 116, (it.w - 36) * j.gone, 6, 3); g.fillStyle = c; g.fill();
+      g.font = `600 12px ${F.ui}`; g.fillStyle = tok('--bone-dim'); g.fillText(clipText(g, j.scopeText, it.w - 36), it.x + 18, it.y + 140);
+    }
     else if (it.type === 'text') {
       g.font = it.size >= 40 ? `800 ${it.size}px ${F.display}` : `700 ${it.size}px ${F.ui}`;
       g.fillStyle = col(it.color); g.textBaseline = 'middle';
@@ -3755,6 +3821,7 @@ function tplBuild(key) {
       const d2 = col_(380, 0, [['Art pass', {disc: 'art', est: '6h'}], ['Sound + music', {disc: 'audio', est: '3h'}], ['Juice', {disc: 'design', est: '2h', body: 'Screenshake, particles, hit-stop'}]], 210);
       const d3 = col_(760, 0, [['Build + test on a clean PC', {disc: 'tech', est: '1h', prio: 'must'}], ['Page + screenshots', {disc: 'mkt', est: '1h'}]], 210);
       const m = card(760, 420, 'Submit', {kind: 'milestone', due: addDays(2)});
+      items.push({id: uid(), type: 'jam', x: -460, y: 0, w: 360, h: 220, title: 'Game jam', theme: '', end: Math.ceil((Date.now() + 48 * 3600000) / 3600000) * 3600000, people: 1, color: '#ff2a4f'});
       chain(d1); chain(d2); chain([...d3, m]); link(d1[2], d2[0]); link(d2[2], d3[0]);
       wrap(d1, 'Day 1 · Prototype', '#ff2a4f'); wrap(d2, 'Day 2 · Content', '#a66bff'); wrap([...d3, m], 'Submit', '#3dff8b'); break;
     }
@@ -4007,6 +4074,7 @@ window.addEventListener('keydown', e => {
   if (!$('#promptModal').hidden) { if (e.key === 'Escape' && $('#promptModal')._done) $('#promptModal')._done(null); return; }
   if (!$('#versions').hidden) { if (e.key === 'Escape') closeVersions(); return; }
   if (!$('#tlapse').hidden) { if (e.key === 'Escape') closeTimelapse(); return; }
+  if (!$('#jamModal').hidden) { if (e.key === 'Escape') $('#jamModal').hidden = true; return; }
   if (!$('#timeline').hidden) { if (e.key === 'Escape' || (e.shiftKey && e.code === 'KeyG')) { e.preventDefault(); closeTimeline(); } return; }
   if (!$('#searchAll').hidden) return;
   if (ctrl && e.shiftKey && e.code === 'KeyF') { e.preventDefault(); openSearchAll(); return; }
@@ -5287,6 +5355,112 @@ function presentRow() {
   return mk('button', {class: 'tm-btn' + (team.presenting ? ' ok' : ''), type: 'button', title: 'Everyone in this project follows your view until you stop', onclick: () => setPresenting(!team.presenting)},
     icon('eye'), team.presenting ? 'Stop presenting' : 'Present to everyone');
 }
+
+/* ---------- game jams ---------- */
+// A jam clock on the board: the deadline counting down (in the top bar too), the theme or when it's revealed, and a
+// scope check that compares the work left with the time you have. "Cut scope" marks the lowest-priority work
+// as Won't until it fits. Reminders come at 24 hours, 6 hours, 1 hour and 15 minutes left.
+const HOUR_MS = 3600000;
+const pad2_ = n => String(n).padStart(2, '0');
+function jamClock(ms) {
+  if (ms <= 0) return 'Time’s up';
+  const t = Math.floor(ms / 1000), d = Math.floor(t / 86400), h = Math.floor(t % 86400 / 3600), m = Math.floor(t % 3600 / 60), sec = t % 60;
+  return (d ? `${d}d ` : '') + `${pad2_(h)}:${pad2_(m)}:${pad2_(sec)}`;
+}
+// what a jam clock shows right now, for the board it's on
+function jamState(it, d = doc) {
+  const now = Date.now(), left = it.end - now, over = left <= 0, soon = !over && left < 6 * HOUR_MS;
+  const start = it.reveal && it.reveal < it.end ? it.reveal : it.end - 48 * HOUR_MS;
+  const gone = clamp((now - start) / Math.max(1, it.end - start), 0, 1);
+  const themeText = it.reveal && now < it.reveal ? `Theme reveal in ${jamClock(it.reveal - now)}` : it.theme ? `Theme: ${it.theme}` : 'Theme: fill it in once it’s out';
+  // work left: estimates in hours (a card with none counts as an hour), Could work kept apart
+  const hrs = n => (n.est ? estDays(n.est) * 8 : 1), work = d.items.filter(n => isWork(n) && n.status !== 'done');
+  const core = work.filter(n => n.prio !== 'could').reduce((a, n) => a + hrs(n), 0), could = work.filter(n => n.prio === 'could').reduce((a, n) => a + hrs(n), 0);
+  const have = Math.max(0, left / HOUR_MS) * (it.people || 1) * 0.6;  // about 60% of the time, with sleep and breaks
+  const r = x => (x < 10 ? Math.round(x * 2) / 2 : Math.round(x));
+  let scope = 'ok', scopeText;
+  if (over) scopeText = 'The jam is over. Ship it!';
+  else if (!work.length) scopeText = 'No tasks left. Polish, or add the next one.';
+  else if (core > have) { scope = 'bad'; scopeText = `Over by ${r(core - have)} h even without Could work: cut something`; }
+  else if (core + could > have) { scope = 'bad'; scopeText = `${r(core)} h of must-do work fits, but Could work doesn’t: cut ${r(core + could - have)} h`; }
+  else scopeText = `On track: ${r(core + could)} h of work, about ${r(have)} h to do it`;
+  return {left, over, soon, gone, clock: over ? 'Time’s up' : jamClock(left), themeText, scope, scopeText, have};
+}
+function jamPaint(el, it) {
+  const j = jamState(it);
+  el.classList.toggle('over', j.over); el.classList.toggle('soon', j.soon);
+  const set = (q, v) => { const e = el.querySelector(q); if (e.textContent !== v) e.textContent = v; };
+  set('.j-name', it.title || 'Untitled jam');
+  set('.j-theme', j.themeText);
+  set('.j-time b', j.clock); set('.j-time span', j.over ? '' : 'left');
+  el.querySelector('.j-bar i').style.width = Math.round(j.gone * 100) + '%';
+  const sc = el.querySelector('.j-scope'); sc.className = 'j-scope ' + j.scope; set('.j-scope', j.scopeText);
+}
+function addJam(w) {
+  if (blocked()) return;
+  const it = {id: uid(), type: 'jam', x: rd(w.x - 180), y: rd(w.y - 100), w: 360, h: 220, title: 'Game jam', theme: '', end: Math.ceil((Date.now() + 48 * HOUR_MS) / HOUR_MS) * HOUR_MS,
+    people: board.team ? Math.max(1, team.members.length) : 1, color: '#ff2a4f'};
+  doc.items.push(it); sel.clear(); sel.add(it.id); refresh(); commit();
+  editJam(it);
+}
+// <input type="datetime-local"> speaks local time without a zone
+const localInput = t => { if (!t) return ''; const d = new Date(t); return `${d.getFullYear()}-${pad2_(d.getMonth() + 1)}-${pad2_(d.getDate())}T${pad2_(d.getHours())}:${pad2_(d.getMinutes())}`; };
+function editJam(it) {
+  if (blocked()) return;
+  const f = $('#jamForm');
+  f.jamname.value = it.title || ''; f.end.value = localInput(it.end); f.reveal.value = localInput(it.reveal); f.theme.value = it.theme || ''; f.people.value = it.people || 1;
+  f.dataset.id = it.id;
+  $('#jamModal').hidden = false;
+  setTimeout(() => f.jamname.focus(), 30);
+}
+$('#jamForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const f = e.target, it = idx.get(f.dataset.id);
+  $('#jamModal').hidden = true;
+  if (!it || blocked()) return;
+  const end = new Date(f.end.value).getTime(), reveal = f.reveal.value ? new Date(f.reveal.value).getTime() : 0;
+  if (!(end > 1.5e12)) { toast('Give the jam a deadline.'); return; }
+  Object.assign(it, {title: f.jamname.value.trim().slice(0, 80), end, theme: f.theme.value.trim().slice(0, 120), people: clamp(Math.round(Number(f.people.value) || 1), 1, 50)});
+  if (reveal > 1.5e12) it.reveal = reveal; else delete it.reveal;
+  jamTold.clear();
+  refresh(); commit();
+});
+$('#jmCancel').onclick = () => { $('#jamModal').hidden = true; };
+$('#jamModal').addEventListener('click', e => { if (e.target.id === 'jamModal') $('#jamModal').hidden = true; });
+// cutting scope: Could first, then work with no priority, then Should; Must work is never cut for you
+function cutScope(jam) {
+  if (blocked()) return;
+  const hrs = n => (n.est ? estDays(n.est) * 8 : 1), rank = n => (n.prio === 'could' ? 0 : !n.prio ? 1 : n.prio === 'should' ? 2 : 9);
+  const cands = doc.items.filter(n => isWork(n) && n.status !== 'done' && rank(n) < 9).sort((a, b) => rank(a) - rank(b) || hrs(b) - hrs(a));
+  if (!cands.length) { toast('Nothing to cut: everything left is Must work.'); return; }
+  const j = jamState(jam), need = doc.items.filter(n => isWork(n) && n.status !== 'done').reduce((a, n) => a + hrs(n), 0) - j.have;
+  const fit = [];
+  for (let got = 0; got < need && fit.length < cands.length;) { fit.push(cands[fit.length]); got += hrs(fit[fit.length - 1]); }
+  const cut = list => { for (const n of list) n.prio = 'wont'; refresh(); commit(); toast(`Cut ${list.length} card${list.length === 1 ? '' : 's'} (marked Won't). Undo with Ctrl+Z.`); };
+  const E = [{head: 'Cut scope'}];
+  if (need > 0 && fit.length) E.push({label: `Cut until it fits: ${fit.length} card${fit.length === 1 ? '' : 's'}`, icon: 'trash', danger: true, run: () => cut(fit)}, '-');
+  for (const n of cands.slice(0, 12)) E.push({label: `${n.title || 'Untitled'} · ${PRIO_LABEL[n.prio] || 'no priority'}`, kb: fmtDays(estDays(n.est || '1h')), run: () => cut([n])});
+  showMenu(lastMenuPt.x, lastMenuPt.y, E);
+}
+// every second: the clocks, the top bar's countdown, and reminders as the deadline nears
+const jamTold = new Set();
+function jamTick() {
+  const jams = doc.items.filter(i => i.type === 'jam');
+  for (const it of jams) { const el = els.get(it.id); if (el) jamPaint(el, it); }
+  const now = Date.now(), next = jams.filter(j => j.end > now - HOUR_MS).sort((a, b) => a.end - b.end)[0], chip = $('#jamChip');
+  chip.hidden = !next || uiOff;
+  if (next) {
+    const left = next.end - now;
+    chip.textContent = left > 0 ? `⏱ ${jamClock(left)}` : '⏱ Time’s up';
+    chip.classList.toggle('soon', left > 0 && left < 6 * HOUR_MS); chip.classList.toggle('over', left <= 0);
+    chip.onclick = () => flyTo(next);
+    for (const [ms, msg] of [[24 * HOUR_MS, '24 hours left'], [6 * HOUR_MS, '6 hours left: start cutting scope'], [HOUR_MS, '1 hour left: build, test on a clean PC, then submit'], [15 * 60000, '15 minutes left: submit now']]) {
+      const key = next.id + ':' + ms;
+      if (left > 0 && left <= ms && !jamTold.has(key)) { jamTold.add(key); if (left > ms - 120000) toast(`${next.title || 'Jam'}: ${msg}`, 6000); }
+    }
+  }
+}
+setInterval(jamTick, 1000);
 
 /* ---------- timelapse ---------- */
 // A board's history as a video. Team projects use their version history; a board on this computer uses the
