@@ -604,6 +604,15 @@ select.tm-in{padding-right:6px;cursor:pointer}
 .tm-checks{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:8px}
 .tm-check{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--bone-dim);cursor:pointer}
 .tm-check input{accent-color:var(--fang);margin:0}
+.tx-sheet{width:min(780px,100%);max-height:calc(100% - 16px);display:flex;flex-direction:column;padding:0;overflow:hidden}
+.tx-body{flex:1;min-height:0;overflow:auto;padding:16px 24px 24px;display:flex;flex-direction:column;gap:14px}
+.tx-body p{margin:0}
+.tx-view{background:#000;border-radius:12px;overflow:hidden;border:1px solid var(--line-2);display:grid;place-items:center}
+.tx-view canvas,.tx-view video{display:block;max-width:100%;max-height:46vh;width:auto;height:auto}
+.tx-row{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center}
+.tx-row b{font:700 11px var(--font-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--bone-faint);min-width:70px}
+.tx-prog{height:6px;border-radius:99px;background:var(--hide-3);overflow:hidden}
+.tx-prog i{display:block;height:100%;width:0;background:var(--fang)}
 .vr-sheet{width:min(720px,100%);height:min(640px,calc(100% - 16px));max-height:none;display:flex;flex-direction:column;padding:0;overflow:hidden}
 .vr-body{flex:1;min-height:0;overflow:auto;padding:16px 24px 24px;display:flex;flex-direction:column;gap:14px}
 .vr-body p{margin:0}
@@ -962,6 +971,13 @@ html.watching #tools .tool:not([data-tool=select]):not([data-tool=hand]),html.wa
   <div class="sheet vr-sheet" role="dialog" aria-modal="true" aria-labelledby="vrTitle">
     <div class="st-head"><h2 id="vrTitle">Version history<em>.</em></h2><button id="vrClose" class="ib" aria-label="Close version history" title="Close (Esc)"><svg viewBox="0 0 20 20"><path d="M5 5l10 10M15 5 5 15"/></svg></button></div>
     <div id="vrBody" class="vr-body"></div>
+  </div>
+</div>
+
+<div id="tlapse" class="modal" hidden>
+  <div class="sheet tx-sheet" role="dialog" aria-modal="true" aria-labelledby="txTitle">
+    <div class="st-head"><h2 id="txTitle">Timelapse<em>.</em></h2><button id="txClose" class="ib" aria-label="Close timelapse" title="Close (Esc)"><svg viewBox="0 0 20 20"><path d="M5 5l10 10M15 5 5 15"/></svg></button></div>
+    <div id="txBody" class="tx-body"></div>
   </div>
 </div>
 
@@ -1815,6 +1831,7 @@ async function persist() {
     lastAssetList = [...used];
     const now = Date.now();
     await store.set('board:' + board.id, {id: board.id, name: board.name, locked: !!board.locked, cam: {...cam}, doc, assetIds: lastAssetList, updated: now});
+    keepHistory();
     const ent = boards.find(b => b.id === board.id);
     if (ent) { ent.name = board.name; ent.updated = now; } else boards.push({id: board.id, name: board.name, updated: now});
     await store.set('boards', boards);
@@ -3145,12 +3162,12 @@ function ago(t) {
 }
 function boardsMenu() {
   const E = [{head: board.team ? 'Team project' : 'Boards'}];
-  if (board.team) E.push({label: board.name, kb: 'live', cur: true, run: () => setTeamPanel(true)}, {label: 'Version history…', icon: 'clock', run: openVersions}, {label: 'Leave and go back to my boards', icon: 'arrow', run: () => leaveProject()}, {head: 'My boards'});
+  if (board.team) E.push({label: board.name, kb: 'live', cur: true, run: () => setTeamPanel(true)}, {label: 'Version history…', icon: 'clock', run: openVersions}, {label: 'Make a timelapse…', icon: 'image', run: openTimelapse}, {label: 'Leave and go back to my boards', icon: 'arrow', run: () => leaveProject()}, {head: 'My boards'});
   const list = boards.slice(); if (!board.team && !list.find(b => b.id === board.id)) list.push({id: board.id, name: board.name, updated: Date.now()});
   list.sort((a, b) => b.updated - a.updated).forEach(b => E.push({label: b.id === board.id ? board.name : b.name, kb: b.id === board.id ? 'open' : ago(b.updated), cur: b.id === board.id, run: () => switchBoard(b.id)}));
   E.push('-', {label: 'New empty board', icon: 'plus', run: () => newBoard('Untitled board', false)}, {label: 'New sample roadmap', icon: 'card', run: () => newBoard('Game Roadmap', true)},
     {label: 'Import from Trello, Jira or CSV…', icon: 'arrow', run: () => { if (!blocked()) $('#fileImport').click(); }},
-    ...(board.team ? [] : ['-', {label: 'Clear this board', run: clearBoard}, {label: 'Delete this board', danger: true, icon: 'trash', run: deleteBoard}]));
+    ...(board.team ? [] : ['-', {label: 'Make a timelapse…', icon: 'image', run: openTimelapse}, {label: 'Clear this board', run: clearBoard}, {label: 'Delete this board', danger: true, icon: 'trash', run: deleteBoard}]));
   menuAt($('#boardsBtn'), E);
 }
 function exportMenu() {
@@ -3235,7 +3252,11 @@ async function clearBoard() {
 async function deleteBoard() {
   if (!(await ask('Delete this board?', `"${board.name}" and its images will be permanently removed from this computer. Save a file first if you want a copy.`, 'Delete board'))) return;
   const id = board.id, ids = lastAssetList.slice();
-  try { await store.del('board:' + id); for (const a of ids) await store.del(`asset:${id}:${a}`); } catch (e) {}
+  try {
+    await store.del('board:' + id); for (const a of ids) await store.del(`asset:${id}:${a}`);
+    for (const at of (await store.get('histidx:' + id)) || []) await store.del(`hist:${id}:${at}`);
+    await store.del('histidx:' + id);
+  } catch (e) {}
   boards = boards.filter(b => b.id !== id);
   try { await store.set('boards', boards); } catch (e) {}
   const next = boards.slice().sort((a, b) => b.updated - a.updated)[0];
@@ -3985,6 +4006,7 @@ window.addEventListener('keydown', e => {
   if (!$('#settings').hidden) { if (e.key === 'Escape' || (ctrl && e.key === ',')) { e.preventDefault(); closeSettings(); } return; }
   if (!$('#promptModal').hidden) { if (e.key === 'Escape' && $('#promptModal')._done) $('#promptModal')._done(null); return; }
   if (!$('#versions').hidden) { if (e.key === 'Escape') closeVersions(); return; }
+  if (!$('#tlapse').hidden) { if (e.key === 'Escape') closeTimelapse(); return; }
   if (!$('#timeline').hidden) { if (e.key === 'Escape' || (e.shiftKey && e.code === 'KeyG')) { e.preventDefault(); closeTimeline(); } return; }
   if (!$('#searchAll').hidden) return;
   if (ctrl && e.shiftKey && e.code === 'KeyF') { e.preventDefault(); openSearchAll(); return; }
@@ -5264,6 +5286,197 @@ function presentRow() {
   if (!team.project || team.watch || teamReadOnly()) return null;  // viewers can follow, not present
   return mk('button', {class: 'tm-btn' + (team.presenting ? ' ok' : ''), type: 'button', title: 'Everyone in this project follows your view until you stop', onclick: () => setPresenting(!team.presenting)},
     icon('eye'), team.presenting ? 'Stop presenting' : 'Present to everyone');
+}
+
+/* ---------- timelapse ---------- */
+// A board's history as a video. Team projects use their version history; a board on this computer uses the
+// snapshots it keeps while you work (one every 20 minutes of editing, the last 60). The camera follows the board
+// as it grows, between a title and a "Made with Venom Board" ending. It records in real time in the window, then
+// saves as MP4 where the browser can, or WebM.
+const HIST_EVERY = 1200000, HIST_KEEP = 60;
+async function keepHistory() {
+  if (!storageOK || board.team) return;
+  try {
+    const id = board.id, list = (await store.get('histidx:' + id)) || [], last = list[list.length - 1];
+    if (last && Date.now() - last < HIST_EVERY) return;
+    const snap = JSON.stringify(doc);
+    if (last && (await store.get(`hist:${id}:${last}`)) === snap) return;
+    const at = Date.now();
+    await store.set(`hist:${id}:${at}`, snap);
+    list.push(at);
+    while (list.length > HIST_KEEP) await store.del(`hist:${id}:${list.shift()}`);
+    await store.set('histidx:' + id, list);
+  } catch (e) { /* history is a nicety; the board itself is saved */ }
+}
+const asDoc = d => Object.fromEntries(COLS.map(k => [k, Array.isArray(d && d[k]) ? d[k] : []]));
+// the moments a timelapse shows, oldest first, ending with the board as it is now
+async function timelapseMoments(say) {
+  const out = [];
+  if (board.team && team.project) {
+    const items = ((await api(`/api/projects/${team.project.id}/versions`)).items || []).slice().reverse();
+    for (let i = 0; i < items.length; i++) {
+      say(`Loading version ${i + 1} of ${items.length}…`, i / items.length);
+      try { out.push({at: items[i].createdAt, doc: asDoc((await api(`/api/projects/${team.project.id}/versions/${items[i].id}`)).doc)}); } catch (e) { /* skipped */ }
+    }
+  } else {
+    for (const at of (await store.get('histidx:' + board.id).catch(() => null)) || []) {
+      try { const snap = await store.get(`hist:${board.id}:${at}`); if (snap) out.push({at, doc: asDoc(JSON.parse(snap))}); } catch (e) { /* skipped */ }
+    }
+  }
+  out.push({at: Date.now(), doc});
+  return out;
+}
+const TX_FORMATS = [['wide', 'Landscape', 1920, 1080], ['square', 'Square', 1080, 1080], ['tall', 'Vertical', 1080, 1920]];
+const TX_SPEEDS = [['fast', 'Fast', 350], ['normal', 'Normal', 650], ['slow', 'Slow', 1100]];
+const tx = {format: 'wide', speed: 'normal', busy: false, stop: false, url: ''};
+function openTimelapse() {
+  hideMenus();
+  if (editing) finishEdit();
+  $('#tlapse').hidden = false;
+  renderTimelapse();
+}
+function closeTimelapse() {
+  if (tx.busy) tx.stop = true;
+  $('#tlapse').hidden = true;
+  if (tx.url) { URL.revokeObjectURL(tx.url); tx.url = ''; }
+}
+$('#txClose').onclick = closeTimelapse;
+$('#tlapse').addEventListener('click', e => { if (e.target.id === 'tlapse') closeTimelapse(); });
+function renderTimelapse(done) {
+  const body = $('#txBody');
+  const what = board.team ? 'its version history (a version is kept before each burst of editing)' : 'the snapshots this computer keeps while you work (one every 20 minutes of editing)';
+  const go = mk('button', {class: 'tm-btn ok', type: 'button', onclick: () => makeTimelapse()}, 'Make the video');
+  body.replaceChildren(
+    mk('p', {class: 'vr-lead'}, `Watch “${board.name}” come together: a video made from ${what}, ending on the board as it is now. Post it on #screenshotsaturday, TikTok or YouTube Shorts.`),
+    mk('div', {class: 'tx-row'}, mk('b', {}, 'Shape'), stSeg('Shape', TX_FORMATS.map(f => [f[0], f[1]]), tx.format, v => { tx.format = v; renderTimelapse(done); })),
+    mk('div', {class: 'tx-row'}, mk('b', {}, 'Speed'), stSeg('Speed', TX_SPEEDS.map(f => [f[0], f[1]]), tx.speed, v => { tx.speed = v; renderTimelapse(done); })),
+    done ? mk('div', {class: 'tx-view'}, mk('video', {src: done.url, controls: true, autoplay: true, loop: true, muted: true, playsinline: true})) : null,
+    mk('div', {class: 'tm-actions'}, go, done ? mk('button', {class: 'tm-btn', type: 'button', onclick: () => saveFile(`${slug(board.name)}-timelapse.${done.ext}`, done.blob, [{description: 'Video', accept: {[done.blob.type]: ['.' + done.ext]}}])}, 'Save video') : null));
+}
+async function makeTimelapse() {
+  if (tx.busy) return;
+  tx.busy = true; tx.stop = false;
+  const body = $('#txBody'), status = mk('p', {class: 'vr-lead', role: 'status'}, 'Gathering the board’s history…'), bar = mk('i');
+  const canvas = mk('canvas'), stopBtn = mk('button', {class: 'tm-btn', type: 'button', onclick: () => { tx.stop = true; }}, 'Stop');
+  body.replaceChildren(status, mk('div', {class: 'tx-prog'}, bar), mk('div', {class: 'tx-view'}, canvas), mk('div', {class: 'tm-actions'}, stopBtn));
+  const say = (t, f) => { status.textContent = t; if (f !== undefined) bar.style.width = Math.round(f * 100) + '%'; };
+  try {
+    const moments = await timelapseMoments(say);
+    if (moments.length < 2) {
+      tx.busy = false;
+      body.replaceChildren(mk('p', {class: 'vr-lead'}, board.team ? 'There’s no version history yet. Versions are kept before each burst of editing; come back after some more work.' : 'There’s nothing to show yet: this board keeps a snapshot every 20 minutes of editing. Come back after some more work.'),
+        mk('div', {class: 'tm-actions'}, mk('button', {class: 'tm-btn', type: 'button', onclick: closeTimelapse}, 'Close')));
+      return;
+    }
+    const blob = await recordTimelapse(moments, canvas, say);
+    tx.busy = false;
+    if (!blob) { renderTimelapse(); return; }
+    if (tx.url) URL.revokeObjectURL(tx.url);
+    tx.url = URL.createObjectURL(blob);
+    renderTimelapse({url: tx.url, blob, ext: blob.type.includes('mp4') ? 'mp4' : 'webm'});
+  } catch (e) { tx.busy = false; toast(e.message || 'The video couldn’t be made.', 5000); renderTimelapse(); }
+}
+async function recordTimelapse(moments, canvas, say) {
+  const [, , W, H] = TX_FORMATS.find(f => f[0] === tx.format), per = TX_SPEEDS.find(f => f[0] === tx.speed)[2], FPS = 30;
+  const type = ['video/mp4;codecs=avc1.640028', 'video/mp4;codecs=avc1', 'video/mp4', 'video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'].find(t => window.MediaRecorder && MediaRecorder.isTypeSupported(t));
+  if (!type || !canvas.captureStream) throw new Error('This browser can’t record video. Try the desktop app, Chrome or Edge.');
+  canvas.width = W; canvas.height = H;
+  const g = canvas.getContext('2d'), {tok, F} = drawTokens(), n = moments.length;
+  // what the board covers up to each moment, so the camera only ever widens as it grows
+  const infos = moments.map(m => drawInfo(m.doc));
+  let seen = null;
+  const boxes = moments.map((m, i) => { const b = unionBox([...m.doc.items, ...m.doc.links, ...m.doc.strokes].map(o => drawBox(o, infos[i]))); if (b) seen = seen ? unionBox([seen, b]) : b; return seen; });
+  const first = boxes.findIndex(Boolean);
+  if (first < 0) throw new Error('The board has been empty the whole time.');
+  for (let i = 0; i < first; i++) boxes[i] = boxes[first];
+  const PAD = 0.08, cy = H * 0.45;
+  const cams = boxes.map(b => ({x: b.x + b.w / 2, y: b.y + b.h / 2, s: Math.min(W / (b.w * (1 + PAD * 2)), (H * 0.84) / (b.h * (1 + PAD * 2)), 2)}));
+  const imgs = new Map();
+  // each moment is drawn once into a picture, then moved and faded frame by frame
+  async function bake(i) {
+    const b = boxes[i], area = {x: b.x - b.w * PAD, y: b.y - b.h * PAD, w: b.w * (1 + PAD * 2), h: b.h * (1 + PAD * 2)};
+    const s = Math.min(cams[i].s * 1.15, 6000 / Math.max(area.w, area.h)), cv = document.createElement('canvas');
+    cv.width = Math.max(1, Math.ceil(area.w * s)); cv.height = Math.max(1, Math.ceil(area.h * s));
+    const c = cv.getContext('2d'); c.scale(s, s); c.translate(-area.x, -area.y);
+    paintBoard(c, moments[i].doc, infos[i], null, await boardImages(moments[i].doc, null, imgs), tok, F, area);
+    return {cv, area};
+  }
+  const stamp = t => new Date(t).toLocaleString(undefined, {day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'});
+  const fs = Math.round(Math.min(W, H) * 0.024), edge = Math.round(Math.min(W, H) * 0.045);
+  function frame(a, b, cam, fade, at) {
+    g.setTransform(1, 0, 0, 1, 0, 0); g.globalAlpha = 1; g.fillStyle = tok('--void'); g.fillRect(0, 0, W, H);
+    for (const [pic, alpha] of [[a, 1], [b, fade]]) {
+      if (!pic || alpha <= 0) continue;
+      g.globalAlpha = alpha; g.setTransform(cam.s, 0, 0, cam.s, W / 2 - cam.x * cam.s, cy - cam.y * cam.s);
+      g.drawImage(pic.cv, pic.area.x, pic.area.y, pic.area.w, pic.area.h);
+    }
+    g.setTransform(1, 0, 0, 1, 0, 0); g.globalAlpha = 1;
+    const band = fs * 5, shade = g.createLinearGradient(0, H - band, 0, H);
+    shade.addColorStop(0, 'rgba(6,6,9,0)'); shade.addColorStop(1, 'rgba(6,6,9,.88)');
+    g.fillStyle = shade; g.fillRect(0, H - band, W, band);
+    g.font = `700 ${fs}px ${F.mono}`; g.fillStyle = tok('--bone-dim'); g.textAlign = 'left'; g.textBaseline = 'middle';
+    g.fillText(stamp(at), edge, H - edge);
+    drawWordmark(g, W - edge, H - edge, Math.round(fs * 1.2), tok, F);
+  }
+  // the opening title, and the ending laid over the finished board
+  function card(alpha, end) {
+    g.setTransform(1, 0, 0, 1, 0, 0); g.globalAlpha = alpha;
+    if (!end) { g.fillStyle = tok('--void'); g.fillRect(0, 0, W, H); }
+    else { g.fillStyle = 'rgba(6,6,9,.78)'; g.fillRect(0, 0, W, H); }
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    const big = Math.round(Math.min(W, H) * 0.075);
+    if (end) {
+      g.font = `700 ${Math.round(big * 0.32)}px ${F.mono}`; g.fillStyle = tok('--bone-dim');
+      if ('letterSpacing' in g) g.letterSpacing = '4px';
+      g.fillText('MADE WITH', W / 2, H / 2 - big * 0.95);
+      if ('letterSpacing' in g) g.letterSpacing = '0px';
+      g.font = `900 ${big}px ${F.display}`;
+      const wv = g.measureText('VENOM/BOARD').width; drawWordmark(g, W / 2 + wv / 2, H / 2, big, tok, F); g.textAlign = 'center';
+      g.font = `700 ${Math.round(big * 0.34)}px ${F.ui}`; g.fillStyle = tok('--bone');
+      g.fillText('venomboard.com · free for game developers', W / 2, H / 2 + big * 1.05);
+    } else {
+      g.font = `700 ${Math.round(big * 0.3)}px ${F.mono}`; g.fillStyle = tok('--fang');
+      if ('letterSpacing' in g) g.letterSpacing = '4px';
+      g.fillText('TIMELAPSE', W / 2, H / 2 - big * 1.1);
+      if ('letterSpacing' in g) g.letterSpacing = '0px';
+      g.font = `800 ${big}px ${F.display}`; g.fillStyle = tok('--bone');
+      g.fillText(clipText(g, board.name || 'Untitled board', W * 0.86), W / 2, H / 2);
+      const d = t => new Date(t).toLocaleDateString(undefined, {day: 'numeric', month: 'short', year: 'numeric'});
+      g.font = `600 ${Math.round(big * 0.32)}px ${F.ui}`; g.fillStyle = tok('--bone-dim');
+      g.fillText(`${d(moments[0].at)} to ${d(moments[n - 1].at)} · ${n} moments`, W / 2, H / 2 + big * 1.05);
+    }
+    g.globalAlpha = 1; g.textAlign = 'left';
+  }
+  const ease = t => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
+  const between = (a, b, t) => ({x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t, s: Math.exp(Math.log(a.s) + (Math.log(b.s) - Math.log(a.s)) * t)});
+  const total = 2100 + (n - 1) * per + 3000;
+  let spent = 0;
+  const play = (dur, draw) => new Promise(res => {
+    const t0 = performance.now();
+    const step = now => {
+      const t = tx.stop ? 1 : Math.min(1, (now - t0) / dur);
+      draw(t); say(`Recording… keep this window open (${Math.ceil((total - spent - t * dur) / 1000)} s left)`, (spent + t * dur) / total);
+      if (t < 1) requestAnimationFrame(step); else { spent += dur; res(); }
+    };
+    requestAnimationFrame(step);
+  });
+  const rec = new MediaRecorder(canvas.captureStream(FPS), {mimeType: type, videoBitsPerSecond: Math.round(W * H * FPS * 0.13)});
+  const chunks = [], stopped = new Promise(r => { rec.onstop = r; });
+  rec.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
+  say('Getting ready…', 0);
+  let a = await bake(0);
+  card(1); rec.start(250);
+  await play(1600, () => card(1));
+  await play(500, t => { frame(a, null, cams[0], 0, moments[0].at); card(1 - t); });
+  for (let i = 0; i < n - 1 && !tx.stop; i++) {
+    rec.pause(); const b = await bake(i + 1); rec.resume();  // drawing a moment takes as long as it takes; the video doesn't wait
+    await play(per, t => frame(a, b, between(cams[i], cams[i + 1], ease(t)), Math.min(1, t * 1.6), t < 0.5 ? moments[i].at : moments[i + 1].at));
+    a = b;
+  }
+  await play(1200, () => frame(a, null, cams[n - 1], 0, moments[n - 1].at));
+  await play(1800, t => { frame(a, null, cams[n - 1], 0, moments[n - 1].at); card(Math.min(1, t * 2.2), true); });
+  rec.stop(); await stopped;
+  return tx.stop ? null : new Blob(chunks, {type: type.split(';')[0]});
 }
 
 /* ---------- version history ---------- */
