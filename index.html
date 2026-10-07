@@ -3707,6 +3707,7 @@ async function refreshMe(quiet) {
     team.user = me.user; team.teams = me.teams; team.invites = me.invites;
     team.sessionsOthers = me.sessions ? me.sessions.others : 0;
     team.colors = Array.isArray(me.colors) ? me.colors.filter(okColor) : [];
+    team.limits = me.limits && typeof me.limits === 'object' ? me.limits : null;
     if (!team.teams.some(t => t.id === team.teamId)) team.teamId = team.teams[0] ? team.teams[0].id : '';
     team.detail = team.teamId ? await api('/api/teams/' + team.teamId).catch(() => null) : null;
   } catch (e) { if (e.status === 401) team.user = null; else if (!quiet) toast(e.message); }
@@ -3833,6 +3834,7 @@ function teamPicker() {
     ...team.teams.map(t => mk('option', {value: t.id, selected: t.id === team.teamId}, `${t.name} · ${ROLE_NAME[t.role]}`)));
   return section('Team', mk('div', {class: 'tm-inline'}, select, mk('button', {class: 'tm-btn', type: 'button', onclick: () => { team.ui.newTeam = !team.ui.newTeam; renderTeam(); }}, 'New team')), form);
 }
+const fmtMB = b => (b / 1048576).toFixed(b < 10485760 ? 1 : 0) + ' MB';
 function projectsSection() {
   const d = team.detail, canEdit = ROLE_RANK[d.role] >= ROLE_RANK.editor, canDelete = ROLE_RANK[d.role] >= ROLE_RANK.admin;
   const rows = d.projects.map(p => mk('div', {class: 'tm-row' + (team.project && team.project.id === p.id ? ' on' : '')},
@@ -3848,12 +3850,17 @@ function projectsSection() {
     team.ui.newProject = false;
     teamAction(async () => { const r = await api(`/api/teams/${d.team.id}/projects`, 'POST', {name}); teamOpen(r.project.id); });
   }}, nameIn, mk('button', {class: 'tm-btn ok', type: 'submit'}, 'Create'));
-  return section('Shared projects',
+  // teams have a project allowance and image space (set by the server), shown so nobody hits them by surprise
+  const lim = d.limits && Number.isFinite(d.limits.projects) ? d.limits : null, full = !!lim && d.projects.length >= lim.projects;
+  const fullTip = full ? `This team has all ${lim.projects} of its projects. Delete one you've finished with to start another.` : null;
+  const space = lim && d.usage && Number.isFinite(d.usage.storageBytes) ? mk('p', {class: 'tm-note'}, `Images use ${fmtMB(d.usage.storageBytes)} of this team's ${lim.storageMB} MB.`) : null;
+  return section(lim ? `Shared projects · ${d.projects.length} of ${lim.projects}` : 'Shared projects',
     rows.length ? mk('div', {class: 'tm-list'}, ...rows) : mk('p', {class: 'tm-note'}, canEdit ? 'No projects yet. Start one, or share the board you have open.' : 'No projects yet.'),
     canEdit ? mk('div', {class: 'tm-actions'},
-      mk('button', {class: 'tm-btn', type: 'button', onclick: () => { team.ui.newProject = !team.ui.newProject; renderTeam(); }}, icon('plus'), 'New project'),
-      board.team ? null : mk('button', {class: 'tm-btn', type: 'button', title: 'Copy the board you have open into this team', onclick: () => teamShareBoard(d.team.id)}, icon('arrow'), 'Share this board')) : null,
-    newForm);
+      mk('button', {class: 'tm-btn', type: 'button', disabled: full, title: fullTip, onclick: () => { team.ui.newProject = !team.ui.newProject; renderTeam(); }}, icon('plus'), 'New project'),
+      board.team ? null : mk('button', {class: 'tm-btn', type: 'button', disabled: full, title: fullTip || 'Copy the board you have open into this team', onclick: () => teamShareBoard(d.team.id)}, icon('arrow'), 'Share this board')) : null,
+    full && canEdit ? mk('p', {class: 'tm-note'}, fullTip) : null,
+    newForm, space);
 }
 function membersSection() {
   const d = team.detail, me = team.user.id, myRole = d.role;
@@ -3889,7 +3896,7 @@ function membersSection() {
       mk('div', {class: 'tm-row-main'}, mk('b', {}, i.displayName || i.username || i.email), mk('span', {}, `Invited as ${ROLE_NAME[i.role].toLowerCase()} · waiting`)),
       mk('button', {class: 'tm-link danger', type: 'button', onclick: () => teamAction(() => api(`/api/teams/${d.team.id}/invites/${i.id}`, 'DELETE'), 'Invite cancelled')}, 'Cancel')))));
   } else out.push(mk('p', {class: 'tm-note'}, 'Team admins and the team leader can invite people and change roles.'));
-  return section(`Members · ${d.members.length}`, ...out);
+  return section(d.limits && Number.isFinite(d.limits.members) ? `Members · ${d.members.length} of ${d.limits.members}` : `Members · ${d.members.length}`, ...out);
 }
 
 /* --- live connection --- */
@@ -3962,6 +3969,7 @@ function onLive(m) {
     case 'kicked': case 'deleted': toast(txt(m.message, 200) || 'You left the project.', 4000); leaveProject(); refreshMe(true); break;
     case 'error':
       if (m.code === 'read_only') { team.unacked = []; team.pending.clear(); team.role = 'viewer'; wsSend({t: 'resync'}); toast(txt(m.message, 200)); }
+      else if (m.code === 'too_big') { team.unacked = []; team.pending.clear(); wsSend({t: 'resync'}); toast(txt(m.message, 240), 7000); }
       else if (m.code === 'auth') { toast(txt(m.message, 200), 4000); signOutLocal(); }
       else if (['forbidden', 'not_found', 'full'].includes(m.code)) { toast(txt(m.message, 200), 4000); leaveProject(); }
       else toast(txt(m.message, 200));
@@ -4253,7 +4261,11 @@ function accountPane() {
       })}, 'Sign out everywhere else')),
     stRow('This device', `You stay signed in here until you sign out.`, mk('button', {class: 'tm-btn', type: 'button', onclick: teamSignOut}, 'Sign out')));
 
-  const teams = stGroup('Teams',
+  const L = team.limits, ledCount = team.teams.filter(t => t.role === 'leader').length;
+  const allowanceNote = !L ? null : L.projectsUntilConfirmed != null
+    ? mk('p', {class: 'st-warn'}, `Until you confirm your email you can lead ${L.teamsLed === 1 ? 'one team' : L.teamsLed + ' teams'} and make ${L.projectsUntilConfirmed} shared projects.`)
+    : mk('p', {class: 'tm-note'}, `You lead ${ledCount} of the ${L.teamsLed} teams one account can lead. Each team can have up to ${L.projectsPerTeam} projects, ${L.membersPerTeam} people and ${L.teamStorageMB} MB of images.`);
+  const teams = stGroup('Teams', allowanceNote,
     team.teams.length ? mk('div', {class: 'tm-list'}, ...team.teams.map(t => mk('div', {class: 'tm-row'},
       mk('button', {class: 'tm-row-main tm-open', type: 'button', title: 'Open in the Team panel', onclick: () => { team.teamId = t.id; closeSettings(); setTeamPanel(true); }},
         mk('b', {}, t.name), mk('span', {}, `${ROLE_NAME[t.role] || ''} · ${plural(t.members, 'member')} · ${plural(t.projects, 'project')}`)))))

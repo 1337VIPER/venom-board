@@ -2,6 +2,14 @@
 
 All notable changes to Venom Board are listed here. The project follows [Semantic Versioning](https://semver.org).
 
+## [Unreleased]
+
+### Fair use
+- Accounts, teams and shared projects have allowances, so nobody can fill the service or flood it with spam: how many teams you lead or are in, how many projects and people a team has, how big a shared board can grow, and how much image space a team and its leader use
+- Until you confirm your email, your account can lead one team and make a few shared projects
+- The Team panel shows how many of a team's projects and places are used and how much image space is left, and Settings shows your allowance
+- A change that would push a shared board past its size limit is undone with a clear message, instead of leaving your copy out of step with your team's
+
 ## [1.1.2] - 2026-10-07
 
 ### Settings
