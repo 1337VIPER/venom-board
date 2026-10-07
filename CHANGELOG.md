@@ -9,7 +9,7 @@ All notable changes to Venom Board are listed here. The project follows [Semanti
 - **Comments and @mentions** on cards, in a panel that follows the selected card. Suggestions appear as you type `@`; only authors edit their comments, and authors or team admins delete them. Viewers can comment
 - **Notifications**: a bell in the top bar for mentions and assignments; clicking one opens the project at the card. Mentions can also come by email, and a morning email lists your tasks due today or tomorrow, or late. Both can be turned off in the new **Settings → Notifications** page, or from a link in the email
 - **Activity feed** in the Team panel: what changed, by whom, gathered into readable lines
-- **Follow** a teammate's view by clicking their avatar; **Present to everyone** makes the whole project follow you
+- **Follow** a teammate's view by clicking their avatar; **Present to everyone** (editors and up) makes the whole project follow you. Step away from a presenter and they won't take your view again for ten minutes
 - **Version history**: automatic versions before each burst of editing (hourly for two days, daily for a month) and named versions. Restore one for everyone (the board as it was is kept first) or open it as a separate copy
 - **View-only links**: share a board with anyone, live and without an account. Watchers can't see who's there or change anything, and can report a board; admins can replace or turn off the link at any time
 - **Discord**: a team admin can post finished tasks, reached milestones, comments, restores and new members to a channel
@@ -27,6 +27,8 @@ All notable changes to Venom Board are listed here. The project follows [Semanti
 
 ### Desktop
 - **macOS** (Apple silicon and Intel) and **Linux** (AppImage) apps. Linux updates itself like Windows; macOS shows when a new version is out
+- Each system only installs updates made for it: the signature check also confirms the file is a Windows installer or an AppImage
+- Comments and notifications show the writer's @username next to their name
 
 ### Fair use
 - Accounts, teams and shared projects have allowances, so nobody can fill the service or flood it with spam: how many teams you lead or are in, how many projects and people a team has, how big a shared board can grow, and how much image space a team and its leader use

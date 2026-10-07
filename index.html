@@ -1165,7 +1165,7 @@ const screenPt = e => ({x: e.clientX - stageRect.left, y: e.clientY - stageRect.
 const viewCenter = () => toWorld({x: stageRect.width / 2, y: stageRect.height / 2});
 let camSaveT = 0;
 function applyCam() {
-  if (follow.cid && !following) stopFollowing();  // moving the board yourself stops following
+  if (follow.cid && !following) stopFollowing(true);  // moving the board yourself stops following
   world.style.transform = `translate(${cam.x}px, ${cam.y}px) scale(${cam.z})`;
   let gs = 24 * cam.z; while (gs < 14) gs *= 5; while (gs > 120) gs /= 5;
   stage.style.setProperty('--gs', gs + 'px');
@@ -3880,7 +3880,7 @@ window.addEventListener('keydown', e => {
   if (e.shiftKey && e.code === 'Digit2') { e.preventDefault(); if (sel.size) fitTo(selObjs()); return; }
   switch (k) {
     case 'Delete': case 'Backspace': e.preventDefault(); deleteSelection(); return;
-    case 'Escape': hideMenus(); if (follow.cid) { stopFollowing(); return; } if (drag) cancelDrag(); else if (trace) { trace = null; refresh(); } else if (sel.size) { sel.clear(); refresh(); } else if (tool !== 'select') setTool('select'); return;
+    case 'Escape': hideMenus(); if (follow.cid) { stopFollowing(true); return; } if (drag) cancelDrag(); else if (trace) { trace = null; refresh(); } else if (sel.size) { sel.clear(); refresh(); } else if (tool !== 'select') setTool('select'); return;
     case 'Tab': if (sel.size === 1 && selObjs()[0] && selObjs()[0].type === 'node') { e.preventDefault(); addNextCard(); } return;
     case 'Enter': {
       const o = sel.size === 1 ? selObjs()[0] : null; if (!o) return; e.preventDefault();
@@ -4203,7 +4203,7 @@ function liveCard() {
   return mk('div', {class: 'tm-live ' + team.status},
     mk('div', {class: 'tm-live-top'}, mk('i', {class: 'dot'}), mk('b', {}, team.project.name || 'Team project'), mk('span', {class: 'tm-role'}, ROLE_NAME[team.role] || '')),
     mk('p', {}, status),
-    people.length ? mk('div', {class: 'tm-people'}, ...people.map(p => mk('button', {class: 'tm-person', type: 'button', title: follow.cid === p.cid ? 'Stop following' : 'Follow their view', onclick: () => follow.cid === p.cid ? stopFollowing() : startFollowing(p.cid)}, avatar(p), p.name, follow.cid === p.cid ? mk('em', {}, 'following') : null))) : null,
+    people.length ? mk('div', {class: 'tm-people'}, ...people.map(p => mk('button', {class: 'tm-person', type: 'button', title: follow.cid === p.cid ? 'Stop following' : 'Follow their view', onclick: () => follow.cid === p.cid ? stopFollowing(true) : startFollowing(p.cid)}, avatar(p), p.name, follow.cid === p.cid ? mk('em', {}, 'following') : null))) : null,
     mk('div', {class: 'tm-actions'}, presentRow(), mk('button', {class: 'tm-btn', type: 'button', onclick: openVersions}, icon('clock'), 'Version history')),
     shareSection(),
     feedSection(),
@@ -4361,6 +4361,7 @@ function onLive(m) {
     case 'role':
       if (!ROLE_RANK[m.role]) break;
       team.role = m.role; setLiveStatus(team.status); refresh();
+      if (team.presenting && ROLE_RANK[m.role] < ROLE_RANK.editor) { team.presenting = false; renderFollowBar(); renderTeam(); }
       toast(`Your role in this team is now ${ROLE_NAME[m.role].toLowerCase()}`, 3600);
       break;
     case 'renamed': if (board.team && typeof m.name === 'string') { team.project.name = board.name = txt(m.name, 80); $('#boardName').value = board.name; renderTeam(); } break;
@@ -4535,7 +4536,7 @@ function updatePeerDock() {
   const people = peopleHere();
   dock.hidden = !people.length;
   // click someone to follow their view
-  dock.replaceChildren(...people.slice(0, 5).map(p => mk('button', {class: 'avbtn' + (follow.cid === p.cid ? ' on' : ''), type: 'button', title: follow.cid === p.cid ? `Stop following ${p.name}` : `Follow ${p.name}`, 'aria-label': follow.cid === p.cid ? `Stop following ${p.name}` : `Follow ${p.name}`, onclick: () => follow.cid === p.cid ? stopFollowing() : startFollowing(p.cid)}, avatar(p))),
+  dock.replaceChildren(...people.slice(0, 5).map(p => mk('button', {class: 'avbtn' + (follow.cid === p.cid ? ' on' : ''), type: 'button', title: (follow.cid === p.cid ? `Stop following ${p.name}` : `Follow ${p.name}`) + (p.username ? ` (@${p.username})` : ''), 'aria-label': follow.cid === p.cid ? `Stop following ${p.name}` : `Follow ${p.name}`, onclick: () => follow.cid === p.cid ? stopFollowing(true) : startFollowing(p.cid)}, avatar(p))),
     ...(people.length > 5 ? [mk('span', {class: 'av more'}, '+' + (people.length - 5))] : []));
 }
 function drawPeers() {
@@ -4871,7 +4872,7 @@ function commentRow(c, mine, admin) {
   body.innerHTML = commentHTML(c.text);
   return mk('div', {class: 'cm' + (mine ? ' mine' : '')}, avatar(m),
     mk('div', {class: 'cm-main'},
-      mk('div', {class: 'cm-top'}, mk('b', {}, m.name), mk('span', {title: c.at ? new Date(c.at).toLocaleString() : ''}, c.at ? ago(c.at) : 'just now'), c.edited ? mk('span', {class: 'cm-ed', title: new Date(c.edited).toLocaleString()}, 'edited') : null,
+      mk('div', {class: 'cm-top'}, mk('b', {}, m.name), m.username ? mk('span', {class: 'cm-user'}, '@' + m.username) : null, mk('span', {title: c.at ? new Date(c.at).toLocaleString() : ''}, c.at ? ago(c.at) : 'just now'), c.edited ? mk('span', {class: 'cm-ed', title: new Date(c.edited).toLocaleString()}, 'edited') : null,
         mk('span', {class: 'cm-tools'},
           mine ? mk('button', {class: 'tm-link', type: 'button', onclick: () => { cp.editing = c.id; cp.editText = c.text; renderCardPanel(); }}, 'Edit') : null,
           mine || admin ? mk('button', {class: 'tm-link danger', type: 'button', onclick: () => deleteComment(c.id)}, 'Delete') : null)),
@@ -4965,7 +4966,7 @@ function renderNotes() {
     mk('div', {class: 'np-head'}, mk('b', {}, 'Notifications'), notes.unread ? mk('button', {class: 'tm-link', type: 'button', onclick: markAllRead}, 'Mark all read') : null),
     ...(notes.items.length ? notes.items.slice(0, 30).map(n => mk('button', {class: 'np-row' + (n.read ? '' : ' unread'), type: 'button', onclick: () => openNote(n)},
       avatar({name: n.fromName || '?', color: n.fromColor}),
-      mk('div', {class: 'np-main'}, mk('b', {}, noteText(n)), n.kind === 'mention' ? mk('span', {class: 'np-quote'}, n.text) : null, mk('em', {}, ago(n.createdAt)))))
+      mk('div', {class: 'np-main'}, mk('b', {}, noteText(n)), n.kind === 'mention' ? mk('span', {class: 'np-quote'}, n.text) : null, mk('em', {}, (n.fromUsername ? '@' + n.fromUsername + ' · ' : '') + ago(n.createdAt)))))
       : [mk('p', {class: 'tm-note np-empty'}, 'Nothing new. Mentions and cards assigned to you show up here.')]));
 }
 function openNote(n) {
@@ -5044,15 +5045,17 @@ function feedSection() {
   const shown = feed.open ? feed.items : feed.items.slice(0, 5);
   return mk('div', {class: 'tm-feed'}, mk('h5', {}, 'Recent activity'),
     ...shown.map(e => mk('button', {class: 'tm-act', type: 'button', disabled: !e.cardId || !idx.get(e.cardId), title: e.cardId && idx.get(e.cardId) ? 'Show this card' : '', onclick: () => focusCard(e.cardId)},
-      mk('i', {class: 'dot', css: {'--c': col(e.color)}}), mk('span', {class: 'tm-act-t'}, mk('b', {}, e.name), ' ' + describeActivity(e)), mk('em', {}, ago(e.at)))),
+      mk('i', {class: 'dot', css: {'--c': col(e.color)}}), mk('span', {class: 'tm-act-t'}, mk('b', {title: e.username ? '@' + e.username : ''}, e.name), ' ' + describeActivity(e)), mk('em', {}, ago(e.at)))),
     feed.items.length > 5 && !feed.open ? mk('button', {class: 'tm-link', type: 'button', onclick: () => { feed.open = true; renderTeam(); }}, 'Show more')
       : feed.open && feed.more ? mk('button', {class: 'tm-link', type: 'button', onclick: () => loadFeed(true)}, 'Show older') : null);
 }
 
 /* ---------- follow and present ---------- */
 // Your view of the board is shared (a few times a second at most), so a teammate can follow along. Moving the
-// board yourself stops following; a presenter is followed by everyone until they stop.
-const follow = {cid: '', auto: false};
+// board yourself stops following; a presenter (an editor or above) is followed by everyone until they stop.
+// Someone you've stepped away from isn't followed again by themselves for ten minutes, so presenting over and
+// over can't keep taking your view; you can still follow them yourself.
+const follow = {cid: '', auto: false, declined: new Map()};
 let viewT = 0, following = false;
 const myView = () => { const a = toWorld({x: 0, y: 0}); return {x: rd(a.x), y: rd(a.y), w: rd(stageRect.width / cam.z), h: rd(stageRect.height / cam.z)}; };
 function sendView() {
@@ -5066,8 +5069,9 @@ function startFollowing(cid, auto) {
   if (p.view) followView(p.view);
   renderFollowBar(); updatePeerDock();
 }
-function stopFollowing() {
+function stopFollowing(byYou) {
   if (!follow.cid) return;
+  if (byYou && follow.auto) follow.declined.set(follow.cid, Date.now());
   follow.cid = ''; follow.auto = false;
   renderFollowBar(); updatePeerDock();
 }
@@ -5079,7 +5083,11 @@ function followView(v) {
   applyCam();
   following = false;
 }
+let presentedAt = 0;
 function setPresenting(on) {
+  // the server takes a new presentation from you at most every ten seconds
+  if (on && Date.now() - presentedAt < 11000) { toast('You can present again in a few seconds.'); return; }
+  if (on) presentedAt = Date.now();
   team.presenting = !!on;
   if (on) stopFollowing();
   teamPresence({presenting: !!on, view: myView()});
@@ -5094,21 +5102,23 @@ function renderFollowBar() {
     bar.hidden = false;
   } else if (p) {
     bar.style.setProperty('--c', col(p.color));
-    bar.replaceChildren(mk('span', {}, `Following ${p.name}${p.presenting ? ' (presenting)' : ''}`), mk('button', {class: 'tm-link', type: 'button', onclick: stopFollowing}, 'Stop following'));
+    bar.replaceChildren(mk('span', {}, `Following ${p.name}${p.presenting ? ' (presenting)' : ''}`), mk('button', {class: 'tm-link', type: 'button', onclick: () => stopFollowing(true)}, 'Stop following'));
     bar.hidden = false;
   } else bar.hidden = true;
 }
 // presence updates drive following: someone starts presenting, the person you follow moves, they stop
 function followPeer(p, old) {
-  if (p.presenting && !(old && old.presenting) && !follow.cid && !team.presenting) {
-    startFollowing(p.cid, true);
-    toast(`${p.name} is presenting. You’re following their view; move the board to stop.`, 5000);
+  if (p.presenting && !(old && old.presenting) && ROLE_RANK[p.role] >= ROLE_RANK.editor && !follow.cid && !team.presenting) {
+    if (Date.now() - (follow.declined.get(p.cid) || 0) > 600000) {
+      startFollowing(p.cid, true);
+      toast(`${p.name} is presenting. You’re following their view; move the board to stop.`, 5000);
+    } else toast(`${p.name} is presenting. Click their picture at the top to follow.`, 5000);
   } else if (old && old.presenting && !p.presenting && follow.cid === p.cid && follow.auto) stopFollowing();
   if (follow.cid === p.cid && p.view && (!old || !old.view || old.view.x !== p.view.x || old.view.y !== p.view.y || old.view.w !== p.view.w || old.view.h !== p.view.h)) followView(p.view);
   if (follow.cid === p.cid) renderFollowBar();
 }
 function presentRow() {
-  if (!team.project || team.watch || team.status !== 'live') return null;
+  if (!team.project || team.watch || teamReadOnly()) return null;  // viewers can follow, not present
   return mk('button', {class: 'tm-btn' + (team.presenting ? ' ok' : ''), type: 'button', title: 'Everyone in this project follows your view until you stop', onclick: () => setPresenting(!team.presenting)},
     icon('eye'), team.presenting ? 'Stop presenting' : 'Present to everyone');
 }

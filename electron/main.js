@@ -281,14 +281,27 @@ function sha512File(file) {
     fs.createReadStream(file).on('data', d => hash.update(d)).on('end', () => resolve(hash.digest('hex'))).on('error', reject);
   });
 }
+// The signature covers the version and the file's SHA-512. Each platform also only takes its own kind of file,
+// by name and by what's actually in it (a Windows program, or an AppImage), so one platform's signed release
+// can't be passed off to another.
+const UPDATE_FILE = WIN ? /^VenomBoard-Setup-[\w.-]+\.exe$/ : /^VenomBoard-[\w.-]+\.AppImage$/;
+async function ownKind(file) {
+  const fh = await fs.promises.open(file, 'r');
+  try {
+    const b = Buffer.alloc(11);
+    await fh.read(b, 0, 11, 0);
+    return WIN ? b[0] === 0x4d && b[1] === 0x5a : b.readUInt32BE(0) === 0x7f454c46 && b[8] === 0x41 && b[9] === 0x49 && b[10] === 0x02;
+  } finally { await fh.close(); }
+}
 // Returns the installer's SHA-512 if its signature checks out, otherwise null.
 async function verifyUpdate(info) {
   const version = String(info.version);
-  if (!/^\d+\.\d+\.\d+([-.][0-9A-Za-z.]+)?$/.test(version)) return null;
+  if (MAC || !/^\d+\.\d+\.\d+([-.][0-9A-Za-z.]+)?$/.test(version)) return null;
+  const entry = (info.files || []).map(f => path.basename(String(f.url || ''))).find(f => UPDATE_FILE.test(f));
+  const file = entry || path.basename(String(info.path || ''));
+  if (!UPDATE_FILE.test(file) || !(await ownKind(info.downloadedFile))) return null;
   const hash = await sha512File(info.downloadedFile);
   // always fetched fresh: a cached copy could be stale
-  const file = path.basename(String((info.files && info.files[0] && info.files[0].url) || info.path || ''));
-  if (!/^VenomBoard-[\w.-]+$/.test(file)) return null;
   const url = SIGNATURES.replace('{version}', version) + `/${file}.sig?t=${Date.now()}`;
   const res = await net.fetch(url, { cache: 'no-store' });
   if (!res.ok) return null;

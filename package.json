@@ -96,12 +96,6 @@
     "mac": {
       "target": [
         {
-          "target": "dmg",
-          "arch": [
-            "universal"
-          ]
-        },
-        {
           "target": "zip",
           "arch": [
             "universal"
@@ -110,12 +104,9 @@
       ],
       "icon": "assets/icon-1024.png",
       "category": "public.app-category.productivity",
-      "identity": null,
+      "identity": "-",
       "hardenedRuntime": false,
       "artifactName": "VenomBoard-${version}-mac.${ext}"
-    },
-    "dmg": {
-      "title": "Venom Board ${version}"
     },
     "publish": [
       {

@@ -35,13 +35,13 @@ Solo boards need no account, no subscription and no telemetry. They work offline
 | | |
 |---|---|
 | **Windows** | Download `VenomBoard-Setup-1.2.0.exe` from the [latest release](https://github.com/1337VIPER/venom-board/releases/latest) and run it. It installs for your Windows account in a few seconds (no admin rights needed) and adds Start menu and desktop shortcuts. **It keeps itself up to date**: new versions download in the background and install when you restart. |
-| **macOS** | Download `VenomBoard-1.2.0-mac.dmg` (Apple silicon and Intel), open it and drag Venom Board into Applications. When a new version is out, *Get 1.x.x* appears in the top bar. |
+| **macOS** | Download `VenomBoard-1.2.0-mac.zip` (Apple silicon and Intel), open it (Safari unzips it for you) and drag Venom Board into Applications. When a new version is out, *Get 1.x.x* appears in the top bar. |
 | **Linux** | Download `VenomBoard-1.2.0.AppImage`, make it executable (`chmod +x VenomBoard-1.2.0.AppImage`, or Properties → Allow executing) and run it. It keeps itself up to date like the Windows app. |
 | **Browser** | Use the web app at [venomboard.com/app](https://venomboard.com/app), or download `VenomBoard-1.2.0-web.zip`, unzip it and open `index.html` in Chrome, Edge or Firefox. Pin on top, click-through and window opacity need a desktop app. |
 
 > **Windows SmartScreen:** the installer isn't code-signed yet, so Windows may show *"Windows protected your PC"* the first time. Click **More info → Run anyway**. Updates after that install without the warning.
 >
-> **macOS:** the app isn't notarized by Apple yet, so the first time, right-click (or Control-click) Venom Board in Applications and choose **Open**, then **Open** again. After that it opens normally.
+> **macOS:** the app isn't notarized by Apple yet, so the first time you open it macOS says it can't check it. Click **Done**, then open **System Settings → Privacy & Security**, scroll down and click **Open Anyway** next to Venom Board. On macOS 14 and older you can instead Control-click the app and choose **Open**. After that it opens normally.
 >
 > **Coming from 1.0.0?** The 1.0.0 zip version can't update itself. Install the new version once and you'll get every update after that automatically. Your boards carry over.
 
@@ -81,7 +81,7 @@ Solo boards need no account, no subscription and no telemetry. They work offline
 - **Comments and @mentions** on every card, live, with suggestions as you type. Viewers can comment too, so reviewers and playtesters can leave feedback
 - **Notifications**: the bell shows mentions and assignments and opens the card for you; mentions and a morning list of your tasks due soon can come by email (each can be turned off)
 - **Activity feed**: who added, finished, deleted or commented on what, gathered into readable lines
-- **Follow** a teammate's view by clicking their avatar, or **present** so everyone in the project follows you
+- **Follow** a teammate's view by clicking their avatar, or **present** (editors and up) so everyone in the project follows you
 - **Version history**: the board is kept before each burst of editing, plus versions you name; restore any of them for everyone, or open one as a copy
 - **View-only links**: anyone with the link can watch a board live without an account, without seeing who's there or changing anything
 - **Discord**: post finished tasks, reached milestones, comments, restores and new members to a channel
@@ -156,7 +156,7 @@ The first `npm start` downloads the Electron runtime. To build the Windows insta
 npm run dist
 ```
 
-The Linux AppImage and the macOS app are built on those systems with `npx electron-builder --linux AppImage` and `npx electron-builder --mac dmg zip --universal` (the release builds run in GitHub Actions).
+The Linux AppImage and the macOS app are built on those systems with `npx electron-builder --linux AppImage` and `npx electron-builder --mac zip --universal`. Release builds run in GitHub Actions, and `node tools/check-build.js <run id>` checks them against a build of the same commit on your own computer before the AppImage is signed with `node tools/sign-update.js`.
 
 ### Project layout
 
