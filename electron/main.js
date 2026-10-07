@@ -1,11 +1,13 @@
 // Venom Board desktop shell: frameless window, pin on top, opacity, window lock,
 // click-through with a global "turn it off" shortcut, native file dialogs and automatic updates.
-const { app, BrowserWindow, ipcMain, dialog, shell, globalShortcut, Tray, Menu, net } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, shell, globalShortcut, Tray, Menu, net, session, nativeImage } = require('electron');
 const path = require('path');
 const crypto = require('crypto');
 const fs = require('fs');
 
 app.setAppUserModelId('com.venomboard.app');
+const MAC = process.platform === 'darwin', WIN = process.platform === 'win32';
+const RELEASES = 'https://github.com/1337VIPER/venom-board/releases/latest';
 
 const ROOT = path.join(__dirname, '..');
 // Developer modes (electron/dev): VB_SMOKE=<dir> runs the self-test, VB_SHOTS=<dir> renders the README screenshots,
@@ -13,7 +15,7 @@ const ROOT = path.join(__dirname, '..');
 const DEV = process.env.VB_SMOKE ? ['smoke', process.env.VB_SMOKE] : process.env.VB_SHOTS ? ['screenshots', process.env.VB_SHOTS] : process.env.VB_LAYOUT ? ['layout', process.env.VB_LAYOUT] : null;
 if (DEV) app.setPath('userData', path.join(DEV[1], 'userdata'));
 const statePath = () => path.join(app.getPath('userData'), 'window-state.json');
-const ICON = path.join(ROOT, 'assets', 'icon.ico');
+const ICON = path.join(ROOT, 'assets', WIN ? 'icon.ico' : 'icon-1024.png');
 const DEFAULT_KEY = 'CommandOrControl+Shift+X';
 const OVERLAY = {
   venom: { color: '#111119', symbolColor: '#f1eef2' },
@@ -78,7 +80,8 @@ function unregisterKey() {
 }
 function showTray() {
   if (tray) return;
-  tray = new Tray(ICON);
+  // the menu bar (macOS) and Linux trays want a small picture
+  tray = new Tray(WIN ? ICON : nativeImage.createFromPath(path.join(ROOT, 'assets', 'icon-1024.png')).resize({ width: MAC ? 18 : 22, height: MAC ? 18 : 22 }));
   tray.setToolTip(`Venom Board: click-through is on. Click here or press ${keyLabel(state.clickKey)} to turn it off.`);
   tray.setContextMenu(Menu.buildFromTemplate([
     { label: 'Turn off click-through', click: () => setClickThrough(false) },
@@ -128,8 +131,9 @@ function createWindow() {
     title: 'Venom Board',
     backgroundColor: '#060609',
     icon: ICON,
-    titleBarStyle: 'hidden',
-    titleBarOverlay: overlay(),
+    // Windows and Linux draw their window buttons over the top bar's right end; macOS keeps its traffic lights top left
+    titleBarStyle: MAC ? 'hiddenInset' : 'hidden',
+    ...(MAC ? { trafficLightPosition: { x: 16, y: 18 } } : { titleBarOverlay: overlay() }),
     show: false,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
@@ -214,19 +218,19 @@ ipcMain.handle('vb:set-ui-scale', (e, f) => {
   if (!win || !UI_SCALES.includes(f)) return uiScale();
   state.uiScale = f;
   win.webContents.setZoomFactor(f);
-  try { win.setTitleBarOverlay(overlay()); } catch (err) { /* older platforms */ }
+  if (!MAC) try { win.setTitleBarOverlay(overlay()); } catch (err) { /* older platforms */ }
   saveState();
   pushState();
   return f;
 });
 ipcMain.handle('vb:set-topbar', (e, on) => {
   state.topbar = !!on;
-  try { win && win.setTitleBarOverlay(overlay()); } catch (err) { /* older platforms */ }
+  if (!MAC) try { win && win.setTitleBarOverlay(overlay()); } catch (err) { /* older platforms */ }
   saveState();
 });
 ipcMain.handle('vb:set-skin', (e, skin) => {
   state.skin = skin === 'anti' ? 'anti' : 'venom';
-  try { win && win.setTitleBarOverlay(overlay()); } catch (err) { /* older platforms */ }
+  if (!MAC) try { win && win.setTitleBarOverlay(overlay()); } catch (err) { /* older platforms */ }
   saveState();
 });
 // The page may only write to files the user picked in a Save or Open dialog this session,
@@ -283,7 +287,9 @@ async function verifyUpdate(info) {
   if (!/^\d+\.\d+\.\d+([-.][0-9A-Za-z.]+)?$/.test(version)) return null;
   const hash = await sha512File(info.downloadedFile);
   // always fetched fresh: a cached copy could be stale
-  const url = SIGNATURES.replace('{version}', version) + `/VenomBoard-Setup-${version}.exe.sig?t=${Date.now()}`;
+  const file = path.basename(String((info.files && info.files[0] && info.files[0].url) || info.path || ''));
+  if (!/^VenomBoard-[\w.-]+$/.test(file)) return null;
+  const url = SIGNATURES.replace('{version}', version) + `/${file}.sig?t=${Date.now()}`;
   const res = await net.fetch(url, { cache: 'no-store' });
   if (!res.ok) return null;
   const signature = Buffer.from((await res.text()).trim(), 'base64');
@@ -318,12 +324,16 @@ function setUpdate(u) {
 function startUpdates() {
   if (!app.isPackaged || DEV) return;
   try { updater = require('electron-updater').autoUpdater; } catch (e) { return; }
-  updater.autoDownload = true;
+  updater.autoDownload = !MAC;
   updater.autoInstallOnAppQuit = false;  // installs only ever happen through installVerified()
   updater.logger = null;
   updater.on('checking-for-update', () => { if (update.state !== 'downloading' && update.state !== 'ready') setUpdate({ state: 'checking' }); });
   updater.on('update-not-available', () => setUpdate({ state: 'current' }));
-  updater.on('update-available', i => { verified = null; setUpdate({ state: 'downloading', version: i.version, percent: 0 }); });
+  updater.on('update-available', i => {
+    verified = null;
+    if (MAC) { setUpdate({ state: 'available', version: i.version }); return; }  // macOS: offered as a download
+    setUpdate({ state: 'downloading', version: i.version, percent: 0 });
+  });
   updater.on('download-progress', p => setUpdate({ ...update, state: 'downloading', percent: Math.floor(p.percent || 0) }));
   updater.on('update-downloaded', async i => {
     verified = null;
@@ -346,7 +356,7 @@ function startUpdates() {
     quitting = true;
     installVerified(false).then(ok => { if (!ok) app.quit(); }, () => app.quit());
   });
-  const check = () => { if (!['downloading', 'verifying', 'ready'].includes(update.state)) updater.checkForUpdates().catch(() => {}); };
+  const check = () => { if (!['downloading', 'verifying', 'ready', 'available'].includes(update.state)) updater.checkForUpdates().catch(() => {}); };
   setTimeout(check, 4000);
   setInterval(check, 4 * 3600000);
 }
@@ -358,6 +368,7 @@ ipcMain.handle('vb:check-update', () => {
   return true;
 });
 ipcMain.handle('vb:install-update', () => {
+  if (updater && update.state === 'available') { shell.openExternal(RELEASES); return true; }  // macOS
   if (!updater || update.state !== 'ready' || !verified) return false;
   quitting = true;
   installVerified(true).then(ok => { if (!ok) quitting = false; });
@@ -373,7 +384,15 @@ if (!app.requestSingleInstanceLock()) {
     if (win.isMinimized()) win.restore();
     win.focus();
   });
-  app.whenReady().then(() => { createWindow(); startUpdates(); });
+  app.whenReady().then(() => {
+    // YouTube and Vimeo players only start inside a page that says which site it's on, and an app loaded from
+    // disk has no address to send; they're told it's Venom Board
+    session.defaultSession.webRequest.onBeforeSendHeaders({ urls: ['https://www.youtube-nocookie.com/*', 'https://player.vimeo.com/*'] }, (d, done) => {
+      if (!d.requestHeaders.Referer) d.requestHeaders.Referer = 'https://venomboard.com/';
+      done({ requestHeaders: d.requestHeaders });
+    });
+    createWindow(); startUpdates();
+  });
   app.on('will-quit', () => { globalShortcut.unregisterAll(); hideTray(); });
   app.on('window-all-closed', () => app.quit());
 }

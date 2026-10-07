@@ -2,6 +2,7 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('venomDesktop', {
+  platform: process.platform,
   getState: () => ipcRenderer.invoke('vb:get-state'),
   onState: cb => {
     ipcRenderer.removeAllListeners('vb:state');

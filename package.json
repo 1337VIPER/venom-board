@@ -1,7 +1,7 @@
 {
   "name": "venom-board",
   "productName": "Venom Board",
-  "version": "1.1.2",
+  "version": "1.2.0",
   "description": "The reference board and roadmap planner for game developers: infinite canvas, dependency-aware task cards, milestones, live team projects and an always-on-top overlay mode.",
   "author": "1337VIPER",
   "license": "MIT",
@@ -51,6 +51,7 @@
       "!electron/dev{,/**/*}",
       "assets/icon.ico",
       "assets/icon.png",
+      "assets/icon-1024.png",
       "package.json"
     ],
     "asar": true,
@@ -75,6 +76,46 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "deleteAppDataOnUninstall": false
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "assets/icon-1024.png",
+      "category": "Graphics",
+      "executableName": "venom-board",
+      "artifactName": "VenomBoard-${version}.${ext}",
+      "synopsis": "Reference board and roadmap planner for game developers",
+      "description": "The reference board and roadmap planner for game developers: infinite canvas, dependency-aware task cards, milestones, live team projects and an always-on-top overlay mode."
+    },
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "universal"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "universal"
+          ]
+        }
+      ],
+      "icon": "assets/icon-1024.png",
+      "category": "public.app-category.productivity",
+      "identity": null,
+      "hardenedRuntime": false,
+      "artifactName": "VenomBoard-${version}-mac.${ext}"
+    },
+    "dmg": {
+      "title": "Venom Board ${version}"
     },
     "publish": [
       {

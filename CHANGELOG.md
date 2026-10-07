@@ -2,13 +2,37 @@
 
 All notable changes to Venom Board are listed here. The project follows [Semantic Versioning](https://semver.org).
 
-## [Unreleased]
+## [1.2.0] - 2026-10-07
+
+### Teams
+- **Assign cards** to teammates: avatars on the card, an *Assign* button on the card toolbar and in the right-click menu, a *People* filter (with *Mine*) in the Planner, and assignees in Markdown and CSV exports
+- **Comments and @mentions** on cards, in a panel that follows the selected card. Suggestions appear as you type `@`; only authors edit their comments, and authors or team admins delete them. Viewers can comment
+- **Notifications**: a bell in the top bar for mentions and assignments; clicking one opens the project at the card. Mentions can also come by email, and a morning email lists your tasks due today or tomorrow, or late. Both can be turned off in the new **Settings → Notifications** page, or from a link in the email
+- **Activity feed** in the Team panel: what changed, by whom, gathered into readable lines
+- **Follow** a teammate's view by clicking their avatar; **Present to everyone** makes the whole project follow you
+- **Version history**: automatic versions before each burst of editing (hourly for two days, daily for a month) and named versions. Restore one for everyone (the board as it was is kept first) or open it as a separate copy
+- **View-only links**: share a board with anyone, live and without an account. Watchers can't see who's there or change anything, and can report a board; admins can replace or turn off the link at any time
+- **Discord**: a team admin can post finished tasks, reached milestones, comments, restores and new members to a channel
+- **Two-step sign-in** with an authenticator app, with ten one-time recovery codes, in the app and on the website
+
+### Planning
+- **Timeline** (`Shift+G`): a schedule in working days from estimates and dependencies, the critical path, late due dates and finished work
+- **Burndown chart** in the Planner, against a straight line to the next milestone
+- **Import** from Trello, Jira or any CSV
+- **Search everything** (`Ctrl+Shift+F`) across every board on this computer and every team project you're in
+
+### References
+- **Video**: drop or paste video files (they stay on this computer), or paste a YouTube or Vimeo link to pin a player that only loads when you double-click it
+- GIFs animate on the board, as before
+
+### Desktop
+- **macOS** (Apple silicon and Intel) and **Linux** (AppImage) apps. Linux updates itself like Windows; macOS shows when a new version is out
 
 ### Fair use
 - Accounts, teams and shared projects have allowances, so nobody can fill the service or flood it with spam: how many teams you lead or are in, how many projects and people a team has, how big a shared board can grow, and how much image space a team and its leader use
 - Until you confirm your email, your account can lead one team and make a few shared projects
 - The Team panel shows how many of a team's projects and places are used and how much image space is left, and Settings shows your allowance
-- A change that would push a shared board past its size limit is undone with a clear message, instead of leaving your copy out of step with your team's
+- A change that would push a shared board past its size limit is undone with a clear message
 
 ## [1.1.2] - 2026-10-07
 
