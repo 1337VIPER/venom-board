@@ -2,7 +2,7 @@
 
 All notable changes to Venom Board are listed here. The project follows [Semantic Versioning](https://semver.org).
 
-## [Unreleased]
+## [1.3.1] - 2026-10-07
 
 ### Fixes
 - The Team panel keeps up live: projects your teammates make, rename or delete, invites being accepted, declined or withdrawn, and people joining, leaving or changing role show straight away, without restarting the app. Signed in, the app stays connected between projects for this, so notifications arrive straight away too
