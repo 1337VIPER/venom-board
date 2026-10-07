@@ -850,7 +850,7 @@ html.watching #tools .tool:not([data-tool=select]):not([data-tool=hand]),html.wa
     </aside>
 
     <div id="followBar" class="followbar" hidden role="status"></div>
-    <div id="watchBar" class="watchbar" hidden><i class="wb-dot"></i><span id="wbText">Opening the shared board…</span><a href="https://venomboard.com" target="_blank" rel="noopener">Get Venom Board</a><button id="wbReport" class="tm-link" type="button">Report</button></div>
+    <div id="watchBar" class="watchbar" hidden><i class="wb-dot"></i><span id="wbText">Opening the shared board…</span><a href="https://venomboard.com/?from=share" target="_blank" rel="noopener">Make your own board · free</a><button id="wbReport" class="tm-link" type="button">Report</button></div>
 
     <aside id="teamPanel" hidden aria-label="Team">
       <div class="pl-head"><h2>Team<em>.</em></h2><button id="tmClose" class="ib" aria-label="Close team panel" title="Close team panel"><svg viewBox="0 0 20 20"><path d="M5 5l10 10M15 5 5 15"/></svg></button></div>
@@ -3402,7 +3402,7 @@ function wrapLines(g, text, maxW) {
   return out;
 }
 function rrect(g, x, y, w, h, r) { g.beginPath(); if (g.roundRect) g.roundRect(x, y, w, h, r); else g.rect(x, y, w, h); }
-function drawCard(g, it, tok, F) {
+function drawCard(g, it, tok, F, deps = openDeps) {
   const k = it.kind || 'task', c = col(it.color), sev = (SEV_MAP[it.sev] || SEV_MAP.major)[2];
   const R = k === 'milestone' ? [22, 4, 22, 4] : k === 'idea' ? [4, 4, 24, 4] : [3, 18, 18, 18];
   g.save();
@@ -3442,7 +3442,7 @@ function drawCard(g, it, tok, F) {
       for (const ln of wrapLines(g, m ? m[3] : raw, it.w - 30 - (tx - x0))) { g.fillText(ln, tx, y + 9); y += 18.1; }
     }
   }
-  const chips = footChips(it, openDeps.get(it.id) || 0);
+  const chips = footChips(it, deps.get(it.id) || 0);
   if (chips.length) {
     y += 10; let fx = x0; g.font = `600 10.5px ${F.mono}`;
     for (const ch of chips) {
@@ -3455,40 +3455,82 @@ function drawCard(g, it, tok, F) {
   }
   g.restore(); g.restore();
 }
-async function exportPNG() {
-  if (editing) finishEdit();
-  const ids = new Set(sel.size ? [...sel] : [...doc.items, ...doc.strokes, ...doc.links].map(o => o.id));
-  for (const l of doc.links) if (l.from.id && l.to.id && ids.has(l.from.id) && ids.has(l.to.id)) ids.add(l.id);
-  const objs = [...ids].map(id => idx.get(id)).filter(Boolean);
-  const b = unionBox(objs.map(outerBox));
-  if (!b) { toast('Nothing to export yet'); return; }
-  const pad = 56, W = b.w + pad * 2, H = b.h + pad * 2;
-  const scale = Math.min(2, 8000 / Math.max(W, H));
-  const cv = document.createElement('canvas'); cv.width = Math.ceil(W * scale); cv.height = Math.ceil(H * scale);
-  const g = cv.getContext('2d');
-  const cs = getComputedStyle(document.documentElement), tok = n => cs.getPropertyValue(n).trim();
-  const F = {ui: tok('--font-ui'), display: tok('--font-display'), mono: tok('--font-mono')};
-  g.scale(scale, scale); g.translate(pad - b.x, pad - b.y);
-  const X0 = b.x - pad, Y0 = b.y - pad;
-  g.fillStyle = tok('--void'); g.fillRect(X0, Y0, W, H);
+// What drawing a board needs beyond what's stored in it: connector shapes, frame totals, open dependencies and
+// frame title sizes. The open board has them already; any other board (a saved version) gets its own, worked out here.
+function drawInfo(d) {
+  if (d === doc) return {geom, frameStats, openDeps, titleBox};
+  const index = new Map();
+  for (const k of COLS) for (const o of d[k] || []) index.set(o.id, o);
+  const g2 = new Map(), fs2 = new Map(), od = new Map(), tb = new Map(), saved = idx;
+  idx = index;  // connector shapes look their ends up here; this runs straight through, so nothing else sees it
+  try { for (const l of d.links) { const gm = linkGeom(l); if (gm) g2.set(l.id, gm); } } finally { idx = saved; }
+  mctx.font = LABEL_FONT;
+  for (const l of d.links) { const gm = g2.get(l.id); if (gm && l.label) { const pw = mctx.measureText(l.label).width + 18; gm.lab = {x: gm.mid.x - pw / 2, y: gm.mid.y - 11, w: pw, h: 22}; } }
+  for (const l of d.links) {
+    const a = l.from.id && index.get(l.from.id), b = l.to.id && index.get(l.to.id);
+    if (a && b && a.type === 'node' && b.type === 'node' && a.kind !== 'idea' && a.prio !== 'wont' && a.status !== 'done') od.set(b.id, (od.get(b.id) || 0) + 1);
+  }
+  mctx.font = `700 15px ${drawTokens().F.display}`;
+  for (const f of d.items) {
+    if (f.type !== 'frame') continue;
+    let total = 0, done = 0, est = 0;
+    for (const n of d.items) if (isWork(n) && containsBox(f, bboxOf(n))) { total++; if (n.status === 'done') done++; else est += estDays(n.est); }
+    fs2.set(f.id, {total, done, est});
+    const t = String(f.title || '').toUpperCase();
+    tb.set(f.id, {w: mctx.measureText(t).width + t.length * 1.05 + 30, h: 33});
+  }
+  return {geom: g2, frameStats: fs2, openDeps: od, titleBox: tb};
+}
+const drawTokens = () => { const cs = getComputedStyle(document.documentElement), tok = n => cs.getPropertyValue(n).trim(); return {tok, F: {ui: tok('--font-ui'), display: tok('--font-display'), mono: tok('--font-mono')}}; };
+// an object's full extent on a drawn board (a frame's includes its title tab)
+function drawBox(o, info) {
+  if (o.type === 'frame') { const t = info.titleBox.get(o.id) || {w: 160, h: 33}; return {x: o.x, y: o.y - t.h - 8, w: Math.max(o.w, t.w), h: o.h + t.h + 8}; }
+  if (o.type === 'link') { const gm = info.geom.get(o.id); return gm ? polyBox(gm.poly) : null; }
+  return o.type === 'stroke' ? strokeBox(o) : {x: o.x, y: o.y, w: o.w || 0, h: o.h || 0};
+}
+// the pictures on a board, loaded before drawing; one that can't be loaded is left out. A cache can be shared
+// between boards that use the same pictures (a timelapse).
+async function boardImages(d, ids, cache = new Map()) {
+  const out = new Map();
+  for (const it of d.items) {
+    if (it.type !== 'image' || (ids && !ids.has(it.id))) continue;
+    const src = it.asset ? assets[it.asset] : it.src;
+    if (!src) continue;
+    if (!cache.has(src)) cache.set(src, loadImg(src, true).catch(() => null));
+    const img = await cache.get(src);
+    if (img) out.set(it.id, img);
+  }
+  return out;
+}
+// Draws a board in world coordinates, in the order the app shows it: frames, connectors, cards and pictures,
+// then ink. `area` is the world rectangle to fill with the background; `ids`, if given, limits what's drawn.
+function paintBoard(g, d, info, ids, imgs, tok, F, area) {
+  const has = o => !ids || ids.has(o.id);
+  g.fillStyle = tok('--void'); g.fillRect(area.x, area.y, area.w, area.h);
   g.fillStyle = tok('--grid');
-  for (let x = Math.ceil(X0 / 24) * 24; x < X0 + W; x += 24) for (let y = Math.ceil(Y0 / 24) * 24; y < Y0 + H; y += 24) g.fillRect(x - 0.75, y - 0.75, 1.5, 1.5);
-  for (const f of doc.items) {
-    if (f.type !== 'frame' || !ids.has(f.id)) continue;
+  for (let x = Math.ceil(area.x / 24) * 24; x < area.x + area.w; x += 24) for (let y = Math.ceil(area.y / 24) * 24; y < area.y + area.h; y += 24) g.fillRect(x - 0.75, y - 0.75, 1.5, 1.5);
+  for (const f of d.items) {
+    if (f.type !== 'frame' || !has(f)) continue;
     const c = col(f.color);
     rrect(g, f.x, f.y, f.w, f.h, [4, 26, 26, 26]); g.globalAlpha = 0.05; g.fillStyle = c; g.fill();
     g.globalAlpha = 0.42; g.strokeStyle = c; g.lineWidth = 1.5; g.stroke(); g.globalAlpha = 1;
     g.font = `700 15px ${F.display}`; if ('letterSpacing' in g) g.letterSpacing = '1px';
-    const t = f.title.toUpperCase(), tw = g.measureText(t).width + 30, th = 33, ty = f.y - 8 - th;
+    const t = String(f.title || '').toUpperCase(), tw = g.measureText(t).width + 30, th = 33, ty = f.y - 8 - th;
     rrect(g, f.x - 1.5, ty, tw, th, [12, 12, 12, 3]); g.fillStyle = tok('--void'); g.fill(); g.globalAlpha = 0.13; g.fillStyle = c; g.fill(); g.globalAlpha = 1;
     g.fillStyle = c; g.textBaseline = 'middle'; g.fillText(t, f.x + 13.5, ty + th / 2 + 1);
     if ('letterSpacing' in g) g.letterSpacing = '0px';
-    const st = frameStats.get(f.id);
-    if (st && st.total) { g.font = `600 12px ${F.mono}`; g.textAlign = 'right'; g.fillText(`${st.done}/${st.total} · ${Math.round(st.done / st.total * 100)}%${st.est ? ` · ${fmtDays(st.est)} left` : ''}`, f.x + f.w - 4, f.y - 22); g.textAlign = 'left'; }
+    const st = info.frameStats.get(f.id);
+    if (st && st.total) {
+      // beside the title, or inside the frame's top corner when the frame is too narrow for both (as on screen)
+      g.font = `600 12px ${F.mono}`; g.textAlign = 'right';
+      const label = `${st.done}/${st.total} · ${Math.round(st.done / st.total * 100)}%${st.est ? ` · ${fmtDays(st.est)} left` : ''}`;
+      if (tw + g.measureText(label).width + 24 > f.w) g.fillText(label, f.x + f.w - 16, f.y + 19); else g.fillText(label, f.x + f.w - 4, f.y - 22);
+      g.textAlign = 'left';
+    }
   }
-  for (const l of doc.links) {
-    if (!ids.has(l.id)) continue;
-    const gm = geom.get(l.id); if (!gm) continue;
+  for (const l of d.links) {
+    if (!has(l)) continue;
+    const gm = info.geom.get(l.id); if (!gm) continue;
     const c = col(l.color);
     g.strokeStyle = c; g.fillStyle = c; g.lineWidth = gm.w; g.lineCap = 'round'; g.lineJoin = 'round';
     g.setLineDash(l.dash ? [gm.w * 3, gm.w * 2.6] : []); g.stroke(new Path2D(gm.d)); g.setLineDash([]);
@@ -3501,19 +3543,16 @@ async function exportPNG() {
       g.fillText(l.label, gm.mid.x, gm.mid.y + 0.5); g.textAlign = 'left';
     }
   }
-  for (const it of doc.items) {
-    if (it.type === 'frame' || !ids.has(it.id)) continue;
+  for (const it of d.items) {
+    if (it.type === 'frame' || !has(it)) continue;
     if (it.type === 'image') {
-      const src = it.asset ? assets[it.asset] : it.src; if (!src) continue;
-      try {
-        const img = await loadImg(src, true);
-        g.save(); if (it.gray) g.filter = 'grayscale(1)';
-        if (it.flip) { g.translate(it.x + it.w, it.y); g.scale(-1, 1); g.drawImage(img, 0, 0, it.w, it.h); } else g.drawImage(img, it.x, it.y, it.w, it.h);
-        g.restore();
-      } catch (e) {}
+      const img = imgs.get(it.id); if (!img) continue;
+      g.save(); if (it.gray) g.filter = 'grayscale(1)';
+      if (it.flip) { g.translate(it.x + it.w, it.y); g.scale(-1, 1); g.drawImage(img, 0, 0, it.w, it.h); } else g.drawImage(img, it.x, it.y, it.w, it.h);
+      g.restore();
     } else if (it.type === 'video') {
-      // the frame on screen, or a dark panel with the play mark where it can't be read
-      const el = els.get(it.id), v = el && el.querySelector('video');
+      // the frame on screen (for the open board), or a dark panel with the play mark
+      const el = d === doc && els.get(it.id), v = el && el.querySelector('video');
       let drawn = false;
       try { if (v && v.readyState >= 2) { g.drawImage(v, it.x, it.y, it.w, it.h); drawn = true; } } catch (e) {}
       if (!drawn) {
@@ -3521,24 +3560,77 @@ async function exportPNG() {
         const r = Math.min(it.w, it.h) * 0.12, cx = it.x + it.w / 2, cy = it.y + it.h / 2;
         g.beginPath(); g.moveTo(cx - r * 0.6, cy - r); g.lineTo(cx + r, cy); g.lineTo(cx - r * 0.6, cy + r); g.closePath(); g.fillStyle = '#f1eef2'; g.fill();
       }
-    } else if (it.type === 'node') drawCard(g, it, tok, F);
+    } else if (it.type === 'node') drawCard(g, it, tok, F, info.openDeps);
     else if (it.type === 'text') {
       g.font = it.size >= 40 ? `800 ${it.size}px ${F.display}` : `700 ${it.size}px ${F.ui}`;
       g.fillStyle = col(it.color); g.textBaseline = 'middle';
       it.text.split('\n').forEach((ln, i) => g.fillText(ln, it.x + 4, it.y + 2 + it.size * 1.15 * (i + 0.5)));
     }
   }
-  for (const kind of ['hl', 'pen']) for (const s of doc.strokes) {
-    if (s.kind !== kind || !ids.has(s.id)) continue;
+  for (const kind of ['hl', 'pen']) for (const st of d.strokes) {
+    if (st.kind !== kind || !has(st)) continue;
     g.save();
     if (kind === 'hl') { g.globalAlpha = parseFloat(tok('--hl-op')) || 0.5; g.globalCompositeOperation = skin === 'anti' ? 'multiply' : 'screen'; g.lineCap = 'square'; }
     else g.lineCap = 'round';
-    g.lineJoin = 'round'; g.strokeStyle = col(s.color); g.lineWidth = s.size; g.stroke(new Path2D(strokePath(s.pts)));
+    g.lineJoin = 'round'; g.strokeStyle = col(st.color); g.lineWidth = st.size; g.stroke(new Path2D(strokePath(st.pts)));
     g.restore();
   }
+}
+async function exportPNG() {
+  if (editing) finishEdit();
+  const ids = new Set(sel.size ? [...sel] : [...doc.items, ...doc.strokes, ...doc.links].map(o => o.id));
+  for (const l of doc.links) if (l.from.id && l.to.id && ids.has(l.from.id) && ids.has(l.to.id)) ids.add(l.id);
+  const info = drawInfo(doc), b = unionBox([...ids].map(id => idx.get(id)).filter(Boolean).map(o => drawBox(o, info)));
+  if (!b) { toast('Nothing to export yet'); return; }
+  const pad = 56, W = b.w + pad * 2, H = b.h + pad * 2;
+  const scale = Math.min(2, 8000 / Math.max(W, H));
+  const cv = document.createElement('canvas'); cv.width = Math.ceil(W * scale); cv.height = Math.ceil(H * scale);
+  const g = cv.getContext('2d'), {tok, F} = drawTokens(), imgs = await boardImages(doc, ids);
+  g.scale(scale, scale); g.translate(pad - b.x, pad - b.y);
+  paintBoard(g, doc, info, ids, imgs, tok, F, {x: b.x - pad, y: b.y - pad, w: W, h: H});
   const blob = await new Promise(r => cv.toBlob(r, 'image/png'));
   if (!blob) { toast('Export failed: the board is too large for one image'); return; }
   await saveFile(`${slug(board.name)}${sel.size ? '-selection' : ''}.png`, blob, [{description: 'PNG image', accept: {'image/png': ['.png']}}]);
+}
+// "VENOM/BOARD", right-aligned at x, with the slash in the board's red
+function drawWordmark(g, x, y, size, tok, F) {
+  g.font = `900 ${size}px ${F.display}`; g.textAlign = 'left'; g.textBaseline = 'middle';
+  const a = 'VENOM', b = 'BOARD', wa = g.measureText(a).width, ws = g.measureText('/').width, wb = g.measureText(b).width;
+  let cx = x - (wa + ws + wb);
+  g.fillStyle = tok('--bone'); g.fillText(a, cx, y); cx += wa;
+  g.fillStyle = tok('--fang'); g.fillText('/', cx, y); cx += ws;
+  g.fillStyle = tok('--bone'); g.fillText(b, cx, y);
+}
+const clipText = (g, t, max) => { if (g.measureText(t).width <= max) return t; while (t.length > 1 && g.measureText(t + '…').width > max) t = t.slice(0, -1); return t.trimEnd() + '…'; };
+// The picture shown when a share link (or a public roadmap) is posted on Discord, Reddit, X and the like:
+// the board fitted into 1200 x 630, with its name and "Made with Venom Board" along the bottom.
+async function previewImage(d = doc, name = board.name) {
+  const W = 1200, H = 630, band = 96, info = drawInfo(d), {tok, F} = drawTokens();
+  const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+  const g = cv.getContext('2d');
+  g.fillStyle = tok('--void'); g.fillRect(0, 0, W, H);
+  const b = unionBox([...d.items, ...d.links, ...d.strokes].map(o => drawBox(o, info)));
+  if (b) {
+    const pad = 44, s = Math.min((W - pad * 2) / Math.max(b.w, 1), (H - band - pad) / Math.max(b.h, 1), 1.25);
+    const tx = W / 2 - (b.x + b.w / 2) * s, ty = (H - band + pad / 2) / 2 - (b.y + b.h / 2) * s;
+    const imgs = await boardImages(d, null);
+    g.save(); g.translate(tx, ty); g.scale(s, s);
+    paintBoard(g, d, info, null, imgs, tok, F, {x: -tx / s, y: -ty / s, w: W / s, h: H / s});
+    g.restore();
+  }
+  const fade = g.createLinearGradient(0, H - band - 70, 0, H);
+  fade.addColorStop(0, 'rgba(6,6,9,0)'); fade.addColorStop(0.5, 'rgba(6,6,9,.93)'); fade.addColorStop(1, '#060609');
+  g.fillStyle = fade; g.fillRect(0, H - band - 70, W, band + 70);
+  g.fillStyle = tok('--fang'); g.fillRect(0, H - 4, W, 4);
+  g.textBaseline = 'middle'; g.textAlign = 'left';
+  g.font = `800 32px ${F.display}`; g.fillStyle = tok('--bone');
+  g.fillText(clipText(g, name || 'Untitled board', W - 470), 44, H - band / 2 - 2);
+  g.font = `700 12px ${F.mono}`; g.fillStyle = tok('--bone-dim'); g.textAlign = 'right';
+  if ('letterSpacing' in g) g.letterSpacing = '2px';
+  g.fillText('MADE WITH', W - 44, H - band / 2 - 19);
+  if ('letterSpacing' in g) g.letterSpacing = '0px';
+  drawWordmark(g, W - 44, H - band / 2 + 6, 24, tok, F);
+  return new Promise(r => cv.toBlob(r, 'image/jpeg', 0.86));
 }
 
 /* ---------- templates ---------- */
@@ -4463,6 +4555,7 @@ function teamSend(ops) {
   for (const k of keys) team.pending.set(k, (team.pending.get(k) || 0) + 1);
   team.unacked.push({batch, ops, keys});
   if (team.status === 'live') wsSend({t: 'ops', batch, ops});
+  if (ops.some(o => o.k !== 'comments')) previewSoon();
 }
 function ackBatch(batch) {
   const i = team.unacked.findIndex(b => b.batch === batch);
@@ -5210,14 +5303,38 @@ async function openVersionCopy(v) {
 /* ---------- share links and watching ---------- */
 async function loadShare() {
   if (!team.project || team.watch || !team.project.id) return;
-  try { team.share = (await api(`/api/projects/${team.project.id}/share`)).url || null; } catch (e) { team.share = null; }
+  let r = null;
+  try { r = await api(`/api/projects/${team.project.id}/share`); } catch (e) { /* treated as no link */ }
+  team.share = (r && r.url) || null;
+  previewAt = (r && r.previewAt) || 0;
+  if (team.share && Date.now() - previewAt > 86400000) previewSoon(true);  // no picture yet, or an old one
   renderTeam();
+}
+// The picture a share link shows when it's posted somewhere: made when the link is, then again at most every half
+// hour while the board changes (by editors and above). The server keeps one per project.
+let previewT = 0, previewAt = 0;
+function previewSoon(now) {
+  if (!board.team || !team.project || team.watch || !team.share || ROLE_RANK[team.role] < ROLE_RANK.editor || (previewT && !now)) return;
+  clearTimeout(previewT);
+  previewT = setTimeout(sendPreview, now ? 1500 : Math.max(60000, 1800000 - (Date.now() - previewAt)));
+}
+async function sendPreview(manual) {
+  previewT = 0;
+  if (!board.team || !team.project || !team.share || team.status !== 'live') return;
+  try {
+    const blob = await previewImage();
+    if (!blob) return;
+    await api(`/api/projects/${team.project.id}/preview`, 'PUT', blob);
+    previewAt = Date.now();
+    if (manual) toast('Preview picture updated. Sites can take a while to show the new one.');
+  } catch (e) { if (manual) toast(e.message, 4000); }  // a preview is a nicety: the link works without one
 }
 async function makeShare(replace) {
   if (replace && !(await ask('Make a new link?', 'The current link stops working straight away for everyone who has it.', 'New link'))) return;
   try {
     team.share = (await api(`/api/projects/${team.project.id}/share`, 'POST')).url;
     navigator.clipboard.writeText(team.share).then(() => toast('View-only link copied'), () => toast('View-only link ready'));
+    previewSoon(true);
   } catch (e) { toast(e.message, 4000); }
   renderTeam();
 }
@@ -5233,6 +5350,7 @@ function shareSection() {
   return mk('div', {class: 'tm-share'}, mk('h5', {}, 'View-only link'),
     url ? mk('div', {class: 'tm-inline'}, mk('input', {class: 'tm-in', readonly: true, value: url, 'aria-label': 'View-only link', onfocus: e => e.target.select()}), mk('button', {class: 'tm-btn', type: 'button', onclick: copy}, 'Copy'))
       : mk('p', {class: 'tm-note'}, admin ? 'Anyone with a link can watch this board live, without an account. They can’t change anything or see who’s here.' : 'No link yet. A team admin can make one.'),
+    url ? mk('p', {class: 'tm-note'}, 'Posted on Discord, Reddit or X, the link shows a picture of this board. ', ROLE_RANK[team.role] >= ROLE_RANK.editor ? mk('button', {class: 'tm-link', type: 'button', onclick: () => sendPreview(true)}, 'Update the picture') : null) : null,
     admin ? mk('div', {class: 'tm-actions'}, url ? [mk('button', {class: 'tm-btn', type: 'button', onclick: () => makeShare(true)}, 'New link'), mk('button', {class: 'tm-link danger', type: 'button', onclick: stopShare}, 'Turn off')]
       : mk('button', {class: 'tm-btn', type: 'button', onclick: () => makeShare(false)}, icon('link'), 'Create a view-only link')) : null);
 }
