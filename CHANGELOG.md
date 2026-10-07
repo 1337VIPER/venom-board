@@ -31,9 +31,9 @@ All notable changes to Venom Board are listed here. The project follows [Semanti
 - Comments and notifications show the writer's @username next to their name
 
 ### Fair use
-- Accounts, teams and shared projects have allowances, so nobody can fill the service or flood it with spam: how many teams you lead or are in, how many projects and people a team has, how big a shared board can grow, and how much image space a team and its leader use
+- Accounts, teams and shared projects have allowances, so nobody can fill the service or flood it with spam: how many teams you lead or are in, how many projects and people a team has, how big a shared board can grow, and how much storage (pictures, boards and their version history) a team and its leader use
 - Until you confirm your email, your account can lead one team and make a few shared projects
-- The Team panel shows how many of a team's projects and places are used and how much image space is left, and Settings shows your allowance
+- The Team panel shows how many of a team's projects and places are used and how much storage is used, and Settings shows your allowance
 - A change that would push a shared board past its size limit is undone with a clear message
 
 ## [1.1.2] - 2026-10-07

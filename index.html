@@ -4244,10 +4244,10 @@ function projectsSection() {
     team.ui.newProject = false;
     teamAction(async () => { const r = await api(`/api/teams/${d.team.id}/projects`, 'POST', {name}); teamOpen(r.project.id); });
   }}, nameIn, mk('button', {class: 'tm-btn ok', type: 'submit'}, 'Create'));
-  // teams have a project allowance and image space (set by the server), shown so nobody hits them by surprise
+  // teams have a project allowance and storage (set by the server), shown so nobody hits them by surprise
   const lim = d.limits && Number.isFinite(d.limits.projects) ? d.limits : null, full = !!lim && d.projects.length >= lim.projects;
   const fullTip = full ? `This team has all ${lim.projects} of its projects. Delete one you've finished with to start another.` : null;
-  const space = lim && d.usage && Number.isFinite(d.usage.storageBytes) ? mk('p', {class: 'tm-note'}, `Images use ${fmtMB(d.usage.storageBytes)} of this team's ${lim.storageMB} MB.`) : null;
+  const space = lim && d.usage && Number.isFinite(d.usage.storageBytes) ? mk('p', {class: 'tm-note'}, `Pictures, boards and their history use ${fmtMB(d.usage.storageBytes)} of this team's ${lim.storageMB} MB.`) : null;
   return section(lim ? `Shared projects · ${d.projects.length} of ${lim.projects}` : 'Shared projects',
     rows.length ? mk('div', {class: 'tm-list'}, ...rows) : mk('p', {class: 'tm-note'}, canEdit ? 'No projects yet. Start one, or share the board you have open.' : 'No projects yet.'),
     canEdit ? mk('div', {class: 'tm-actions'},
@@ -4675,8 +4675,8 @@ function accountPane() {
 
   const L = team.limits, ledCount = team.teams.filter(t => t.role === 'leader').length;
   const allowanceNote = !L ? null : L.projectsUntilConfirmed != null
-    ? mk('p', {class: 'st-warn'}, `Until you confirm your email you can lead ${L.teamsLed === 1 ? 'one team' : L.teamsLed + ' teams'} and make ${L.projectsUntilConfirmed} shared projects.`)
-    : mk('p', {class: 'tm-note'}, `You lead ${ledCount} of the ${L.teamsLed} teams one account can lead. Each team can have up to ${L.projectsPerTeam} projects, ${L.membersPerTeam} people and ${L.teamStorageMB} MB of images.`);
+    ? mk('p', {class: 'st-warn'}, `Until you confirm your email you can lead ${L.teamsLed === 1 ? 'one team' : L.teamsLed + ' teams'}, make ${L.projectsUntilConfirmed} shared projects and use ${L.teamStorageMB} MB.`)
+    : mk('p', {class: 'tm-note'}, `You lead ${ledCount} of the ${L.teamsLed} teams one account can lead. Each team can have up to ${L.projectsPerTeam} projects, ${L.membersPerTeam} people and ${L.teamStorageMB} MB of pictures, boards and history, and the teams you lead share ${L.leaderStorageMB} MB.`);
   const teams = stGroup('Teams', allowanceNote,
     team.teams.length ? mk('div', {class: 'tm-list'}, ...team.teams.map(t => mk('div', {class: 'tm-row'},
       mk('button', {class: 'tm-row-main tm-open', type: 'button', title: 'Open in the Team panel', onclick: () => { team.teamId = t.id; closeSettings(); setTeamPanel(true); }},
