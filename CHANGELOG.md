@@ -2,7 +2,7 @@
 
 All notable changes to Venom Board are listed here. The project follows [Semantic Versioning](https://semver.org).
 
-## [Unreleased]
+## [1.4.2] - 2026-10-08
 
 ### Planning
 - **Circuit connectors**: a new wire style with straight runs and 45° bends, like Electric Nodes in Unreal. Pick it in the connector toolbar or the connector tool, or right-click the board → *Style every connector* to switch every wire at once
