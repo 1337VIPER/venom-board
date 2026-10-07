@@ -193,6 +193,8 @@ html.ct-on body::after{content:"";position:fixed;inset:0;border:2px solid color-
 .f-title{position:absolute;left:-1.5px;bottom:100%;margin-bottom:8px;white-space:nowrap;font:700 15px/1 var(--font-display);letter-spacing:.07em;text-transform:uppercase;color:var(--fc);padding:8px 14px;border-radius:12px 12px 12px 3px;background:color-mix(in srgb,var(--fc) 13%,var(--void));border:1px solid color-mix(in srgb,var(--fc) 32%,transparent);outline:none}
 .f-meta{position:absolute;right:4px;bottom:100%;margin-bottom:16px;display:flex;align-items:center;gap:8px;font:600 12px/1 var(--font-mono);color:var(--fc);white-space:nowrap}
 .f-meta:empty{display:none}
+.frame.f-tight .f-meta{bottom:auto;top:13px;right:16px;margin:0}
+.frame.f-tight .f-bar{display:none}
 .f-bar{width:96px;height:6px;border-radius:99px;background:color-mix(in srgb,var(--fc) 18%,transparent);overflow:hidden}
 .f-bar i{display:block;height:100%;background:var(--fc);border-radius:inherit}
 [contenteditable]{user-select:text;-webkit-user-select:text;cursor:text;caret-color:var(--fang)}
@@ -1458,7 +1460,13 @@ function measure() {
     const el = els.get(it.id); if (!el) continue;
     if (it.type === 'node') it.h = el.offsetHeight;
     else if (it.type === 'text') { it.w = el.offsetWidth; it.h = el.offsetHeight; }
-    else if (it.type === 'frame') { const t = el.firstChild; titleBox.set(it.id, {w: t.offsetWidth, h: t.offsetHeight}); }
+    else if (it.type === 'frame') {
+      const t = el.firstChild, m = el.children[1];
+      titleBox.set(it.id, {w: t.offsetWidth, h: t.offsetHeight});
+      // a narrow frame has no room for its numbers beside the title, so they move inside its top corner
+      const fit = it.w + '|' + it.title + '|' + m._m;
+      if (el._fit !== fit) { el._fit = fit; el.classList.remove('f-tight'); el.classList.toggle('f-tight', !!m._m && t.offsetWidth + m.offsetWidth + 24 > it.w); }
+    }
   }
 }
 
@@ -3535,6 +3543,7 @@ async function exportPNG() {
 
 /* ---------- templates ---------- */
 const TEMPLATES = [
+  ['roadmap', 'Game roadmap', 'Pre-production to launch: the key work in each phase and the milestones between them.'],
   ['feature', 'Feature pipeline', 'Take one feature from design doc to polish across every discipline.'],
   ['level', 'Level pipeline', 'Paper map, blockout, playtest, art pass, lighting, optimisation.'],
   ['character', 'Character pipeline', 'Concept to in-engine: sculpt, retopo, texture, rig, animate.'],
@@ -3545,6 +3554,7 @@ const TEMPLATES = [
   ['jam', 'Game jam · 48 h', 'Day one prototype, day two content, then submit on time.'],
   ['steam', 'Steam launch', 'Store page, capsule, trailer, Next Fest, wishlists, release day.'],
   ['gdd', 'Design doc outline', 'Idea notes for pitch, pillars, core loop, scope and cuts.'],
+  ['moodboard', 'Art moodboard', 'Frames for character, environment, palette, UI and VFX references.'],
 ];
 function tplBuild(key) {
   const items = [], links = [];
@@ -3561,6 +3571,33 @@ function tplBuild(key) {
   const row = (x, y, specs, gap = 300) => specs.map((s, i) => card(x + i * gap, y, s[0], s[1] || {}));
   const col_ = (x, y, specs, gap = 190) => specs.map((s, i) => card(x, y + i * gap, s[0], s[1] || {}));
   switch (key) {
+    case 'roadmap': {
+      const phases = [
+        ['Pre-production', '#a66bff', [['Pitch + pillars', {disc: 'design', est: '3d', prio: 'must', body: '[ ] One-line pitch\n[ ] Three pillars\n[ ] Target platforms'}], ['Prototype the core loop', {disc: 'code', est: '10d', prio: 'must'}], ['Art direction tests', {disc: 'art', est: '5d', prio: 'should'}]], ['Greenlight', 30]],
+        ['Production', '#ff2a4f', [['Vertical slice', {disc: 'design', est: '20d', prio: 'must'}], ['Content pipeline', {disc: 'tech', est: '5d', prio: 'must'}], ['First three levels', {disc: 'level', est: '15d', prio: 'should'}]], ['Vertical slice', 100]],
+        ['Alpha', '#ff7a1a', [['Feature complete', {disc: 'code', est: '25d', prio: 'must'}], ['Full playthrough test', {disc: 'qa', est: '3d', prio: 'must'}], ['Save + settings', {disc: 'code', est: '4d', prio: 'should'}]], ['Alpha', 170]],
+        ['Beta', '#ffd23d', [['Content complete', {disc: 'level', est: '20d', prio: 'must'}], ['Bug bash', {disc: 'qa', est: '10d', prio: 'must'}], ['Performance pass', {disc: 'tech', est: '5d', prio: 'should'}]], ['Beta', 230]],
+        ['Launch', '#3dff8b', [['Store page + trailer', {disc: 'mkt', est: '8d', prio: 'must'}], ['Launch build review', {disc: 'tech', est: '2d', prio: 'must'}], ['Launch-week plan', {disc: 'mkt', est: '2d', prio: 'should', body: '[ ] Creators\n[ ] Socials\n[ ] Newsletter'}]], ['Release', 280]],
+      ];
+      let prev = null;
+      phases.forEach(([title, color, specs, [ms, days]], i) => {
+        const cs = col_(i * 420, 0, specs, 200), m = card(i * 420, 620, ms, {kind: 'milestone', due: addDays(days)});
+        chain([...cs, m]); if (prev) link(prev, m, {style: 'straight'});  // each milestone follows the one before
+        wrap([...cs, m], title, color); prev = m;
+      });
+      break;
+    }
+    case 'moodboard': {
+      const areas = [['Characters', '#ff2a4f', 'Silhouettes, proportions, costume, faces'], ['Environments', '#3dff8b', 'Landmarks, materials, scale, weather'], ['Palette + lighting', '#ffd23d', 'Five colours, time of day, mood'],
+        ['UI + type', '#2fd6ff', 'Menus, HUD, fonts, icons'], ['VFX + animation', '#a66bff', 'Hits, magic, timing, camera']];
+      areas.forEach(([title, color, hint], i) => {
+        const x = (i % 3) * 600, y = Math.floor(i / 3) * 480;
+        frame(x, y, 560, 420, title, color);
+        items.push({id: uid(), type: 'text', x: x + 30, y: y + 340, w: 420, h: 40, text: 'Paste or drop references here', size: 18, color: '#9d99aa'});
+        card(x + 30, y + 30, 'What we want', {kind: 'idea', body: hint, color});
+      });
+      break;
+    }
     case 'feature': { const cs = row(0, 0, [['Design doc', {disc: 'design', est: '1d', prio: 'must', body: '[ ] Player fantasy + goal\n[ ] Rules and edge cases\n[ ] How we know it works'}], ['Prototype in engine', {disc: 'code', est: '3d', prio: 'must'}], ['Art + animation', {disc: 'art', est: '5d', prio: 'should'}], ['SFX + music hooks', {disc: 'audio', est: '2d', prio: 'should'}], ['QA pass', {disc: 'qa', est: '1d', prio: 'must'}], ['Polish + juice', {disc: 'design', est: '2d', prio: 'could', body: 'Screenshake, hit-stop, particles'}]]); chain(cs); wrap(cs, 'Feature: name it', '#ff2a4f'); break; }
     case 'level': { const cs = row(0, 0, [['Paper map + beats', {disc: 'level', est: '1d', body: '[ ] Critical path\n[ ] Secrets\n[ ] Pacing beats'}], ['Blockout', {disc: 'level', est: '2d', prio: 'must'}], ['Playtest the blockout', {disc: 'qa', est: '4h', prio: 'must'}], ['Art pass', {disc: 'art', est: '5d'}], ['Lighting', {disc: 'art', est: '2d'}], ['Optimisation', {disc: 'tech', est: '1d', body: 'Draw calls, LODs, culling'}], ['Final polish', {disc: 'level', est: '1d'}]]); chain(cs); wrap(cs, 'Level: name it', '#3dff8b'); break; }
     case 'character': { const cs = row(0, 0, [['Concept sheet', {disc: 'art', est: '2d', prio: 'must'}], ['Sculpt', {disc: 'art', est: '3d'}], ['Retopo + UVs', {disc: 'art', est: '2d'}], ['Bake + texture', {disc: 'art', est: '2d'}], ['Rig + skin', {disc: 'art', est: '1d'}], ['Core animations', {disc: 'art', est: '5d', body: '[ ] Idle\n[ ] Walk / run\n[ ] Attack set\n[ ] Hit + death'}], ['In-engine setup', {disc: 'code', est: '1d', body: 'Anim blueprint, state machine, sockets'}]]); chain(cs); wrap(cs, 'Character: name it', '#a66bff'); break; }
@@ -5958,7 +5995,17 @@ function openHashLink() {
   history.replaceState(null, '', location.pathname + location.search);
   goToCard(link[1], link[2] || '', false);
 }
-window.addEventListener('hashchange', () => { if (team.user && !team.watch) openHashLink(); });
+window.addEventListener('hashchange', () => {
+  const t = templateLinked();
+  if (t && !team.watch) newBoard(t[1], false).then(() => insertTemplate(t[0]));
+  else if (team.user && !team.watch) openHashLink();
+});
+// venomboard.com/templates links here as #template=<key>: a new board opens with that template on it
+function templateLinked() {
+  const m = location.hash.match(/^#template=([a-z]{2,20})$/), t = m && TEMPLATES.find(x => x[0] === m[1]);
+  if (m) history.replaceState(null, '', location.pathname + location.search);
+  return t || null;
+}
 async function boot() {
   let s0 = 'venom'; try { s0 = localStorage.getItem('venom-board-skin') || 'venom'; } catch (e) {}
   renderBell();
@@ -5979,12 +6026,14 @@ async function boot() {
     if (last) ok = await withTimeout(loadBoard(last), 4000);
     if (!ok && boards.length) ok = await withTimeout(loadBoard(boards[0].id), 4000);
   } catch (e) { storageOK = false; setSaveState('off'); }
+  const tpl = templateLinked();
   if (!ok) {
-    const s = sampleBoard();
-    setBoard({id: uid(), name: 'Game Roadmap'}, s.doc, s.assets, null);
+    const s = tpl ? {doc: {items: [], links: [], strokes: [], comments: []}, assets: {}} : sampleBoard();
+    setBoard({id: uid(), name: tpl ? tpl[1] : 'Game Roadmap'}, s.doc, s.assets, tpl ? {x: stageRect.width / 2, y: stageRect.height / 2, z: 1} : null);
     scheduleSave();
-  }
+  } else if (tpl) await newBoard(tpl[1], false);
   refresh();
+  if (tpl) insertTemplate(tpl[0]);
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { render(); if (!ok) fitTo(allObjs(), false); });
   // signed-in accounts come back quietly; a #p=<project> link (with &c=<card> from an email) opens that project
   refreshMe(true).then(openHashLink);
