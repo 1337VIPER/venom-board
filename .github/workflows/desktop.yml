@@ -1,0 +1,51 @@
+# Builds the Linux and macOS desktop apps. Nothing is published from here and no secrets are used: the builds come
+# back as artifacts, and tools/check-build.js checks each one against the maintainer's own copy of the code before
+# anything is signed or released (built from that exact commit, on GitHub's own machines, with the app inside
+# identical to a local build). Third-party steps are pinned to exact commits, so a moved tag can't change what runs.
+name: Desktop apps (Linux, macOS)
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            name: linux
+            args: --linux AppImage --x64
+          - os: macos-latest
+            name: macos
+            args: --mac zip --universal
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          package-manager-cache: false
+      - run: npm ci
+      - name: Build
+        run: npx electron-builder ${{ matrix.args }} --publish never
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: venom-board-${{ matrix.name }}
+          path: |
+            dist/*.AppImage
+            dist/*.zip
+            dist/*.blockmap
+            dist/latest*.yml
+          if-no-files-found: error
+          retention-days: 14
