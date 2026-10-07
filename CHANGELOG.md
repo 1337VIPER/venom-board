@@ -2,6 +2,24 @@
 
 All notable changes to Venom Board are listed here. The project follows [Semantic Versioning](https://semver.org).
 
+## [Unreleased]
+
+### Sharing
+- **Public roadmaps**: publish a page players can follow from the Team panel: phases, what's planned, in progress and done, ideas if you want, and milestone dates with countdowns. Players vote for what they want most (the team sees the votes on the cards), follow it with RSS, and you can embed it on your own site. Pictures, comments, people and estimates are never shown; right-click a card to keep it off. Admins choose what shows and can take it down at any time
+- **Link previews**: a view-only link or public roadmap posted on Discord, Reddit or X shows a picture of the board with its name. The picture updates as the board changes, or straight away from the Team panel
+- The view-only page links back with "Make your own board · free"
+
+### Planning
+- **Game jam clock**: right-click the board → Game jam clock, or start from the 48-hour jam template. It counts down to the deadline (in the top bar too), shows the theme or when it's revealed, and checks the work left against the time you have. **Cut scope** marks the lowest-priority work Won't until it fits, never Must work. Reminders come at 24 hours, 6 hours, 1 hour and 15 minutes left
+- Two new templates: **Game roadmap** (pre-production to launch with dated milestones) and **Art moodboard**
+- Template links: venomboard.com/templates opens any template in the web app in one click
+
+### References
+- **Timelapse** (Boards menu): a video of the board coming together from its history, with a title, the time of each moment and a "Made with Venom Board" ending. Landscape, square or vertical; saved as MP4 where possible, otherwise WebM. Boards on this computer keep a snapshot every 20 minutes of work for it (the last 60)
+
+### Fixes
+- A narrow frame's progress moves inside its top corner instead of covering its title
+
 ## [1.2.0] - 2026-10-07
 
 ### Teams

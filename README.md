@@ -54,6 +54,7 @@ Solo boards need no account, no subscription and no telemetry. They work offline
 - Snap guides, align, distribute, pack into a grid, lock items, bring to front or send to back
 - **Videos and GIFs** as references: GIFs animate on the board, video files play on hover or double-click (loop, autoplay, sound), and YouTube or Vimeo links become players that only load when you click them
 - Export the whole board or just the selection as a 2× PNG
+- **Timelapse**: turn a board's history into a video of it coming together (landscape, square or vertical, saved as MP4 or WebM), ready for #screenshotsaturday, TikTok or Shorts. Team projects use their version history; boards on your computer keep a snapshot every 20 minutes of work
 
 ### Production planning
 - Four card types: **Task**, **Milestone**, **Bug** (crash / major / minor / polish) and **Idea note**
@@ -67,7 +68,8 @@ Solo boards need no account, no subscription and no telemetry. They work offline
 - **Timeline** (`Shift+G`): every task scheduled in working days from its estimate and what it waits on, with the **critical path** that decides your finish date, due dates you'll miss, and finished work
 - **Import** from **Trello** (JSON export), **Jira** (CSV export) or any spreadsheet saved as CSV: lists, sprints or statuses become phases, with statuses, priorities, estimates, due dates and checklists carried over
 - **Search everything** (`Ctrl+Shift+F`): every board on this computer and every team project you're in, at once
-- **10 game-dev templates**: feature, level and character pipelines, vertical slice, weekly sprint board, bug triage, playtest loop, 48-hour game jam, Steam launch and a design-doc outline
+- **12 game-dev templates**: game roadmap, feature, level and character pipelines, vertical slice, weekly sprint board, bug triage, playtest loop, 48-hour game jam, Steam launch, a design-doc outline and an art moodboard. Browse them at [venomboard.com/templates](https://venomboard.com/templates) and open one in a click
+- **Game jam clock**: the deadline counting down on the board and in the top bar, the theme (or when it's revealed), a scope check of the work left against the time you have, and **Cut scope** to drop the lowest-priority work until it fits, with reminders as the deadline nears
 - **Export to Markdown** (GitHub, Notion, Discord) and **CSV** (Sheets, Jira, Trello)
 - **Board lock**: a view-only mode for reviews and sharing, so nothing gets nudged by accident
 
@@ -83,7 +85,8 @@ Solo boards need no account, no subscription and no telemetry. They work offline
 - **Activity feed**: who added, finished, deleted or commented on what, gathered into readable lines
 - **Follow** a teammate's view by clicking their avatar, or **present** (editors and up) so everyone in the project follows you
 - **Version history**: the board is kept before each burst of editing, plus versions you name; restore any of them for everyone, or open one as a copy
-- **View-only links**: anyone with the link can watch a board live without an account, without seeing who's there or changing anything
+- **View-only links**: anyone with the link can watch a board live without an account, without seeing who's there or changing anything. Posted on Discord, Reddit or X, a link shows a picture of the board
+- **Public roadmaps**: a page your players can follow, with your phases, what's planned, in progress and done, milestone dates, votes on what they want most, an RSS feed and an embed for your own site. Pictures, comments, people and estimates are never shown, and any card can be kept off it
 - **Discord**: post finished tasks, reached milestones, comments, restores and new members to a channel
 - **Viewers** watch live without being able to change anything
 - **Account settings** (`Ctrl+,`): change your display name, your cursor colour and your password, turn on **two-step sign-in** with an authenticator app (with recovery codes), see where you're signed in and sign out everywhere else, or delete your account
@@ -104,7 +107,7 @@ Solo boards need no account, no subscription and no telemetry. They work offline
 | ![Planner panel with filters](docs/screenshots/planner.png) | ![Close-up of task cards](docs/screenshots/cards.png) |
 | **Planner** · progress, milestone countdowns and filters that dim the rest of the board | **Cards** · discipline, priority, estimates, due dates, checklists and dependencies |
 | ![Place next picker](docs/screenshots/place-next.png) | ![Template gallery](docs/screenshots/templates.png) |
-| **Place next** · drag a tendril into empty space to choose the next card | **Templates** · ten ready-made game production structures |
+| **Place next** · drag a tendril into empty space to choose the next card | **Templates** · twelve ready-made game production structures |
 | ![Window menu](docs/screenshots/window-menu.png) | ![Anti-Venom light skin](docs/screenshots/anti-venom.png) |
 | **Overlay controls** · pin, lock, click-through, opacity, board lock | **Anti-Venom** · the light skin |
 
