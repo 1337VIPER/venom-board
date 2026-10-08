@@ -723,6 +723,8 @@ textarea.pm-in{height:auto;padding:9px 12px;resize:vertical;line-height:1.45}
 .tm-opts{display:flex;flex-direction:column;gap:6px;margin:6px 0 10px}
 .tm-opt{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--bone-dim);cursor:pointer}
 .tm-opt input{accent-color:var(--fang);margin:0}
+.tm-key{font:600 11.5px var(--font-mono)}
+.tm-note.tm-warn{color:var(--warn)}
 .watchbar{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);z-index:36;display:flex;align-items:center;gap:14px;padding:8px 16px;border-radius:99px;background:var(--hide-2);border:1px solid var(--line-2);box-shadow:0 18px 40px -14px var(--shadow);font:600 12.5px var(--font-ui);white-space:nowrap;max-width:calc(100% - 32px)}
 .watchbar span{overflow:hidden;text-overflow:ellipsis}
 .watchbar a{color:var(--fang);font-weight:800;text-decoration:none}
@@ -5541,6 +5543,7 @@ function liveCard() {
     mk('div', {class: 'tm-actions'}, presentRow(), mk('button', {class: 'tm-btn', type: 'button', onclick: openVersions}, icon('clock'), 'Version history')),
     shareSection(),
     roadmapSection(),
+    intakeSection(),
     feedSection(),
     mk('button', {class: 'tb tm-wide', type: 'button', onclick: () => leaveProject()}, 'Leave project'));
 }
@@ -5778,7 +5781,7 @@ function onLive(m) {
     case 'ready': if (team.retry) teamChangedSoon(); team.retry = 0; if (team.project) wsSend({t: 'join', project: team.project.id}); break;
     case 'team': teamChangedSoon(); break;
     case 'invites': teamChangedSoon(true); break;
-    case 'shared': loadShare(); loadRoadmap(); break;
+    case 'shared': loadShare(); loadRoadmap(); loadIntake(); break;
     case 'snapshot': applySnapshot(m); break;
     case 'ops': applyRemote(m.ops, m.by, false); break;
     case 'preview': applyRemote(m.ops, m.by, true); break;
@@ -5878,7 +5881,7 @@ function applySnapshot(m) {
   if (team.afterJoin) { const ops = team.afterJoin; team.afterJoin = null; applyOps(ops); captureBase(); teamSend(ops); }
   setLiveStatus('live'); refresh(); syncPanels();
   if (team.watch) { $('#wbText').textContent = `${team.project.name} · view only, live`; document.title = team.project.name + ' · Venom Board'; }
-  else if (first) { toast(`Joined ${team.project.name} as ${ROLE_NAME[team.role].toLowerCase()}`); loadFeed(); loadShare(); loadRoadmap(); }
+  else if (first) { toast(`Joined ${team.project.name} as ${ROLE_NAME[team.role].toLowerCase()}`); loadFeed(); loadShare(); loadRoadmap(); loadIntake(); }
   if (team.presenting || team.user) sendView();
   if (team.focusAfterJoin) { const f = team.focusAfterJoin; team.focusAfterJoin = null; setTimeout(() => focusCard(f.cardId, f.comments), 80); }
 }
@@ -6408,7 +6411,7 @@ function threadEl(t, nums) {
     watch || root.resolved || orphan ? null : mk('button', {class: 'tm-link cp-replybtn', type: 'button', onclick: () => startReply(root.id)}, cp.replyTo === root.id ? 'Replying…' : 'Reply'));
 }
 function commentRow(c, mine, admin, o = {}) {
-  const m = memberById(c.by) || GIT_AUTHORS[c.by] || {name: 'Former teammate', color: ''};
+  const m = memberById(c.by) || GIT_AUTHORS[c.by] || playerAuthor(c.by) || {name: 'Former teammate', color: ''};
   if (cp.editing === c.id) {
     const ta = mk('textarea', {class: 'tm-in cp-edit', rows: 3, maxlength: 2000, 'aria-label': 'Edit comment'});
     ta.value = cp.editText;
@@ -7359,6 +7362,66 @@ function roadmapSection() {
     mk('p', {class: 'tm-note'}, `${rm.indexable ? (rm.listed ? 'Search engines can find it.' : 'Search engines hear about it after its first few days.') : 'Kept out of search engines.'} To keep a card off it, right-click the card.`),
     admin ? mk('div', {class: 'tm-opts'}, opt('showIdeas', 'Show ideas as “under consideration”'), opt('showBugs', 'Show bug fixes'), opt('showDetails', 'Show descriptions and checklists'), opt('indexable', 'Let search engines list it')) : null,
     admin ? mk('div', {class: 'tm-actions'}, mk('button', {class: 'tm-btn', type: 'button', onclick: () => copy(rm.embed, 'Embed code')}, 'Copy embed code'), mk('button', {class: 'tm-link danger', type: 'button', onclick: stopRoadmap}, 'Take it down')) : null);
+}
+/* ---------- playtest feedback and the in-game bug reporter ---------- */
+// Players reach the board directly: a public feedback form a team admin turns on, and a report key a game sends bug
+// reports with. What they send arrives live as cards in a frame of its own ("Playtest inbox", "Bug reports"), kept off
+// the public roadmap. A report key is shown once, when it's made: the server keeps only a hash of it.
+const INTAKE_DOCS = 'https://github.com/1337VIPER/venom-board/tree/main/integrations/bug-reporter';
+const intake = {project: '', state: null, key: ''};
+// comments the bug reporter adds ("Reported again…") come from a stand-in for the game, not a teammate
+function playerAuthor(id) {
+  return /^vb-bugs-/.test(id) ? {name: 'Bug reporter', color: '#ff7a1a'} : /^vb-play-/.test(id) ? {name: 'Playtester', color: '#ffd23d'} : null;
+}
+async function loadIntake() {
+  if (!team.project || team.watch || !team.project.id) return;
+  const pid = team.project.id;
+  let r = null;
+  try { r = await api(`/api/projects/${pid}/intake`); } catch (e) { /* a server without it: nothing to show */ }
+  if (!board.team || !team.project || team.project.id !== pid) return;
+  if (intake.project !== pid) intake.key = '';
+  intake.project = pid;
+  intake.state = r && typeof r === 'object' && 'feedback' in r ? r : null;
+  renderTeam();
+}
+async function intakeDo(path, method, body, done) {
+  const pid = team.project && team.project.id;
+  if (!pid) return;
+  try {
+    const r = await api(`/api/projects/${pid}/intake${path}`, method, body);
+    if (intake.project === pid) { intake.state = r; intake.key = typeof r.key === 'string' ? r.key : path === '/key' ? '' : intake.key; }
+    if (done) toast(done);
+  } catch (e) { toast(e.message, 4000); }
+  renderTeam();
+}
+async function intakeSure(title, msg, yes, ...call) { if (await ask(title, msg, yes)) intakeDo(...call); }
+function intakeSection() {
+  if (!team.project || team.watch || intake.project !== team.project.id || !intake.state) return null;
+  const s = intake.state, f = s.feedback, k = s.reportKey, admin = ROLE_RANK[team.role] >= ROLE_RANK.admin;
+  const fresh = !!k && !!intake.key && intake.key.endsWith(k.hint);  // the key just made here, until another replaces it
+  const copy = (t, what) => navigator.clipboard.writeText(t).then(() => toast(what + ' copied'), () => toast(t, 6000));
+  const btn = (label, run, ico) => mk('button', {class: 'tm-btn', type: 'button', onclick: run}, ico ? icon(ico) : null, label);
+  const plural = (n, one) => `${n} ${one}${n === 1 ? '' : 's'}`;
+  const form = mk('div', {class: 'tm-share'}, mk('h5', {}, 'Playtest feedback'),
+    f ? [
+      mk('div', {class: 'tm-inline'}, mk('input', {class: 'tm-in', readonly: true, value: f.url, 'aria-label': 'Feedback form link', onfocus: e => e.target.select()}),
+        btn('Copy', () => copy(f.url, 'Link')), btn('Open', () => openLink(f.url))),
+      mk('p', {class: 'tm-note'}, `${f.paused ? 'Paused: playtesters are asked to come back later. ' : ''}${plural(f.submissions, 'submission')} so far${f.lastAt ? ' · last ' + ago(f.lastAt) : ''}. They arrive in the “Playtest inbox” frame.`),
+      admin ? mk('div', {class: 'tm-actions'}, btn(f.paused ? 'Resume' : 'Pause', () => intakeDo('/feedback', 'POST', {paused: !f.paused}, f.paused ? 'Feedback form open again' : 'Feedback form paused')),
+        btn('New link', () => intakeSure('Make a new link?', 'The current link stops working straight away for everyone who has it.', 'New link', '/feedback', 'POST', {newLink: true}, 'New feedback link ready')),
+        mk('button', {class: 'tm-link danger', type: 'button', onclick: () => intakeSure('Turn off the feedback form?', 'The page stops working straight away. Cards already sent stay on the board.', 'Turn off', '/feedback', 'DELETE', undefined, 'Feedback form turned off')}, 'Turn off')) : null]
+    : [mk('p', {class: 'tm-note'}, 'A page playtesters can open to send bugs and ideas, with a screenshot. Each one arrives on this board as a card in a “Playtest inbox” frame, kept off the public roadmap.'),
+      admin ? mk('div', {class: 'tm-actions'}, btn('Turn on the feedback form', () => intakeDo('/feedback', 'POST', {}, 'Feedback form is on. Share its link with your playtesters.'), 'link')) : mk('p', {class: 'tm-note'}, 'A team admin can turn it on.')]);
+  const reporter = mk('div', {class: 'tm-share'}, mk('h5', {}, 'In-game bug reporter'),
+    mk('p', {class: 'tm-note'}, 'Your game can send bug reports straight to this board, with a screenshot and its log. They arrive as bug cards in a “Bug reports” frame; the same bug again within a day adds a comment instead.'),
+    fresh ? [mk('div', {class: 'tm-inline'}, mk('input', {class: 'tm-in tm-key', readonly: true, value: intake.key, 'aria-label': 'Report key', onfocus: e => e.target.select()}), btn('Copy', () => copy(intake.key, 'Report key'))),
+      mk('p', {class: 'tm-note tm-warn'}, 'Copy the key now: it won’t be shown again. Anyone who has it can send reports, so make a new one if it gets out.')] : null,
+    k ? mk('p', {class: 'tm-note'}, `Key ending …${k.hint}, made ${ago(k.createdAt)} · ${plural(k.reports, 'report')}${k.lastUsed ? ' · last ' + ago(k.lastUsed) : ''}.`) : null,
+    mk('p', {class: 'tm-note'}, `Games send reports to ${s.reportUrl}. `, mk('button', {class: 'tm-link', type: 'button', onclick: () => openLink(INTAKE_DOCS)}, 'How to add it to your game')),
+    admin ? mk('div', {class: 'tm-actions'}, k ? [btn('New key', () => intakeSure('Make a new key?', 'The current key stops working straight away, in every build of your game that has it.', 'New key', '/key', 'POST', {}, 'New report key made')),
+      mk('button', {class: 'tm-link danger', type: 'button', onclick: () => intakeSure('Revoke the report key?', 'Games using it can’t send reports any more. Cards already sent stay on the board.', 'Revoke', '/key', 'DELETE', undefined, 'Report key revoked')}, 'Revoke')]
+      : btn('Create a report key', () => intakeDo('/key', 'POST', {}, 'Report key made. Copy it now.'), 'key')) : k ? null : mk('p', {class: 'tm-note'}, 'A team admin can create a report key.'));
+  return [form, reporter];
 }
 // a share link (/v/<token>) opens the board read-only, live, without an account
 const watchToken = (location.pathname.match(/^\/v\/([\w-]{20,64})$/) || [])[1] || '';
