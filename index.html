@@ -785,6 +785,86 @@ html.watching #tools .tool:not([data-tool=select]):not([data-tool=hand]),html.wa
 .pl-burn .act{fill:none;stroke:var(--fang);stroke-width:2;stroke-linejoin:round}
 .pl-burn circle{fill:var(--fang)}
 
+/* ---------- time tracking, sprints and tags ---------- */
+.timerchip{flex:none;display:inline-flex;align-items:center;gap:7px;margin-left:6px;height:28px;max-width:260px;padding:0 9px 0 10px;border-radius:99px;border:1px solid color-mix(in srgb,var(--run) 50%,transparent);background:color-mix(in srgb,var(--run) 10%,transparent);color:var(--bone);font:700 11.5px var(--font-ui);white-space:nowrap;cursor:pointer}
+.timerchip:hover{border-color:var(--run)}
+.timerchip .tc-dot{width:7px;height:7px;border-radius:50%;background:var(--run);box-shadow:0 0 8px var(--run);flex:none;animation:vbpulse 1.8s ease-in-out infinite}
+.timerchip .tc-t{min-width:0;max-width:150px;overflow:hidden;text-overflow:ellipsis}
+.timerchip .tc-c{font:700 11px var(--font-mono);color:var(--run);font-variant-numeric:tabular-nums}
+.timerchip .tc-stop{width:8px;height:8px;border-radius:2px;background:var(--bone-dim);flex:none}
+.timerchip:hover .tc-stop{background:var(--fang)}
+.node.timing{box-shadow:inset 0 1px 0 var(--gloss),0 0 0 2px color-mix(in srgb,var(--run) 55%,transparent),0 0 26px -6px var(--run),0 18px 36px -16px var(--shadow)}
+.n-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
+.n-tags:empty{display:none}
+.n-tags .tg{font:600 10px/1 var(--font-mono);padding:3px 7px 3px 6px;border-radius:99px;border:1px solid color-mix(in srgb,var(--tag) 34%,transparent);background:color-mix(in srgb,var(--tag) 11%,transparent);color:var(--bone-dim);white-space:nowrap;cursor:pointer}
+.n-tags .tg::before{content:"#";opacity:.5;margin-right:1px}
+.n-tags .tg:hover{color:var(--bone);border-color:color-mix(in srgb,var(--tag) 70%,transparent)}
+.chip.tk-spent{font-family:var(--font-mono);font-weight:600}
+.chip.tk-spent.over{color:var(--warn);border-color:color-mix(in srgb,var(--warn) 45%,transparent)}
+.f-spr{display:inline-flex;align-items:center;gap:7px;padding:4px 9px;border-radius:99px;border:1px solid color-mix(in srgb,var(--fc) 38%,transparent);background:color-mix(in srgb,var(--fc) 10%,var(--void))}
+.f-spr b{font:800 9px var(--font-display);letter-spacing:.14em;text-transform:uppercase}
+.f-spr.warn{color:var(--warn);border-color:color-mix(in srgb,var(--warn) 50%,transparent)}
+.f-spr.over{opacity:.6}
+.frame.f-tight .f-spr .d{display:none}
+.pl-track{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 6px;margin-top:8px;font-size:12px;color:var(--bone-dim)}
+.pl-track b{color:var(--bone);font:700 12px var(--font-mono);margin-right:3px}
+.pl-track .warn{color:var(--warn)}
+.pl-track .warn b{color:var(--warn)}
+.pl-track em{font:800 9px var(--font-display);font-style:normal;letter-spacing:.14em;text-transform:uppercase;color:var(--bone-faint);margin-right:2px}
+/* a sprint makes the stats tall: past 40% of the panel they scroll on their own, so the card list keeps some room */
+.pl-stats:has(.pl-spr){max-height:40%;overflow-y:auto;scrollbar-width:thin;flex:none}
+.pl-spr{margin:12px 0 2px;padding:10px 12px;border:1px solid var(--line);border-radius:14px 14px 14px 4px;background:var(--void-2);display:flex;flex-direction:column;gap:8px}
+.pl-spr-h{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.pl-spr-h>b,.pl-vel-h b{font:800 9.5px var(--font-display);letter-spacing:.14em;text-transform:uppercase;color:var(--bone-faint)}
+.pl-spr-name{display:inline-flex;align-items:center;gap:4px;min-width:0;max-width:170px;border:0;background:none;padding:2px 4px;border-radius:6px;color:var(--bone);font:800 12px var(--font-ui);cursor:pointer}
+.pl-spr-name:hover{background:var(--hide-3)}
+.pl-spr-name span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pl-spr-name svg{width:12px;height:12px;flex:none;fill:none;stroke:currentColor;stroke-width:1.8;opacity:.6}
+.pl-spr-h .st{margin-left:auto;font:800 10.5px var(--font-mono);text-transform:uppercase;letter-spacing:.06em;color:var(--bone-dim)}
+.pl-spr-h .st.ok{color:var(--ok)}.pl-spr-h .st.warn{color:var(--warn)}.pl-spr-h .st.bad{color:var(--bad)}
+.pl-spr-d{font:500 11px var(--font-mono);color:var(--bone-dim)}
+.pl-spr-bar{height:6px;border-radius:99px;background:var(--hide-3);overflow:hidden}
+.pl-spr-bar i{display:block;height:100%;background:var(--ok);border-radius:inherit}
+.pl-spr .pl-facts .ok b{color:var(--ok)}
+.pl-spr-link{border:0;background:none;padding:0;color:var(--fang);font:700 11.5px var(--font-ui);cursor:pointer;text-align:left}
+.pl-cap{display:flex;flex-direction:column;gap:5px;border-top:1px solid var(--line);padding-top:8px}
+.pl-cap-r{display:grid;grid-template-columns:minmax(0,1fr) 70px auto;align-items:center;gap:8px;font-size:12px}
+.pl-cap-r .n{display:flex;align-items:center;gap:6px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--bone)}
+.pl-cap-r .n i{width:7px;height:7px;border-radius:50%;background:var(--c,var(--bone-faint));flex:none}
+.pl-cap-r .bar{height:5px;border-radius:99px;background:var(--hide-3);overflow:hidden}
+.pl-cap-r .bar i{display:block;height:100%;background:var(--ok);border-radius:inherit}
+.pl-cap-r .v{font:600 10.5px var(--font-mono);color:var(--bone-dim);white-space:nowrap;text-align:right}
+.pl-cap-r.warn .bar i{background:var(--warn)}.pl-cap-r.warn .v{color:var(--warn)}
+.pl-cap-r.bad .bar i{background:var(--bad)}.pl-cap-r.bad .v{color:var(--bad)}
+.pl-cap-r.none .v{color:var(--bone-faint)}
+.pl-vel{border-top:1px solid var(--line);padding-top:8px}
+.pl-vel-h{display:flex;align-items:baseline;gap:8px}
+.pl-vel-h em{margin-left:auto;font:500 11px var(--font-mono);font-style:normal;color:var(--bone-dim)}
+.pl-vel-bars{display:flex;align-items:flex-end;gap:6px;height:58px;margin-top:6px}
+.pl-vel-bars span{flex:0 1 52px;min-width:0;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:stretch;gap:3px}
+.pl-vel-bars i{display:block;border-radius:4px 4px 2px 2px;background:color-mix(in srgb,var(--bone) 34%,transparent)}
+.pl-vel-bars .plan i{background:transparent;box-shadow:inset 0 0 0 1.5px var(--fang)}
+.pl-vel-bars em{font:600 9px var(--font-mono);font-style:normal;color:var(--bone-faint);text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pl-spr-note{margin:0;font-size:11.5px;color:var(--bone-faint);line-height:1.45}
+.pl-spr-note.warn{color:var(--warn)}
+.pl-saved{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.pl-saved .dd{height:28px;max-width:220px}
+.pl-saved .dd span{overflow:hidden;text-overflow:ellipsis}
+.pl-save{border:0;background:none;color:var(--fang);font:700 11.5px var(--font-ui);cursor:pointer;padding:2px 0}
+.sp-two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.sp-cap{display:flex;flex-direction:column;gap:7px}
+.sp-cap h5{margin:2px 0 0;font:700 12px var(--font-ui);color:var(--bone-dim)}
+.sp-cap h5 em{font-style:normal;font-weight:500;color:var(--bone-faint)}
+.sp-people{display:flex;flex-direction:column;gap:6px;max-height:230px;overflow:auto;padding-right:2px}
+.sp-person{display:flex;align-items:center;gap:9px;font:600 12.5px var(--font-ui);color:var(--bone)}
+.sp-person i{width:8px;height:8px;border-radius:50%;background:var(--c);flex:none}
+.sp-person span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sp-person .tm-in,.sp-cap>.tm-in{width:110px;flex:none}
+.sp-note{margin:0;font-size:12px;color:var(--bone-faint);line-height:1.5}
+.sp-acts{align-items:center}
+.sp-acts .tm-link{margin-left:auto}
+@media (max-width:760px){.timerchip .tc-t{display:none}}
+
 /* ---------- search everything ---------- */
 .modal#searchAll{align-items:start;padding-top:min(12vh,110px)}
 .sa-sheet{width:min(680px,100%);max-height:min(620px,calc(100% - 40px));display:flex;flex-direction:column;padding:0;overflow:hidden}
@@ -861,6 +941,7 @@ html.watching #tools .tool:not([data-tool=select]):not([data-tool=hand]),html.wa
     <span id="saveState" class="savestate">Saved</span>
     <span id="liveChip" class="livechip" hidden></span>
     <button id="jamChip" class="jamchip" type="button" hidden title="Show the jam clock"></button>
+    <button id="timerChip" class="timerchip" type="button" hidden></button>
     <div id="peerDock" class="peers" hidden></div>
     <div class="spacer"></div>
     <div class="grp">
@@ -991,6 +1072,7 @@ html.watching #tools .tool:not([data-tool=select]):not([data-tool=hand]),html.wa
         <dt><kbd>Ctrl F</kbd></dt><dd>Planner search and filters</dd>
         <dt><kbd>PgDn</kbd> <kbd>PgUp</kbd></dt><dd>Fly to the next or previous phase</dd>
         <dt><kbd>[ ] text</kbd></dt><dd>Lines like this in notes become checkboxes</dd>
+        <dt><kbd>Right-click</kbd></dt><dd>A card: start a timer or add tags. A phase: make it a sprint</dd>
       </dl></section>
       <section><h3>Canvas</h3><dl>
         <dt><kbd>Wheel</kbd></dt><dd>Zoom at the cursor</dd>
@@ -1064,6 +1146,17 @@ html.watching #tools .tool:not([data-tool=select]):not([data-tool=hand]),html.wa
     <label class="jm-f">Theme <em>fill it in once it's out</em><input class="tm-in" name="theme" maxlength="120"></label>
     <label class="jm-f">People making the game<input class="tm-in" name="people" type="number" min="1" max="50" step="1"></label>
     <div class="tm-actions"><button class="tm-btn ok" type="submit">Save</button><button class="tm-btn" type="button" id="jmCancel">Cancel</button></div>
+  </form>
+</div>
+
+<div id="sprintModal" class="modal" hidden>
+  <form id="sprintForm" class="sheet jm-sheet" role="dialog" aria-modal="true" aria-labelledby="spTitle">
+    <div class="st-head"><h2 id="spTitle">Sprint<em>.</em></h2></div>
+    <p id="spLead" class="sp-note"></p>
+    <div class="sp-two"><label class="jm-f">Starts<input class="tm-in" name="start" type="date" required></label><label class="jm-f">Ends<input class="tm-in" name="end" type="date" required></label></div>
+    <div id="spLen" class="st-seg" role="group" aria-label="Sprint length"><button type="button" data-wk="1">1 week</button><button type="button" data-wk="2">2 weeks</button><button type="button" data-wk="3">3 weeks</button><button type="button" data-wk="4">4 weeks</button></div>
+    <div id="spCap" class="sp-cap"></div>
+    <div class="tm-actions sp-acts"><button class="tm-btn ok" type="submit">Save</button><button class="tm-btn" type="button" id="spCancel">Cancel</button><button class="tm-link danger" type="button" id="spClear" hidden>Clear sprint dates</button></div>
   </form>
 </div>
 
@@ -1224,7 +1317,7 @@ let storageOK = true, fileHandle = null, deskPath = null, dl = null, clip = null
 const pref = (k, d) => { try { const v = localStorage.getItem('venom-board-' + k); return v === null ? d : v === '1'; } catch (e) { return d; } };
 const savePref = (k, v) => { try { localStorage.setItem('venom-board-' + k, v ? '1' : '0'); } catch (e) {} };
 let snapOn = pref('snap', true), showMini = pref('mini', true), uiOff = false, plannerOpen = false;
-let filt = {q: '', kinds: new Set(), status: new Set(), prio: new Set(), disc: new Set(), who: new Set(), ready: false};
+let filt = {q: '', kinds: new Set(), status: new Set(), prio: new Set(), disc: new Set(), who: new Set(), ready: false, tags: new Set()};
 let trace = null, dimSet = null, openDeps = new Map(), frameStats = new Map();
 let pending = null, imageLinkFrom = null, TOK = {};
 let topbarOn = pref('topbar', true);
@@ -1353,8 +1446,9 @@ function reindex() {
 }
 const isWork = n => n.type === 'node' && n.kind !== 'idea' && n.kind !== 'milestone' && n.prio !== 'wont';
 const isReady = n => n.type === 'node' && n.kind !== 'idea' && n.kind !== 'milestone' && (n.status || 'todo') === 'todo' && !openDeps.get(n.id) && n.prio !== 'wont';
-const filterActive = () => !!(filt.q || filt.kinds.size || filt.status.size || filt.prio.size || filt.disc.size || filt.who.size || filt.ready);
+const filterActive = () => !!(filt.q || filt.kinds.size || filt.status.size || filt.prio.size || filt.disc.size || filt.who.size || filt.ready || (filt.tags && filt.tags.size));
 function matches(n) {
+  if (filt.tags && filt.tags.size && !(n.tags || []).some(t => filt.tags.has(t))) return false;
   if (filt.kinds.size && !filt.kinds.has(n.kind || 'task')) return false;
   if (filt.status.size && !filt.status.has(n.status || 'todo')) return false;
   if (filt.prio.size && !filt.prio.has(n.prio || '')) return false;
@@ -1471,7 +1565,7 @@ function footChips(it, deps) {
     if (isDate(it.due)) { const n = daysUntil(it.due); out.push({i: 'cal', t: `${fmtDate(it.due)} · ${open ? countdown(n) : 'reached'}`, c: !open ? 'ok' : n < 0 ? 'late' : n <= 7 ? 'soon' : ''}); }
     else out.push({i: 'cal', t: 'No date yet', c: ''});
   } else {
-    if (it.est) out.push({i: 'clock', t: it.est, c: ''});
+    if (it.spent) out.push(spentChip(it)); else if (it.est) out.push({i: 'clock', t: it.est, c: ''});
     if (isDate(it.due)) { const n = daysUntil(it.due); out.push({i: 'cal', t: (open && n < 0 ? 'Overdue · ' : 'Due ') + fmtDate(it.due), c: open && n < 0 ? 'late' : open && n <= 3 ? 'soon' : ''}); }
     const cl = checklist(it.body); if (cl.total) out.push({i: 'check', t: `${cl.done}/${cl.total}`, c: cl.done === cl.total ? 'ok' : ''});
   }
@@ -1506,7 +1600,7 @@ function makeEl(it) {
   el.dataset.id = it.id; el._type = it.type;
   if (it.type === 'image') { const img = new Image(); img.draggable = false; img.alt = it.name || 'Reference image'; el.appendChild(img); }
   else if (it.type === 'video') el.innerHTML = '<div class="v-box"></div><div class="v-tag"></div>';
-  else if (it.type === 'node') el.innerHTML = '<div class="n-head"></div><div class="n-title"></div><div class="n-body" data-ph="Notes… start a line with [ ] for a checkbox"></div><div class="n-foot"></div>';
+  else if (it.type === 'node') el.innerHTML = '<div class="n-head"></div><div class="n-title"></div><div class="n-body" data-ph="Notes… start a line with [ ] for a checkbox"></div><div class="n-foot"></div><div class="n-tags"></div>';
   else if (it.type === 'frame') el.innerHTML = '<div class="f-title"></div><div class="f-meta"></div>';
   else if (it.type === 'jam') el.innerHTML = '<div class="j-top"><span>Game jam</span><b class="j-name"></b></div><div class="j-theme"></div><div class="j-time"><b></b><span></span></div><div class="j-bar"><i></i></div><div class="j-scope"></div>';
   return el;
@@ -1544,8 +1638,9 @@ function syncEl(el, it) {
     if (k === 'bug') el.style.setProperty('--sev', (SEV_MAP[it.sev] || SEV_MAP.major)[2]);
     const deps = openDeps.get(it.id) || 0, cl = checklist(it.body);
     const sig = [k, it.status, it.prio, it.disc, it.est, it.due, it.sev, deps, cl.done, cl.total, isoDay(new Date()), skin, (it.assignees || []).join(','), board.team ? commentCounts.get(it.id) || 0 : 0, team.membersSig || '',
-      board.team && team.roadmap ? `${team.votes.get(it.id) || 0}${it.nopub ? 'h' : ''}` : ''].join('|');
+      board.team && team.roadmap ? `${team.votes.get(it.id) || 0}${it.nopub ? 'h' : ''}` : '', it.spent || 0].join('|');
     if (el._sig !== sig) { el._sig = sig; el.children[0].innerHTML = headHTML(it); el.children[3].innerHTML = footHTML(it, deps); }
+    syncTrack(el, it);
     if (ed !== 'title') { const t = el.children[1]; if (t.textContent !== it.title) t.textContent = it.title; }
     if (ed !== 'body') { const b = el.children[2], key = (it.body || '') + '|' + skin; if (b._k !== key) { b._k = key; b.innerHTML = bodyHTML(it.body || ''); } }
   } else if (it.type === 'text') {
@@ -1558,7 +1653,7 @@ function syncEl(el, it) {
     el.style.setProperty('--fc', col(it.color));
     const t = el.firstChild; if (!ed && t.textContent !== it.title) t.textContent = it.title;
     const st = frameStats.get(it.id), pct = st && st.total ? Math.round(st.done / st.total * 100) : 0;
-    const meta = st && st.total ? `<span>${st.done}/${st.total}</span><span class="f-bar"><i style="width:${pct}%"></i></span><span>${pct}%</span>${st.est ? `<span>· ${fmtDays(st.est)} left</span>` : ''}` : '';
+    const meta = sprintMetaHTML(it, st) + (st && st.total ? `<span>${st.done}/${st.total}</span><span class="f-bar"><i style="width:${pct}%"></i></span><span>${pct}%</span>${st.est ? `<span>· ${fmtDays(st.est)} left</span>` : ''}` : '');
     if (el.children[1]._m !== meta) { el.children[1]._m = meta; el.children[1].innerHTML = meta; }
   } else if (it.type === 'jam') {
     el.style.width = it.w + 'px';
@@ -2009,10 +2104,13 @@ function cleanItem(i) {
       if (okTime(i.createdAt)) n.createdAt = i.createdAt;  // when it was added and finished, for the burndown chart
       if (okTime(i.doneAt) && n.status === 'done') n.doneAt = i.doneAt;
       if (i.nopub === true) n.nopub = true;  // kept off the project's public roadmap
+      const spent = cleanSpent(i.spent), tags = cleanTags(i.tags);
+      if (spent) n.spent = spent;  // tracked time, in minutes
+      if (tags.length) n.tags = tags;
       return n;
     }
     case 'text': return {...base, text: txt(i.text, 4000), size: clamp(num(i.size, 32), 4, 800), color: colorOr(i.color, BONE)};
-    case 'frame': return {...base, title: txt(i.title, 200), color: colorOr(i.color, '#a66bff')};
+    case 'frame': { const f = {...base, title: txt(i.title, 200), color: colorOr(i.color, '#a66bff')}, sp = cleanSprint(i.sprint); if (sp) f.sprint = sp; return f; }
     case 'jam': {  // a game jam's clock: deadline, theme and a scope check
       if (!okTime(i.end)) return null;
       const j = {...base, w: clamp(num(i.w, 360), 280, 720), title: txt(i.title, 80), theme: txt(i.theme, 120), end: i.end, people: clamp(Math.round(num(i.people, 1)), 1, 50), color: colorOr(i.color, '#ff2a4f')};
@@ -2036,6 +2134,41 @@ function cleanItem(i) {
   return null;
 }
 const okTime = v => Number.isFinite(v) && v > 1.5e12 && v < 4e12;
+/* --- time tracking, tags and sprints: optional fields, rebuilt like everything else --- */
+const SPENT_MAX = 1000000, TAG_RE = /^[\p{L}\p{N}_-]{1,24}$/u;
+// a card's tracked time, in whole minutes
+const cleanSpent = v => (typeof v === 'number' && Number.isFinite(v) ? Math.round(clamp(v, 0, SPENT_MAX)) : 0);
+// up to 8 tags, each 1 to 24 lower-case letters, digits, - or _
+function cleanTags(v) {
+  const out = [];
+  for (const t of Array.isArray(v) ? v.slice(0, 64) : []) {
+    if (typeof t !== 'string') continue;
+    const s = t.trim().toLowerCase();
+    if (TAG_RE.test(s) && !out.includes(s)) out.push(s);
+    if (out.length === 8) break;
+  }
+  return out;
+}
+// a real calendar day (YYYY-MM-DD) this century
+const realDay = s => { if (typeof s !== 'string' || !/^20\d\d-\d\d-\d\d$/.test(s)) return false; const t = Date.parse(s + 'T00:00:00Z'); return Number.isFinite(t) && new Date(t).toISOString().slice(0, 10) === s; };
+// a phase used as a sprint: its first and last day (up to a year apart) and the days of work each teammate
+// (or "all", the whole board) can give it
+function cleanSprint(s) {
+  if (!s || typeof s !== 'object' || !realDay(s.start) || !realDay(s.end) || s.end < s.start) return null;
+  if ((Date.parse(s.end) - Date.parse(s.start)) / 864e5 > 366) return null;
+  const out = {start: s.start, end: s.end}, cap = {};
+  if (s.cap && typeof s.cap === 'object' && !Array.isArray(s.cap)) {
+    let n = 0;
+    for (const k of Object.keys(s.cap)) {
+      const v = s.cap[k];
+      if (k === '__proto__' || !okId(k) || typeof v !== 'number' || !(v >= 0 && v <= 365)) continue;
+      cap[k] = Math.round(v * 10) / 10;
+      if (++n === 50) break;
+    }
+  }
+  if (Object.keys(cap).length) out.cap = cap;
+  return out;
+}
 // a YouTube or Vimeo video, played from their site only when someone clicks it
 const cleanEmbed = e => e && typeof e === 'object' && ((e.p === 'yt' && /^[\w-]{11}$/.test(e.id)) || (e.p === 'vimeo' && /^\d{5,12}$/.test(e.id))) ? {p: e.p, id: e.id} : null;
 function cleanComment(c) {
@@ -3225,6 +3358,7 @@ function nodeCtx(list, one) {
   if (board.team && team.members.length && !teamReadOnly()) h += vsep + ddbtn('assignMenu', 'Assign people', assignLabel(list));
   if (one) h += vsep + cbtn('notes', 'Edit notes', 'notes') + cbtn('trace', 'Trace dependencies', 'trace', false, trace === one.id) + cbtn('next', 'Add connected task (Tab)', 'plus');
   if (one && board.team) { const n = commentCounts.get(one.id) || 0; h += cbtn('comments', n ? `Comments (${n})` : 'Comments', 'label', false, cp.open && cp.card === one.id); }
+  h += trackCtx(list, one);
   return h;
 }
 function selCtx(list) {
@@ -3243,6 +3377,7 @@ function selCtx(list) {
     if (only('text')) h += vsep + range(8, 200, list[0].size * cam.z);
     if (only('link')) h += vsep + seg('lstyle', STYLE_OPTS, common(list.map(o => o.style)), 'Line style') + seg('head', HEAD_OPTS, common(list.map(o => o.head)), 'Arrowheads') + chip('dash', 'Dashed', list.every(o => o.dash)) + chip('flow', 'Flow', list.every(o => o.flow)) + (one ? cbtn('label', 'Edit label', 'label') + cbtn('reverse', 'Reverse direction', 'swap') + cbtn('knot', 'Add a reroute point', 'plus') : '') + (list.some(o => o.via) ? chip('unknot', 'Straighten', false) : '');
     if (one && one.type === 'jam') h += vsep + cbtn('jamedit', 'Edit the jam', 'clock') + cbtn('jamcut', 'Cut scope', 'trash');
+    if (one && one.type === 'frame') h += vsep + chip('sprint', one.sprint ? 'Sprint…' : 'Make a sprint…', !!one.sprint);
     if (only('image')) h += vsep + chip('flip', 'Flip', list.every(o => o.flip)) + chip('gray', 'Greyscale', list.every(o => o.gray)) + (one ? cbtn('orig', 'Original size', 'orig') + cbtn('replace', 'Replace with another picture or video', 'swap') : '');
     if (one && one.type === 'image' && board.team) { const n = commentCounts.get(one.id) || 0; h += vsep + cbtn('fbpin', 'Add feedback pin', 'fbpin') + cbtn('comments', n ? `Comments (${n})` : 'Comments', 'label', false, cp.open && cp.card === one.id); }
     if (one && one.type === 'video') {
@@ -3336,6 +3471,10 @@ function act(a, v, btn) {
     case 'comments': if (list[0]) { if (cp.open && cp.card === list[0].id) closeComments(); else openComments(list[0].id); } break;
     case 'fbpin': if (list[0] && list[0].type === 'image') startFeedbackPin(list[0]); break;
     case 'unlockBoard': toggleBoardLock(); break;
+    case 'timer': if (nodes.length === 1) toggleTimer(nodes[0]); break;
+    case 'spent': if (nodes.length === 1) editSpent(nodes[0]); break;
+    case 'tags': if (nodes.length) tagMenu(nodes.map(n => n.id), btn); break;
+    case 'sprint': if (list[0] && list[0].type === 'frame') editSprint(list[0]); break;
     case 'more': menuAt(btn, moreEntries()); break;
     case 'arrange': menuAt(btn, arrangeEntries()); break;
     case 'replace': if (list.length === 1) menuAt(btn, replaceEntries(list[0])); break;
@@ -3418,6 +3557,7 @@ function contextEntries(hit, w) {
       if (board.team) E.push({label: 'Comments', icon: 'label', kb: (commentCounts.get(hit.id) || '') + '', run: () => openComments(hit.id)});
       if (board.team && team.members.length && !teamReadOnly()) E.push({label: 'Assign people…', icon: 'user', run: () => showMenu(lastMenuPt.x, lastMenuPt.y, assignEntries())});
       if (board.team && team.roadmap && !teamReadOnly()) { const off = list.filter(o => o.type === 'node').every(n => n.nopub); E.push({label: off ? 'Show on the public roadmap' : 'Hide from the public roadmap', icon: 'eye', run: () => setNopub(!off)}); }
+      E.push(...trackEntries(hit));
       E.push({label: 'Edit title', kb: 'Enter', run: () => startEdit(hit.id, 'title', true)}, {label: 'Edit notes', run: () => startEdit(hit.id, 'body', false)},
         {label: 'Add connected task', kb: 'Tab', icon: 'plus', run: addNextCard}, {label: trace === hit.id ? 'Stop tracing' : 'Trace dependencies', icon: 'trace', run: () => { trace = trace === hit.id ? null : hit.id; refresh(); }}, {head: 'Status'});
       STATUS.forEach(([v]) => E.push({label: statusLabel(hit.kind || 'task', v).replace('✓ ', ''), cur: hit.status === v, run: () => setStatus(selObjs(), v)}));
@@ -3436,6 +3576,7 @@ function contextEntries(hit, w) {
         ...(hit.via ? [{label: 'Straighten (remove reroute points)', run: () => clearKnots([hit])}] : []), {head: 'Style'},
         ...STYLE_OPTS.map(([v, t]) => ({label: t, cur: hit.style === v, run: () => { (sel.has(hit.id) ? selObjs().filter(o => o.type === 'link') : [hit]).forEach(o => { o.style = v; }); opts.link.style = v; refresh(); commit(); }})), '-');
     } else if (hit.type === 'text' || hit.type === 'frame') {
+      if (hit.type === 'frame') E.push(...sprintEntries(hit));
       E.push({label: hit.type === 'frame' ? 'Rename phase' : 'Edit text', run: () => startEdit(hit.id, null, true)}, '-');
     }
     if (list.filter(o => o.type !== 'link' && o.type !== 'stroke').length >= 2) E.push({label: 'Arrange…', icon: 'arrange', run: () => showMenu(lastMenuPt.x, lastMenuPt.y, arrangeEntries())});
@@ -3633,6 +3774,7 @@ function renderPlanner() {
   let h = `<div class="pl-big"><b>${pct}<small>%</small></b><span>done · ${c.done} of ${total} task${total === 1 ? '' : 's'}</span></div>`;
   h += `<div class="pl-bar">${total ? bar('--ok', c.done) + bar('--run', c.doing) + bar('--bad', c.blocked) + bar('--bone-faint', c.todo) : ''}</div>`;
   h += `<div class="pl-facts"><span><b>${ready}</b>ready to start</span><span><b>${fmtDays(est)}</b>estimated left</span><span class="${bugs ? 'warn' : ''}"><b>${bugs}</b>open bug${bugs === 1 ? '' : 's'}</span><span class="${late ? 'bad' : ''}"><b>${late}</b>overdue</span></div>`;
+  h += trackedHTML(work) + sprintHTML();
   const ms = nodes.filter(n => n.kind === 'milestone').sort((a, b) => (a.due || '9999').localeCompare(b.due || '9999'));
   h += burndownHTML(work);
   if (ms.length) h += `<div class="pl-ms">${ms.map(m => { const d = daysUntil(m.due), cls = m.status === 'done' ? 'ok' : d < 0 ? 'bad' : d <= 14 ? 'warn' : ''; return `<button class="pl-msrow" data-id="${esc(m.id)}"><span class="dia" style="--c:${col(m.color)}"></span><span class="t">${esc(m.title)}</span><span class="m ${cls}">${m.status === 'done' ? 'reached' : isDate(m.due) ? countdown(d) : 'no date'}</span></button>`; }).join('')}</div>`;
@@ -3642,8 +3784,10 @@ function renderPlanner() {
   f += `<div class="fg"><span class="fl">Status</span>${pchip('ready', '1', 'Ready to start', filt.ready)}${STATUS.map(([k, t]) => pchip('status', k, t, filt.status.has(k))).join('')}</div>`;
   f += `<div class="fg"><span class="fl">Priority</span>${PRIO.map(([k, t]) => pchip('prio', k, t, filt.prio.has(k))).join('')}</div>`;
   if (usedDisc.length) f += `<div class="fg"><span class="fl">Discipline</span>${usedDisc.map(d => pchip('disc', d[0], d[1], filt.disc.has(d[0]), d[2])).join('')}</div>`;
+  f += tagFilterHTML();
   if (board.team && team.members.length) f += `<div class="fg"><span class="fl">People</span>${team.user ? pchip('who', 'me', 'Mine', filt.who.has('me')) : ''}${team.members.map(m => pchip('who', m.id, m.name, filt.who.has(m.id), m.color)).join('')}</div>`;
   if (filterActive()) f += `<button class="pl-clear" data-pl="clear">Clear filters · cards outside the filter are dimmed</button>`;
+  f = savedFilterHTML() + f;
   $('#plFilters').innerHTML = f;
   let L = '';
   for (const g of boardGroups()) {
@@ -3662,7 +3806,7 @@ planner.addEventListener('click', e => {
   const b = e.target.closest('[data-pl]');
   if (b) {
     const a = b.dataset.pl;
-    if (a === 'clear') { filt = {q: '', kinds: new Set(), status: new Set(), prio: new Set(), disc: new Set(), who: new Set(), ready: false}; $('#plSearch').value = ''; refresh(); }
+    if (a === 'clear') { filt = {q: '', kinds: new Set(), status: new Set(), prio: new Set(), disc: new Set(), who: new Set(), ready: false, tags: new Set()}; $('#plSearch').value = ''; refresh(); }
     else if (a === 'timeline') openTimeline();
     else if (a === 'searchall') openSearchAll();
     else if (a === 'md') copyMarkdown(); else if (a === 'csv') saveCSV();
@@ -3679,6 +3823,459 @@ $('#plSearch').addEventListener('keydown', e => {
     searchIdx = (searchIdx + (e.shiftKey ? -1 : 1) + hits.length) % hits.length;
     const it = hits[searchIdx]; sel.clear(); sel.add(it.id); flyTo(it); refresh();
   } else if (e.key === 'Escape') { e.preventDefault(); if (e.target.value) { e.target.value = ''; filt.q = ''; refresh(); } else e.target.blur(); }
+});
+
+/* ---------- time tracking, sprints and tags ---------- */
+// Time tracking: "Start timer" runs a clock for one card. The clock lives on this computer (localStorage, one per
+// person per board, so it survives a reload) and is never sent to the team; stopping it adds its minutes to the
+// card's tracked time (spent), which is shared like any other edit and can be fixed by hand.
+Object.assign(ICON, {
+  timer: '<circle cx="10" cy="11.2" r="5.8"/><path d="M10 11.2V8.4M8.2 2.9h3.6M14.6 6l1.2-1.2"/>',
+  tag: '<path d="M3.6 4.8v4.4c0 .3.1.6.4.9l6.3 6.3a1.2 1.2 0 0 0 1.7 0l4.3-4.3a1.2 1.2 0 0 0 0-1.7L10 4c-.3-.3-.6-.4-.9-.4H4.8a1.2 1.2 0 0 0-1.2 1.2z"/><circle cx="7.1" cy="7.1" r="1.1"/>',
+  sprint: '<rect x="3.5" y="4.5" width="13" height="12" rx="2"/><path d="M3.5 8.5h13M7 3v3M13 3v3M6.8 12.6h5.6M10.6 10.8l1.8 1.8-1.8 1.8"/>',
+});
+const workCard = n => !!n && n.type === 'node' && (n.kind === 'task' || n.kind === 'bug');
+const shortTitle = s => { s = String(s || '').trim() || 'Untitled'; return s.length > 40 ? s.slice(0, 39) + '…' : s; };
+// 45m, 2.5h, then days of 8 hours (as estimates count them): 1.5d
+const fmtSpent = m => { m = Math.max(0, Math.round(m || 0)); return m < 60 ? m + 'm' : m < 480 ? rd(m / 60) + 'h' : rd(m / 480) + 'd'; };
+const fmtHM = m => { m = Math.max(0, Math.round(m || 0)); const h = Math.floor(m / 60); return h ? h + 'h' + (m % 60 ? ' ' + (m % 60) + 'm' : '') : m + 'm'; };
+const overEst = n => { const e = estDays(n.est); return e > 0 && (n.spent || 0) > e * 480; };
+// the card footer's figure: tracked against the estimate, amber (the "soon" colour) once it's over
+const spentChip = n => ({i: 'timer', t: n.est ? `${fmtSpent(n.spent)} / ${n.est}` : `${fmtSpent(n.spent)} tracked`, c: overEst(n) ? 'soon' : ''});
+// "2h 30m", "45m", "1.5h", "1d" (8 hours) or "1:30"; a plain number is hours
+function parseSpent(s) {
+  s = String(s || '').trim().toLowerCase().replace(/,/g, '.');
+  const hm = s.match(/^(\d+):([0-5]?\d)$/);
+  if (hm) return Math.min(SPENT_MAX, +hm[1] * 60 + +hm[2]);
+  const re = /(\d+(?:\.\d+)?)\s*(days?|d|hours?|hrs?|h|minutes?|mins?|m)?\s*/y;
+  let total = 0, any = false;
+  while (re.lastIndex < s.length) {
+    const k = re.exec(s); if (!k) return NaN;
+    const v = parseFloat(k[1]), u = (k[2] || 'h')[0];
+    total += u === 'd' ? v * 480 : u === 'm' ? v : v * 60; any = true;
+  }
+  return any ? Math.min(SPENT_MAX, Math.round(total)) : NaN;
+}
+const timerKey = () => 'venom-board-timer:' + board.id + (board.team && team.user ? ':' + team.user.id : '');
+let tmr = {key: '', t: null};
+function timerNow() {
+  const key = timerKey();
+  if (tmr.key !== key) {  // another board (or another person on it): read its timer
+    let t = null;
+    try { t = JSON.parse(localStorage.getItem(key) || 'null'); } catch (e) {}
+    tmr = {key, t: t && typeof t === 'object' && okId(t.card) && okTime(t.start) ? {card: t.card, start: t.start, title: txt(t.title, 200)} : null};
+    queueMicrotask(paintTimer);
+  }
+  return tmr.t;
+}
+function setTimer(t) {
+  tmr = {key: timerKey(), t};
+  try { if (t) localStorage.setItem(tmr.key, JSON.stringify(t)); else localStorage.removeItem(tmr.key); } catch (e) {}
+  paintTimer(); refresh();
+}
+const timing = id => { const t = timerNow(); return !!t && t.card === id; };
+function toggleTimer(card) { if (timing(card.id)) stopTimer(); else startTimer(card); }
+async function startTimer(card) {
+  if (!workCard(card) || blocked()) return;
+  const cur = timerNow();
+  if (cur && cur.card === card.id) return;
+  let said = '';
+  if (cur) { said = await stopTimer(true); if (said === null || timerNow()) return; }  // one at a time: the first one's time goes to its card
+  const now = doc.items.find(i => i.id === card.id);
+  if (!now) return;
+  setTimer({card: now.id, start: Date.now(), title: txt(now.title, 200)});
+  toast(`${said ? said + ' ' : ''}Timer started on “${shortTitle(now.title)}”. Click it in the top bar to stop.`, said ? 4500 : 2800);
+}
+// Returns what happened, or null when the timer keeps running (the board can't be edited right now, or a
+// long run was cancelled at the check)
+async function stopTimer(quiet) {
+  const t = timerNow(); if (!t) return '';
+  const say = m => { if (!quiet) toast(m, 4000); return m; };
+  const gone = () => { setTimer(null); return say(`Timer stopped. “${shortTitle(t.title)}” isn't on this board any more, so its time wasn't added.`); };
+  if (!doc.items.some(i => i.id === t.card)) return gone();
+  if (blocked()) return null;
+  let min = Math.round((Date.now() - t.start) / 60000);
+  if (min > 480) {  // longer than a working day: maybe it was left running, so check before adding it all
+    const v = await askSpent(`Add ${fmtHM(min)}?`, `The timer on “${shortTitle(t.title)}” ran for ${fmtHM(min)}. Add all of it, or change the amount. Cancel keeps it running.`, 'Add time', min);
+    const again = timerNow();
+    if (v === null || !again || again.start !== t.start || blocked()) return null;
+    min = v;
+  }
+  const card = doc.items.find(i => i.id === t.card);  // looked up again: a teammate's edit may have replaced it
+  if (!card) return gone();
+  setTimer(null);
+  if (min < 1) return say('Timer stopped. It ran for under a minute, so nothing was added.');
+  card.spent = Math.min(SPENT_MAX, (card.spent || 0) + min);
+  refresh(); commit();
+  return say(`Added ${fmtSpent(min)} to “${shortTitle(card.title)}”${card.est ? ` · ${fmtSpent(card.spent)} of ${card.est} now` : ''}.`);
+}
+async function askSpent(title, msg, yes, cur) {
+  const p = askText(title, msg, yes, {placeholder: 'e.g. 2h 30m', max: 40});
+  const inp = $('#pmField input');
+  if (inp) { inp.value = cur ? fmtHM(cur) : ''; inp.select(); }
+  const v = await p;
+  if (v === null) return null;
+  const m = parseSpent(v);
+  if (!(m >= 0)) { toast('Use hours and minutes, like 2h 30m, 45m or 1.5h (a day is 8h).', 4000); return null; }
+  return m;
+}
+async function editSpent(card) {
+  if (!workCard(card) || blocked()) return;
+  const m = await askSpent('Tracked time', `Time spent on “${shortTitle(card.title)}” so far${card.est ? `, against an estimate of ${card.est}` : ''}. A plain number counts as hours, and 0 clears it.`, 'Save', card.spent || 0);
+  if (m === null || blocked()) return;
+  const now = doc.items.find(i => i.id === card.id); if (!now) return;
+  if (m) now.spent = m; else delete now.spent;
+  refresh(); commit();
+  toast(m ? `Tracked time on “${shortTitle(now.title)}” is now ${fmtSpent(m)}` : 'Tracked time cleared');
+}
+// the top bar chip: which card, how long so far; a click stops it
+function paintTimer() {
+  const chip = $('#timerChip'), t = timerNow();
+  if (chip.hidden !== !t) chip.hidden = !t;
+  if (!t) return;
+  if (!chip.firstChild) chip.innerHTML = '<i class="tc-dot"></i><span class="tc-t"></span><b class="tc-c"></b><i class="tc-stop"></i>';
+  const card = idx.get(t.card), name = (card ? card.title : t.title) || 'Untitled';
+  const s = Math.max(0, Math.floor((Date.now() - t.start) / 1000)), h = Math.floor(s / 3600);
+  const clock = (h ? h + ':' + pad2(Math.floor(s / 60) % 60) : Math.floor(s / 60)) + ':' + pad2(s % 60);
+  const set = (q, v) => { const e = chip.querySelector(q); if (e.textContent !== v) e.textContent = v; };
+  set('.tc-t', name); set('.tc-c', clock);
+  const tip = `Timing “${name}”${card ? '' : ' (no longer on the board)'}. Click to stop and add the time to the card.`;
+  if (chip.title !== tip) { chip.title = tip; chip.setAttribute('aria-label', tip); }
+}
+setInterval(paintTimer, 1000);
+$('#timerChip').onclick = () => stopTimer();
+// another window on this computer started or stopped a timer
+window.addEventListener('storage', e => { if (e.key && e.key.startsWith('venom-board-timer:')) { tmr.key = ''; render(); updateCtx(); } });
+// a card's timer glow and its tags
+function syncTrack(el, it) {
+  el.classList.toggle('timing', timing(it.id));
+  const box = el.children[4]; if (!box) return;
+  const k = (it.tags || []).join(' ');
+  if (box._k !== k) { box._k = k; box.innerHTML = (it.tags || []).map(t => `<span class="tg" data-tagf="${esc(t)}" title="Show cards tagged ${esc(t)}">${esc(t)}</span>`).join(''); }
+}
+// the selection toolbar for cards: timer, tracked time, tags
+function trackCtx(list, one) {
+  if (viewOnly()) return '';
+  let h = one ? '' : vsep;
+  if (one && workCard(one)) {
+    const on = timing(one.id);
+    h += cbtn('timer', on ? 'Stop the timer and add the time' : 'Start timer', 'timer', false, on);
+    if (one.spent) h += `<button class="chip tk-spent${overEst(one) ? ' over' : ''}" data-act="spent" title="Tracked time${one.est ? ' against the estimate' : ''}. Click to change it.">${esc(fmtSpent(one.spent) + (one.est ? ' / ' + one.est : ''))}</button>`;
+  }
+  return h + cbtn('tags', 'Tags', 'tag');
+}
+function trackEntries(hit) {
+  if (viewOnly()) return [];
+  const E = [], ids = (sel.has(hit.id) ? selObjs() : [hit]).filter(o => o.type === 'node').map(o => o.id);
+  if (workCard(hit)) {
+    const on = timing(hit.id);
+    E.push({label: on ? 'Stop timer' : 'Start timer', icon: 'timer', kb: on ? 'running' : '', run: () => toggleTimer(hit)},
+      {label: 'Edit tracked time…', kb: hit.spent ? fmtSpent(hit.spent) : '', run: () => editSpent(hit)});
+  }
+  E.push({label: 'Tags…', icon: 'tag', kb: (hit.tags || []).length ? String(hit.tags.length) : '', run: () => tagMenu(ids, null)});
+  return E;
+}
+
+// Tags: up to 8 short labels per card, picked from the ones already on the board or typed new
+const normTag = s => String(s || '').trim().toLowerCase().replace(/^#+/, '').replace(/\s+/g, '-');
+function boardTags() {
+  const c = new Map();
+  for (const n of doc.items) if (n.type === 'node') for (const t of n.tags || []) c.set(t, (c.get(t) || 0) + 1);
+  return [...c].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).map(e => e[0]);
+}
+// add tags to cards, take them off, or (tags null) clear them
+function setTags(ids, tags, on) {
+  if (blocked()) return;
+  let full = 0;
+  for (const id of ids) {
+    const n = doc.items.find(i => i.id === id && i.type === 'node'); if (!n) continue;
+    let t = (n.tags || []).slice();
+    if (!tags) t = [];
+    else if (!on) t = t.filter(x => !tags.includes(x));
+    else for (const x of tags) { if (t.includes(x)) continue; if (t.length >= 8) { full++; break; } t.push(x); }
+    if (t.length) n.tags = t; else delete n.tags;
+  }
+  refresh(); commit();
+  if (full) toast(`A card holds up to 8 tags, so ${full === 1 ? 'one card' : full + ' cards'} couldn't take them all.`, 3600);
+}
+// the tag menu stays open while you tick tags on and off
+function tagMenu(ids, btn) {
+  const open = () => {
+    const E = tagEntries(ids, open), b = btn && (btn.isConnected ? btn : $('#ctx [data-act="tags"]'));
+    if (b) menuAt(b, E); else showMenu(lastMenuPt.x, lastMenuPt.y, E);
+  };
+  open();
+}
+function tagEntries(ids, reopen) {
+  const cards = ids.map(id => idx.get(id)).filter(n => n && n.type === 'node'), all = boardTags();
+  const E = [{head: cards.length > 1 ? `Tags · ${cards.length} cards` : 'Tags'}];
+  for (const t of all.slice(0, 40)) {
+    const on = cards.length > 0 && cards.every(n => (n.tags || []).includes(t));
+    E.push({label: t, icon: 'tag', cur: on, run: () => { setTags(ids, [t], !on); reopen(); }});
+  }
+  if (all.length) E.push('-');
+  E.push({label: 'New tag…', icon: 'plus', run: () => newTags(ids)});
+  if (cards.some(n => n.tags && n.tags.length)) E.push({label: cards.length > 1 ? 'Remove their tags' : 'Remove all tags', danger: true, run: () => setTags(ids, null, false)});
+  return E;
+}
+async function newTags(ids) {
+  if (blocked()) return;
+  const p = askText('Add tags', 'Letters, numbers, - and _. Separate tags with commas. A card holds up to 8.', 'Add', {placeholder: 'e.g. combat, boss-fight', max: 240});
+  const inp = $('#pmField input'), have = boardTags();
+  if (inp && have.length) { $('#pmField').append(mk('datalist', {id: 'tagSuggest'}, ...have.slice(0, 80).map(t => mk('option', {value: t})))); inp.setAttribute('list', 'tagSuggest'); }
+  const v = await p; if (!v) return;
+  const parts = v.split(/[,;]+/).map(normTag).filter(Boolean), good = [...new Set(parts.filter(t => TAG_RE.test(t)))], bad = parts.filter(t => !TAG_RE.test(t));
+  if (good.length) setTags(ids, good, true);
+  if (bad.length) toast(`Skipped “${shortTitle(bad[0])}”: a tag is up to 24 letters, numbers, - or _.`, 4200);
+}
+// a tag on a card shows every card with it in the Planner: a press and release in place, not the end of a drag
+// (the canvas captures the pointer, so this watches the press and the release rather than a click)
+let tagPress = null;
+itemLayer.addEventListener('pointerdown', e => { const t = e.button === 0 && tool === 'select' && !editing && e.target.closest('[data-tagf]'); tagPress = t ? {x: e.clientX, y: e.clientY, tag: t.dataset.tagf} : null; }, true);
+window.addEventListener('pointerup', e => {
+  const t = tagPress; tagPress = null;
+  if (!t || editing || Math.hypot(e.clientX - t.x, e.clientY - t.y) > 4) return;
+  setTimeout(() => { filt.tags = new Set([t.tag]); if (!plannerOpen) setPlanner(true); else refresh(); }, 0);
+}, true);
+function tagFilterHTML() {
+  if (!filt.tags) filt.tags = new Set();
+  const shown = boardTags().slice(0, 24);
+  for (const t of filt.tags) if (!shown.includes(t)) shown.push(t);
+  return shown.length ? `<div class="fg"><span class="fl">Tags</span>${shown.map(t => pchip('tags', esc(t), '#' + t, filt.tags.has(t))).join('')}</div>` : '';
+}
+
+// Saved filters: the Planner's filters under a name, kept on this computer for each board
+const filtKey = () => 'venom-board-filters:' + board.id;
+function savedFilters() {
+  try { const a = JSON.parse(localStorage.getItem(filtKey()) || '[]'); return Array.isArray(a) ? a.filter(s => s && typeof s.name === 'string' && s.f && typeof s.f === 'object').slice(0, 30) : []; }
+  catch (e) { return []; }
+}
+function storeFilters(list) { try { localStorage.setItem(filtKey(), JSON.stringify(list)); return true; } catch (e) { toast("Couldn't save filters on this computer."); return false; } }
+// the filters as plain data, read back into the shape they have now
+function filtOut() { const o = {}; for (const [k, v] of Object.entries(filt)) o[k] = v instanceof Set ? [...v].sort() : v; return o; }
+function normF(f) {
+  const o = {};
+  for (const [k, v] of Object.entries(filt)) {
+    const s = f[k];
+    o[k] = v instanceof Set ? (Array.isArray(s) ? s.filter(x => typeof x === 'string').slice(0, 200) : []).sort()
+      : typeof v === 'boolean' ? s === true : typeof v === 'string' ? (typeof s === 'string' ? s.slice(0, 200) : '') : v;
+  }
+  return o;
+}
+const sameFilt = f => JSON.stringify(normF(f)) === JSON.stringify(filtOut());
+function filtIn(f) {
+  for (const [k, v] of Object.entries(normF(f))) filt[k] = Array.isArray(v) ? new Set(v) : v;
+  $('#plSearch').value = filt.q || ''; searchIdx = -1;
+  refresh();
+}
+function savedFilterHTML() {
+  const list = savedFilters(), cur = list.find(s => sameFilt(s.f)), on = filterActive();
+  if (!list.length && !on) return '';
+  return `<div class="pl-saved">${list.length ? `<button class="dd" data-plx="saved" title="Filters saved on this computer for this board">${ic('notes')}<span>${esc(cur ? cur.name : 'Saved filters')}</span><svg class="chev" viewBox="0 0 20 20" aria-hidden="true">${ICON.chev}</svg></button>` : ''}${on && !cur ? '<button class="pl-save" data-plx="savef">Save these filters…</button>' : ''}</div>`;
+}
+function savedFilterMenu(btn) {
+  const list = savedFilters(), again = () => (btn.isConnected ? btn : $('#plFilters [data-plx="saved"]'));
+  const E = [{head: 'Saved filters'}, ...list.map(s => ({label: s.name, icon: 'notes', cur: sameFilt(s.f), run: () => filtIn(s.f)}))];
+  if (filterActive() && !list.some(s => sameFilt(s.f))) E.push('-', {label: 'Save these filters…', icon: 'plus', run: saveFilterPrompt});
+  if (list.length) E.push('-', {label: 'Delete a saved filter…', icon: 'trash', run: () => menuAt(again(), [{head: 'Delete which?'}, ...savedFilters().map(s => ({label: s.name, icon: 'trash', danger: true, run: () => deleteFilter(s.name)}))])});
+  menuAt(btn, E);
+}
+async function saveFilterPrompt() {
+  if (!filterActive()) { toast('Pick some filters first, then save them.'); return; }
+  const name = await askText('Save filters', 'Name these filters to pick them again later. They’re kept on this computer, for this board.', 'Save', {placeholder: 'e.g. My open bugs', max: 40});
+  if (!name) return;
+  const list = savedFilters().filter(s => s.name.toLowerCase() !== name.toLowerCase());
+  if (list.length >= 30) { toast('That’s 30 saved filters already. Delete one first.'); return; }
+  list.push({name: name.slice(0, 40), f: filtOut()});
+  list.sort((a, b) => a.name.localeCompare(b.name));
+  if (storeFilters(list)) { toast(`Saved “${name.slice(0, 40)}”`); schedulePlanner(); }
+}
+function deleteFilter(name) {
+  if (storeFilters(savedFilters().filter(s => s.name !== name))) { toast(`Deleted “${name}”`); schedulePlanner(); }
+}
+// tracked time against the estimates, for the board or what the filters show
+function trackedHTML(work) {
+  if (!work.some(n => n.spent)) return '';
+  const on = filterActive(), list = on ? work.filter(matches) : work;
+  let spent = 0, est = 0, over = 0;
+  for (const n of list) { spent += n.spent || 0; est += estDays(n.est); if (overEst(n)) over++; }
+  return `<div class="pl-track" title="Time tracked on ${on ? 'the cards these filters show' : 'every task and bug'}, against their estimates (a day is 8 hours)"><em>${on ? 'Filtered' : 'Time'}</em><span><b>${fmtSpent(spent)}</b>tracked of</span><span><b>${fmtDays(est)}</b>estimated</span>${over ? `<span class="warn">· <b>${over}</b>over estimate</span>` : ''}</div>`;
+}
+planner.addEventListener('click', e => {
+  const b = e.target.closest('[data-plx]'); if (!b) return;
+  const a = b.dataset.plx;
+  if (a === 'saved') savedFilterMenu(b);
+  else if (a === 'savef') saveFilterPrompt();
+  else if (a === 'sprint') sprintMenu(b);
+  else if (a === 'sprintedit') editSprint(idx.get(b.dataset.fr));
+});
+
+// Sprints: any phase frame can have a start and an end date; the work cards inside it belong to it. Days are
+// counted as whole calendar days in UTC so time zones never move a date, and working days are Monday to Friday.
+const dayNum = s => Math.round(Date.parse(s + 'T00:00:00Z') / 864e5);
+const dayIso = n => new Date(n * 864e5).toISOString().slice(0, 10);
+const todayNum = () => dayNum(isoDay(new Date()));
+const weekend = n => { const w = (n + 4) % 7; return w === 0 || w === 6; };
+function workDays(a, b) { let n = 0; for (let d = a; d <= b; d++) if (!weekend(d)) n++; return n; }
+const capTotal = s => Object.values(s.cap || {}).reduce((a, v) => a + v, 0);
+const sprintFrames = () => doc.items.filter(f => f.type === 'frame' && f.sprint).sort((a, b) => a.sprint.start.localeCompare(b.sprint.start) || a.sprint.end.localeCompare(b.sprint.end));
+const sprintCards = f => doc.items.filter(n => isWork(n) && containsBox(f, bboxOf(n)));
+function sprintInfo(f) {
+  const s = f.sprint, a = dayNum(s.start), b = dayNum(s.end), t = todayNum(), cards = sprintCards(f);
+  let total = 0, doneEst = 0, done = 0, noEst = 0;
+  for (const n of cards) { const e = estDays(n.est); total += e; if (n.status === 'done') { done++; doneEst += e; } else if (!e) noEst++; }
+  const days = workDays(a, b), daysLeft = t > b ? 0 : workDays(Math.max(a, t), b), cap = s.cap ? capTotal(s) : null;
+  return {f, s, a, b, t, cards, total, doneEst, done, noEst, left: total - doneEst, days, daysLeft, cap,
+    capLeft: cap === null ? null : cap * (days ? daysLeft / days : 0), phase: t < a ? 'soon' : t > b ? 'over' : 'now'};
+}
+// the frame header: dates and days left, amber when more work is left than capacity
+function sprintMetaHTML(f, st) {
+  const s = f.sprint; if (!s) return '';
+  const a = dayNum(s.start), b = dayNum(s.end), t = todayNum();
+  const when = t < a ? `starts ${countdown(a - t)}` : t > b ? 'ended' : t === b ? 'last day' : `${b - t} day${b - t === 1 ? '' : 's'} left`;
+  let cls = t > b ? ' over' : '';
+  if (t <= b && s.cap && st) { const days = workDays(a, b), capLeft = capTotal(s) * (days ? workDays(Math.max(a, t), b) / days : 0); if (st.est > capLeft + 0.05) cls = ' warn'; }
+  return `<span class="f-spr${cls}" title="${cls === ' warn' ? 'More work is left than the capacity left in this sprint' : 'A sprint: the cards inside this frame belong to it'}"><b>Sprint</b><span class="d">${esc(fmtDate(s.start))} – ${esc(fmtDate(s.end))} ·</span><span>${when}</span></span>`;
+}
+// which sprint the Planner shows: the one you picked, the one running now, the next, or the last
+let plSprint = '';
+function plannerSprint() {
+  const sp = sprintFrames(); if (!sp.length) return null;
+  const pick = sp.find(f => f.id === plSprint); if (pick) return pick;
+  const t = todayNum(), A = f => dayNum(f.sprint.start), B = f => dayNum(f.sprint.end);
+  return sp.filter(f => A(f) <= t && t <= B(f)).sort((x, y) => B(x) - B(y))[0] || sp.filter(f => A(f) > t).sort((x, y) => A(x) - A(y))[0] || sp.slice().sort((x, y) => B(y) - B(x))[0];
+}
+// estimated days finished in each of the last few sprints that have ended (finished by their last day)
+function velocity() {
+  const t = todayNum();
+  return sprintFrames().filter(f => dayNum(f.sprint.end) < t).sort((x, y) => dayNum(x.sprint.end) - dayNum(y.sprint.end)).slice(-5).map(f => {
+    const b = dayNum(f.sprint.end);
+    const got = sprintCards(f).filter(n => n.status === 'done' && (!n.doneAt || dayNum(isoDay(new Date(n.doneAt))) <= b)).reduce((a, n) => a + estDays(n.est), 0);
+    return {f, got};
+  });
+}
+// capacity against the estimates given to each person (a card shared by two counts half for each)
+function capRows(i) {
+  const rows = [], cap = i.s.cap || {}, per = new Map();
+  let un = 0;
+  for (const n of i.cards) {
+    const e = estDays(n.est), who = board.team ? (n.assignees || []).filter(id => memberById(id)) : [];
+    if (!who.length) un += e; else for (const id of who) per.set(id, (per.get(id) || 0) + e / who.length);
+  }
+  if (cap.all !== undefined) rows.push({name: board.team ? 'Whole team' : 'Capacity', cap: cap.all, got: i.total});
+  if (board.team) {
+    for (const m of team.members) { const c = cap[m.id], g = per.get(m.id) || 0; if (c !== undefined || g) rows.push({name: m.name, color: m.color, cap: c, got: g}); }
+    if (un) rows.push({name: 'Unassigned', got: un, none: true});
+  }
+  return rows;
+}
+function capRowHTML(r) {
+  const has = r.cap !== undefined, ratio = has ? (r.cap ? r.got / r.cap : r.got ? Infinity : 0) : 0;
+  const cls = !has ? ' none' : ratio > 1.2 ? ' bad' : ratio > 1.0001 ? ' warn' : '';
+  return `<div class="pl-cap-r${cls}" title="${esc(r.name)}: ${fmtDays(r.got)} of estimated work${has ? `, capacity ${rd(r.cap)}d` : ''}"><span class="n"${r.color ? ` style="--c:${col(r.color)}"` : ''}><i></i>${esc(r.name)}</span><span class="bar"><i style="width:${has ? Math.min(100, Math.round(ratio * 100)) : 0}%"></i></span><span class="v">${fmtDays(r.got)}${has ? ' / ' + rd(r.cap) + 'd' : r.none ? '' : ' · no capacity'}</span></div>`;
+}
+function velocityHTML(i) {
+  const v = velocity();
+  if (!v.length) return '<p class="pl-spr-note">Velocity shows once a sprint has ended.</p>';
+  const avg = v.reduce((a, x) => a + x.got, 0) / v.length, cur = i.phase !== 'over' ? i.total : 0, top = Math.max(0.1, cur, ...v.map(x => x.got));
+  const bar = (d, label, tip, cls) => `<span${cls ? ` class="${cls}"` : ''} title="${esc(tip)}"><i style="height:${Math.max(3, Math.round(d / top * 40))}px"></i><em>${esc(label)}</em></span>`;
+  let h = `<div class="pl-vel"><div class="pl-vel-h"><b>Velocity</b><em>${fmtDays(avg)} per sprint · last ${v.length}</em></div><div class="pl-vel-bars">`;
+  h += v.map(x => bar(x.got, x.f.title || 'Sprint', `${x.f.title || 'Sprint'}: ${fmtDays(x.got)} finished`)).join('');
+  if (cur) h += bar(cur, 'Planned', `${i.f.title || 'This sprint'}: ${fmtDays(cur)} planned`, 'plan');
+  h += '</div>';
+  if (cur && avg > 0 && cur > avg * 1.15) h += `<p class="pl-spr-note warn">This sprint plans ${fmtDays(cur)}, more than the ${fmtDays(avg)} you usually finish.</p>`;
+  return h + '</div>';
+}
+function sprintHTML() {
+  const f = plannerSprint(); if (!f) return '';
+  const i = sprintInfo(f), n = i.cards.length;
+  const pct = i.total ? Math.round(i.doneEst / i.total * 100) : n ? Math.round(i.done / n * 100) : 0;
+  const st = i.phase === 'over' ? ['', 'Ended'] : i.cap === null ? ['', ''] : i.left > i.capLeft * 1.2 + 0.05 ? ['bad', 'Over capacity'] : i.left > i.capLeft + 0.05 ? ['warn', 'Tight'] : ['ok', 'On track'];
+  const when = i.phase === 'soon' ? `starts ${countdown(i.a - i.t)}` : i.phase === 'over' ? 'ended' : i.t === i.b ? 'last day' : `${i.b - i.t} day${i.b - i.t === 1 ? '' : 's'} to go`;
+  let h = `<div class="pl-spr"><div class="pl-spr-h"><b>Sprint</b><button class="pl-spr-name" data-plx="sprint" title="Pick a sprint, edit it or go to it"><span>${esc(f.title || 'Untitled phase')}</span><svg viewBox="0 0 20 20" aria-hidden="true">${ICON.chev}</svg></button>${st[1] ? `<span class="st ${st[0]}">${st[1]}</span>` : ''}</div>`;
+  h += `<div class="pl-spr-d" title="${i.days} working day${i.days === 1 ? '' : 's'} in all">${esc(fmtDate(i.s.start))} – ${esc(fmtDate(i.s.end))} · ${when}</div>`;
+  h += `<div class="pl-spr-bar" title="${pct}% of ${i.total ? 'the estimated work' : 'the cards'} done"><i style="width:${pct}%"></i></div>`;
+  h += `<div class="pl-facts"><span><b>${i.done}/${n}</b>cards done</span><span><b>${fmtDays(i.left)}</b>work left</span><span><b>${i.daysLeft}</b>working day${i.daysLeft === 1 ? '' : 's'} left</span>${i.cap !== null ? `<span class="${i.phase === 'over' ? '' : st[0]}"><b>${fmtDays(i.capLeft)}</b>capacity left</span>` : ''}</div>`;
+  if (i.noEst) h += `<p class="pl-spr-note">${i.noEst} card${i.noEst === 1 ? ' has' : 's have'} no estimate yet, so the work left may be more.</p>`;
+  const rows = capRows(i);
+  if (rows.length) h += `<div class="pl-cap">${rows.map(capRowHTML).join('')}</div>`;
+  if (i.cap === null && !viewOnly()) h += `<button class="pl-spr-link" data-plx="sprintedit" data-fr="${esc(f.id)}">Set capacity to compare it with the work</button>`;
+  return h + velocityHTML(i) + '</div>';
+}
+function sprintMenu(btn) {
+  const cur = plannerSprint(); if (!cur) return;
+  const E = [{head: 'Sprints'}, ...sprintFrames().map(f => ({label: f.title || 'Untitled phase', kb: `${fmtDate(f.sprint.start)} – ${fmtDate(f.sprint.end)}`, cur: f.id === cur.id, run: () => { plSprint = f.id; schedulePlanner(); }})),
+    '-', {label: 'Go to this sprint', icon: 'frame', run: () => { const f = idx.get(cur.id); if (f) { setTool('select'); sel.clear(); sel.add(f.id); fitTo([f], true, 1.4); refresh(); } }}];
+  if (!viewOnly()) E.push({label: 'Edit sprint…', icon: 'sprint', run: () => editSprint(idx.get(cur.id))});
+  menuAt(btn, E);
+}
+function sprintEntries(f) {
+  if (viewOnly()) return [];
+  return f.sprint ? [{label: 'Edit sprint…', icon: 'sprint', kb: `${fmtDate(f.sprint.start)} – ${fmtDate(f.sprint.end)}`, run: () => editSprint(f)}, {label: 'Clear sprint dates', run: () => clearSprint(f.id)}]
+    : [{label: 'Make this a sprint…', icon: 'sprint', run: () => editSprint(f)}];
+}
+function clearSprint(id) {
+  if (blocked()) return;
+  const f = doc.items.find(i => i.id === id && i.type === 'frame'); if (!f || !f.sprint) return;
+  delete f.sprint; refresh(); commit();
+  toast(`“${shortTitle(f.title)}” is a plain phase again. Undo with Ctrl+Z.`);
+}
+// the sprint form: dates, a length shortcut, and capacity (per teammate on team boards, one figure otherwise)
+const spForm = $('#sprintForm');
+function sprintEnd(start, weeks) { const a = dayNum(start); let d = a + weeks * 7 - 1; while (d > a && weekend(d)) d--; return dayIso(d); }
+function editSprint(f) {
+  if (!f || f.type !== 'frame' || blocked()) return;
+  const s = f.sprint;
+  let a = todayNum(); while (weekend(a)) a++;
+  const start = s ? s.start : dayIso(a);
+  spForm.dataset.id = f.id;
+  spForm.start.value = start; spForm.end.value = s ? s.end : sprintEnd(start, 2);
+  $('#spLead').textContent = `The work cards inside “${shortTitle(f.title)}” belong to this sprint. Working days are Monday to Friday.`;
+  $('#spClear').hidden = !s;
+  const cap = (s && s.cap) || {}, field = (id, label) => mk('input', {class: 'tm-in', type: 'number', min: 0, max: 365, step: 'any', inputmode: 'decimal', placeholder: 'days', 'data-cap': id, value: cap[id] === undefined ? null : String(cap[id]), 'aria-label': label});
+  const kids = [];
+  if (board.team && team.members.length) {
+    const people = mk('div', {class: 'sp-people'});
+    if (cap.all !== undefined) people.append(mk('label', {class: 'sp-person'}, mk('i', {css: {'--c': 'var(--bone-faint)'}}), mk('span', {}, 'Whole team'), field('all', 'Capacity of the whole team, in days')));
+    for (const m of team.members.slice(0, 50)) people.append(mk('label', {class: 'sp-person'}, mk('i', {css: {'--c': col(m.color)}}), mk('span', {}, m.name), field(m.id, `${m.name}: capacity in days`)));
+    kids.push(mk('h5', {}, 'Capacity per person ', mk('em', {}, 'days of work each can give, optional')), people);
+  } else kids.push(mk('h5', {}, 'Capacity ', mk('em', {}, 'days of work the sprint can take, optional')), field('all', 'Capacity in days'));
+  kids.push(mk('p', {class: 'sp-note', id: 'spNote'}));
+  $('#spCap').replaceChildren(...kids);
+  sprintNote();
+  $('#sprintModal').hidden = false;
+  setTimeout(() => spForm.start.focus(), 30);
+}
+function sprintNote() {
+  const a = spForm.start.value, b = spForm.end.value, ok = realDay(a) && realDay(b) && b >= a, days = ok ? workDays(dayNum(a), dayNum(b)) : 0, note = $('#spNote');
+  if (note) note.textContent = ok ? `${days} working day${days === 1 ? '' : 's'}: someone full time can give up to ${days} day${days === 1 ? '' : 's'}, less for meetings and time off.` : 'Pick a start date and an end date on or after it.';
+  for (const btn of $('#spLen').children) btn.setAttribute('aria-pressed', String(ok && sprintEnd(a, +btn.dataset.wk) === b));
+}
+spForm.addEventListener('input', sprintNote);
+$('#spLen').addEventListener('click', e => { const b = e.target.closest('[data-wk]'); if (!b || !realDay(spForm.start.value)) return; spForm.end.value = sprintEnd(spForm.start.value, +b.dataset.wk); sprintNote(); });
+$('#spCancel').onclick = () => { $('#sprintModal').hidden = true; };
+$('#spClear').onclick = () => { $('#sprintModal').hidden = true; clearSprint(spForm.dataset.id); };
+$('#sprintModal').addEventListener('click', e => { if (e.target.id === 'sprintModal') $('#sprintModal').hidden = true; });
+spForm.addEventListener('submit', e => {
+  e.preventDefault();
+  const start = spForm.start.value, end = spForm.end.value, cap = {};
+  if (!realDay(start) || !realDay(end)) { toast('Pick a start date and an end date.'); return; }
+  if (end < start) { toast('A sprint ends on or after the day it starts.'); return; }
+  if (dayNum(end) - dayNum(start) > 366) { toast('A sprint can be up to a year long.'); return; }
+  for (const inp of spForm.querySelectorAll('[data-cap]')) {
+    const v = inp.value.trim(); if (!v) continue;
+    const d = Number(v);
+    if (!(d >= 0 && d <= 365)) { toast('Capacity is a number of days, from 0 to 365.'); inp.focus(); return; }
+    cap[inp.dataset.cap] = Math.round(d * 10) / 10;
+  }
+  $('#sprintModal').hidden = true;
+  const f = doc.items.find(i => i.id === spForm.dataset.id && i.type === 'frame');
+  if (!f || blocked()) return;
+  const first = !f.sprint;
+  f.sprint = Object.keys(cap).length ? {start, end, cap} : {start, end};
+  plSprint = f.id;
+  refresh(); commit();
+  toast(first ? `“${shortTitle(f.title)}” is a sprint now. The Planner shows how it’s going.` : 'Sprint saved');
 });
 
 /* ---------- Markdown + CSV ---------- */
@@ -4325,6 +4922,7 @@ window.addEventListener('keydown', e => {
   if (!$('#versions').hidden) { if (e.key === 'Escape') closeVersions(); return; }
   if (!$('#tlapse').hidden) { if (e.key === 'Escape') closeTimelapse(); return; }
   if (!$('#jamModal').hidden) { if (e.key === 'Escape') $('#jamModal').hidden = true; return; }
+  if (!$('#sprintModal').hidden) { if (e.key === 'Escape') $('#sprintModal').hidden = true; return; }
   if (!$('#timeline').hidden) { if (e.key === 'Escape' || (e.shiftKey && e.code === 'KeyG')) { e.preventDefault(); closeTimeline(); } return; }
   if (!$('#searchAll').hidden) return;
   if (ctrl && e.shiftKey && e.code === 'KeyF') { e.preventDefault(); openSearchAll(); return; }
