@@ -786,6 +786,92 @@ html.watching #tools .tool:not([data-tool=select]):not([data-tool=hand]),html.wa
 .tl-due{position:absolute;top:5px;bottom:5px;width:2px;background:var(--bone-dim);border-radius:2px}
 .tl-due.late{background:var(--bad)}
 .tl-empty{padding:30px;margin:0}
+/* dragging a bar's end (its estimate) or a milestone (its date) */
+.tl-grip{position:absolute;right:-6px;top:-5px;bottom:-5px;width:12px;cursor:ew-resize;touch-action:none}
+.tl-grip::after{content:"";position:absolute;left:5px;top:6px;bottom:6px;width:2px;border-radius:2px;background:var(--bone);opacity:0;transition:opacity .12s}
+.tl-row:hover .tl-grip::after,.tl-grip:hover::after{opacity:.9}
+.tl-ms[data-tl-ms]{cursor:ew-resize;touch-action:none}
+.tl-ms[data-tl-ms]::before{content:"";position:absolute;inset:-6px}
+.tl-tip{position:fixed;z-index:95;pointer-events:none;padding:4px 9px;border-radius:8px 8px 8px 2px;background:var(--bone);color:var(--void);font:700 11.5px var(--font-mono);white-space:nowrap;box-shadow:0 10px 24px -10px var(--shadow)}
+html.tl-dragging,html.tl-dragging *{cursor:ew-resize!important}
+
+/* ---------- kanban + calendar views ---------- */
+.modal#views{padding:8px}
+.vw-sheet{width:100%;height:100%;max-height:none;display:flex;flex-direction:column;padding:0;overflow:hidden;user-select:none;-webkit-user-select:none}
+.vw-top{gap:14px;flex-wrap:wrap}
+.vw-top h2{flex:none}
+.vw-nav{margin-left:auto;display:flex;align-items:center;gap:6px;min-width:0}
+.vw-nav b{font:800 12.5px var(--font-display);letter-spacing:.1em;text-transform:uppercase;min-width:168px;text-align:center;white-space:nowrap}
+.vw-nav .tb{height:30px}
+.vw-sum{font:600 11.5px var(--font-mono);color:var(--bone-faint);white-space:nowrap}
+.vw-ro-note{font:700 10px var(--font-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--run);border:1px solid color-mix(in srgb,var(--run) 45%,transparent);border-radius:99px;padding:4px 9px;white-space:nowrap}
+.vw-filters{display:flex;flex-wrap:wrap;align-items:center;gap:6px 18px;padding:10px 26px;border-bottom:1px solid var(--line)}
+.vw-filters .fl{width:auto;margin:0 3px 0 0}
+.vw-body{flex:1;min-height:0;overflow:auto;padding:14px 18px 18px}
+body:has(#views:not([hidden])) #toast,body:has(#timeline:not([hidden])) #toast{position:fixed;z-index:96}
+.kb-cols{display:grid;grid-template-columns:repeat(4,minmax(230px,1fr));gap:12px;height:100%;min-height:360px}
+.kb-col{--sc:var(--bone-faint);display:flex;flex-direction:column;min-height:0;background:var(--void-2);border:1px solid var(--line);border-radius:16px 16px 16px 4px;transition:border-color .12s,background .12s}
+.kb-col[data-drop=doing]{--sc:var(--run)}
+.kb-col[data-drop=blocked]{--sc:var(--bad)}
+.kb-col[data-drop=done]{--sc:var(--ok)}
+.kb-col.over{border-color:var(--sc);background:color-mix(in srgb,var(--sc) 9%,var(--void-2))}
+.kb-head{display:flex;align-items:center;gap:8px;margin:0;padding:12px 14px 8px;font:800 10.5px var(--font-display);letter-spacing:.12em;text-transform:uppercase}
+.kb-head i{width:8px;height:8px;border-radius:50%;background:var(--sc);flex:none}
+.kb-head em{margin-left:auto;font:600 11px var(--font-mono);font-style:normal;letter-spacing:0;text-transform:none;color:var(--bone-faint)}
+.kb-list{flex:1;min-height:0;overflow:auto;padding:4px 10px 12px;display:flex;flex-direction:column;gap:8px}
+.kb-empty{margin:4px 2px;padding:14px;border:1px dashed var(--line-2);border-radius:12px;text-align:center;font-size:12px;color:var(--bone-faint)}
+.vw-tile{--c:var(--bone-faint);--sev:var(--fang);flex:none;display:flex;flex-direction:column;gap:6px;width:100%;text-align:left;padding:9px 11px 10px 12px;border:1px solid var(--line);border-left:3px solid var(--c);border-radius:4px 12px 12px 12px;background:linear-gradient(158deg,var(--card-hi),var(--card) 60%);color:var(--bone);font:inherit;cursor:grab;box-shadow:0 10px 22px -16px var(--shadow)}
+.vw-tile:hover{border-color:var(--line-2);border-left-color:var(--c)}
+.vw-tile.ms{border-radius:14px 4px 14px 4px;background:linear-gradient(158deg,color-mix(in srgb,var(--c) 14%,var(--card-hi)),var(--card) 62%)}
+.vw-tile.bug{background:repeating-linear-gradient(135deg,color-mix(in srgb,var(--sev) 7%,transparent) 0 6px,transparent 6px 12px),linear-gradient(158deg,var(--card-hi),var(--card) 60%)}
+.vw-tile.wont{opacity:.5}
+.vw-tile.wont .vw-tt{text-decoration:line-through}
+.vw-tile.done .vw-tt{color:var(--bone-dim)}
+.vw-th{display:flex;align-items:center;gap:7px;min-width:0;height:16px}
+.vw-k,.vw-d{flex:none;font:700 9.5px/1 var(--font-mono);letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;color:var(--bone-dim)}
+.vw-k.bug{color:var(--sev)}
+.vw-k.milestone{color:var(--c)}
+.vw-d{flex:0 1 auto;overflow:hidden;text-overflow:ellipsis}
+.vw-p{margin-left:auto;flex:none;font:700 9px/1 var(--font-mono);letter-spacing:.08em;text-transform:uppercase;padding:3px 5px;border-radius:4px;border:1px solid var(--line-2);color:var(--bone-dim)}
+.vw-p.must{background:var(--fang);border-color:var(--fang);color:#fff}
+.vw-p.should{color:var(--bone);border-color:var(--bone-dim)}
+.vw-tt{font:700 13px/1.3 var(--font-ui);overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.vw-tile.ms .vw-tt{font:800 12px/1.3 var(--font-display);letter-spacing:.03em;text-transform:uppercase}
+.vw-meta{display:flex;flex-wrap:wrap;gap:5px;align-items:center}
+.vw-meta:empty{display:none}
+.vw-ph{font:600 10px var(--font-mono);letter-spacing:.04em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:.85}
+.vw-ro .vw-tile,.vw-ro .vw-ev{cursor:pointer}
+.vw-ghost{position:fixed;z-index:95;pointer-events:none;margin:0;transform:rotate(-2deg);box-shadow:0 26px 50px -18px rgba(0,0,0,.85);opacity:.96}
+.vw-lift{opacity:.3}
+.vw-dragging,.vw-dragging *{cursor:grabbing!important}
+.cal{display:flex;gap:12px;height:100%;min-height:460px}
+.cal-main{flex:1;min-width:660px;display:flex;flex-direction:column;min-height:0}
+.cal-dow{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;margin-bottom:6px}
+.cal-dow span{font:800 9.5px var(--font-display);letter-spacing:.14em;text-transform:uppercase;color:var(--bone-faint);padding:0 8px}
+.cal-grid{flex:1;min-height:0;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+.cal-day{display:flex;flex-direction:column;min-height:0;min-width:0;border:1px solid var(--line);border-radius:10px;background:var(--void-2);padding:4px 5px 6px;transition:border-color .12s,background .12s}
+.cal-day.we{background:color-mix(in srgb,var(--void-2) 55%,var(--void))}
+.cal-day.out .cal-n,.cal-day.out .vw-ev{opacity:.5}
+.cal-day.today{border-color:var(--fang);box-shadow:inset 0 0 0 1px var(--fang)}
+.cal-day.over,.cal-side.over{border-color:var(--run);background:color-mix(in srgb,var(--run) 11%,var(--void-2))}
+.cal-n{display:flex;align-items:center;gap:6px;padding:2px 4px 5px;font:700 11px var(--font-mono);color:var(--bone-dim)}
+.cal-day.today .cal-n b{color:var(--fang)}
+.cal-n em{font:800 8.5px var(--font-display);font-style:normal;letter-spacing:.12em;text-transform:uppercase;color:var(--fang)}
+.cal-evs{flex:1;min-height:0;overflow:auto;display:flex;flex-direction:column;gap:3px;scrollbar-width:thin}
+.vw-ev{--c:var(--bone-faint);flex:none;display:flex;align-items:center;gap:5px;width:100%;min-width:0;border:0;border-left:3px solid var(--c);border-radius:3px 7px 7px 3px;background:var(--hide-2);color:var(--bone);font:700 11.5px/1.25 var(--font-ui);padding:3px 5px 3px 6px;text-align:left;cursor:grab}
+.vw-ev:hover{background:var(--hide-3)}
+.vw-ev>span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.vw-ev.ms{background:color-mix(in srgb,var(--c) 17%,var(--hide-2))}
+.vw-ev.ms::before{content:"";flex:none;width:7px;height:7px;border-radius:1px;transform:rotate(45deg);background:var(--c)}
+.vw-ev.late{color:var(--bad);border-left-color:var(--bad);background:color-mix(in srgb,var(--bad) 13%,var(--hide-2))}
+.vw-ev.done>span{text-decoration:line-through;color:var(--bone-faint)}
+.vw-ev .mav{flex:none;box-shadow:0 0 0 1.5px var(--hide-2)}
+.cal-side{flex:none;width:228px;display:flex;flex-direction:column;min-height:0;border:1px solid var(--line);border-radius:14px 14px 14px 4px;background:var(--void-2);transition:border-color .12s,background .12s}
+.cal-side h4{display:flex;align-items:center;margin:0;padding:12px 12px 2px;font:800 10px var(--font-display);letter-spacing:.12em;text-transform:uppercase;color:var(--bone-dim)}
+.cal-side h4 em{margin-left:auto;font:600 11px var(--font-mono);font-style:normal;letter-spacing:0;color:var(--bone-faint)}
+.cal-side p{margin:2px 12px 8px;font-size:11.5px;line-height:1.4;color:var(--bone-faint)}
+.cal-side .cal-evs{padding:0 8px 10px}
+@media (max-width:760px){.vw-filters{padding:8px 14px}.vw-body{padding:10px}.cal-side{display:none}}
 
 /* ---------- burndown ---------- */
 .pl-burn{margin:12px 0 2px;padding:10px 12px 6px;border:1px solid var(--line);border-radius:14px 14px 14px 4px;background:var(--void-2)}
@@ -1100,6 +1186,8 @@ html.watching #tools .tool:not([data-tool=select]):not([data-tool=hand]),html.wa
         <dt><kbd>Ctrl Shift B</kbd></dt><dd>Hide or show the top bar</dd>
         <dt><kbd>Ctrl ,</kbd></dt><dd>Settings: your account, appearance, window</dd>
         <dt><kbd>Shift G</kbd></dt><dd>Timeline: schedule and critical path</dd>
+        <dt><kbd>Shift K</kbd></dt><dd>Kanban: drag cards between statuses</dd>
+        <dt><kbd>Shift C</kbd></dt><dd>Calendar: drag cards to new due dates</dd>
         <dt><kbd>Ctrl Shift F</kbd></dt><dd>Search every board and team project</dd>
       </dl></section>
       <section><h3>Team · live</h3><dl>
@@ -1189,8 +1277,19 @@ html.watching #tools .tool:not([data-tool=select]):not([data-tool=hand]),html.wa
       <div id="tlScale" class="st-seg" role="group" aria-label="Scale"><button type="button" data-v="days">Days</button><button type="button" data-v="weeks">Weeks</button></div>
       <button id="tlClose" class="ib" aria-label="Close timeline" title="Close (Esc)"><svg viewBox="0 0 20 20"><path d="M5 5l10 10M15 5 5 15"/></svg></button></div>
     <p id="tlSummary" class="tl-summary"></p>
-    <div class="tl-legend"><span><i class="lg crit"></i>Critical path: these decide the finish date</span><span><i class="lg late"></i>Late for its due date</span><span><i class="lg done"></i>Done</span><span>Working days only · estimates in days, a day if none · click a row to jump to the card</span></div>
+    <div class="tl-legend"><span><i class="lg crit"></i>Critical path: these decide the finish date</span><span><i class="lg late"></i>Late for its due date</span><span><i class="lg done"></i>Done</span><span>Working days only · estimates in days, a day if none · click a row to jump to the card · drag the end of a bar or a milestone to change it</span></div>
     <div id="tlBody" class="tl-body"></div>
+  </div>
+</div>
+
+<div id="views" class="modal" hidden>
+  <div class="sheet vw-sheet" role="dialog" aria-modal="true" aria-labelledby="vwTitle">
+    <div class="st-head vw-top"><h2 id="vwTitle">Kanban<em>.</em></h2>
+      <div id="vwMode" class="st-seg" role="group" aria-label="View"><button type="button" data-v="kanban" title="Cards in columns by status (Shift+K)">Kanban</button><button type="button" data-v="calendar" title="Due dates and milestones by month (Shift+C)">Calendar</button></div>
+      <div id="vwNav" class="vw-nav"></div>
+      <button id="vwClose" class="ib" aria-label="Close" title="Close (Esc)"><svg viewBox="0 0 20 20"><path d="M5 5l10 10M15 5 5 15"/></svg></button></div>
+    <div id="vwFilters" class="vw-filters"></div>
+    <div id="vwBody" class="vw-body"></div>
   </div>
 </div>
 
@@ -3730,6 +3829,7 @@ function viewMenu() {
     {label: skin === 'anti' ? 'Venom skin' : 'Anti-Venom skin', run: () => applySkin(skin === 'anti' ? 'venom' : 'anti')}];
   if (desk && desk.setUiScale) E.push({label: 'Interface size…', kb: Math.round((deskState.uiScale || 1) * 100) + '%', run: uiScaleMenu});
   E.push('-', {label: 'Timeline', kb: 'Shift G', icon: 'clock', run: openTimeline}, {label: 'Search everything', kb: 'Ctrl Shift F', run: openSearchAll},
+    {label: 'Kanban', kb: 'Shift K', icon: 'arrange', run: () => openViews('kanban')}, {label: 'Calendar', kb: 'Shift C', icon: 'cal', run: () => openViews('calendar')},
     '-', {label: 'Zoom to fit', kb: 'Shift 1', run: () => fitTo(allObjs())},
     {label: 'Next phase', kb: 'PgDn', run: () => flyPhase(1)}, {label: 'Previous phase', kb: 'PgUp', run: () => flyPhase(-1)});
   menuAt($('#viewBtn'), [...E, '-', ...windowEntries()]);
@@ -3832,7 +3932,7 @@ function toast(msg, ms = 2600) { const t = $('#toast'); t.textContent = msg; t.h
 /* ---------- planner ---------- */
 const planner = $('#planner');
 let plRaf = 0, searchIdx = -1;
-function schedulePlanner() { if (plannerOpen && !plRaf) plRaf = requestAnimationFrame(renderPlanner); }
+function schedulePlanner() { if (plannerOpen && !plRaf) plRaf = requestAnimationFrame(renderPlanner); scheduleViews(); }
 function setPlanner(open, focusSearch) {
   plannerOpen = open; planner.hidden = !open;
   if (open && team.panelOpen) setTeamPanel(false);
@@ -5023,7 +5123,9 @@ window.addEventListener('keydown', e => {
   if (!$('#tlapse').hidden) { if (e.key === 'Escape') closeTimelapse(); return; }
   if (!$('#jamModal').hidden) { if (e.key === 'Escape') $('#jamModal').hidden = true; return; }
   if (!$('#sprintModal').hidden) { if (e.key === 'Escape') $('#sprintModal').hidden = true; return; }
+  if (!$('#timeline').hidden && timelineKeys(e)) return;
   if (!$('#timeline').hidden) { if (e.key === 'Escape' || (e.shiftKey && e.code === 'KeyG')) { e.preventDefault(); closeTimeline(); } return; }
+  if (!$('#views').hidden) { viewsKeys(e); return; }
   if (!$('#searchAll').hidden) return;
   if (ctrl && e.shiftKey && e.code === 'KeyF') { e.preventDefault(); openSearchAll(); return; }
   if (!$('#notePanel').hidden && e.key === 'Escape') { toggleNotes(false); return; }
@@ -5056,6 +5158,8 @@ window.addEventListener('keydown', e => {
   if (e.altKey) return;
   if (e.shiftKey && e.code === 'Digit1') { e.preventDefault(); fitTo(allObjs()); return; }
   if (e.shiftKey && e.code === 'KeyG') { e.preventDefault(); openTimeline(); return; }
+  if (e.shiftKey && e.code === 'KeyK') { e.preventDefault(); openViews('kanban'); return; }
+  if (e.shiftKey && e.code === 'KeyC') { e.preventDefault(); openViews('calendar'); return; }
   if (e.shiftKey && e.code === 'Digit2') { e.preventDefault(); if (sel.size) fitTo(selObjs()); return; }
   switch (k) {
     case 'Delete': case 'Backspace': e.preventDefault(); deleteSelection(); return;
@@ -6093,7 +6197,11 @@ function accountPane() {
   const tools = stGroup('Connect tools (MCP)', stRow('Assistants and planning tools',
     'Tools that support the Model Context Protocol can work on your team boards as you: plan with phases, cards and dependencies, and lay out text, pictures, videos, ink, connectors and templates. Make an access token on your account page.',
     mk('button', {class: 'tm-btn', type: 'button', onclick: () => openLink(team.server + '/account#mcp')}, icon('arrow'), 'Set up')));
-  return [profile, stGroup('Profile', nameForm, colorField, email, verify), stGroup('Security', pwForm), securityGroup(), signIns, teams, tools, danger];
+  // a private calendar address (iCal) with your cards that have due dates and your teams' milestones
+  const calFeed = stGroup('Calendar feed', stRow('Your due dates in your calendar',
+    "Subscribe in Google Calendar, Outlook or Apple Calendar to see the cards assigned to you that have a due date, and your teams' milestones. Turn it on and copy its private address on your account page.",
+    mk('button', {class: 'tm-btn', type: 'button', onclick: () => openLink(team.server + '/account#calendar')}, icon('arrow'), 'Set up')));
+  return [profile, stGroup('Profile', nameForm, colorField, email, verify), stGroup('Security', pwForm), securityGroup(), signIns, teams, tools, calFeed, danger];
 }
 
 function lookPane() {
@@ -7575,6 +7683,7 @@ function renderTimeline() {
   const past = [...S.values()].filter(s => s.done && s.es !== null).map(s => s.es);
   const from = Math.max(-15, Math.min(0, ...past)) - 1, to = Math.max(end + 3, from + (tl.scale === 'days' ? 25 : 70));
   const x = off => Math.round((off - from) * dayW), width = x(to);
+  tl.from = from; tl.dayW = dayW;  // where a pointer is in days, for dragging bars and milestones
   const finish = dateAtWork(Math.max(0, Math.ceil(end) - 1));
   const fmt = d => d.toLocaleDateString(undefined, {weekday: 'short', day: 'numeric', month: 'short'});
   $('#tlSummary').textContent = live.length ? `About ${Math.ceil(end)} working day${Math.ceil(end) === 1 ? '' : 's'} of work left, finishing around ${fmt(finish)}. ${critical} task${critical === 1 ? '' : 's'} on the critical path${late ? `, ${late} running late` : ''}.` : 'Nothing left to schedule: every task is done.';
@@ -7598,12 +7707,12 @@ function renderTimeline() {
       const n = s.n, c = col(DISC_MAP[n.disc] ? DISC_MAP[n.disc][2] : n.color), cls = [s.done ? 'done' : '', s.critical ? 'crit' : '', s.late ? 'late' : '', n.status === 'doing' ? 'doing' : '', n.status === 'blocked' ? 'blocked' : ''].join(' ');
       let bar = '';
       if (n.kind === 'milestone') {
-        const at = s.done ? s.ef : isDate(n.due) ? Math.max(s.ef, s.dueOff || 0) : s.ef;
-        if (at !== null && at !== undefined) bar = `<i class="tl-ms ${cls}" style="left:${x(at) - 7}px;--c:${col(n.color)}" title="${esc(n.title)}"></i>`;
+        const at = tlDrag && tlDrag.id === n.id && tlDrag.at !== null ? tlDrag.at : s.done ? s.ef : isDate(n.due) ? Math.max(s.ef, s.dueOff || 0) : s.ef;
+        if (at !== null && at !== undefined) bar = `<i class="tl-ms ${cls}"${tlMsDrag(s)} style="left:${x(at) - 7}px;--c:${col(n.color)}" title="${esc(n.title)}"></i>`;
       } else if (s.es !== null && s.es !== undefined) {
-        bar = `<i class="tl-bar ${cls}" style="left:${x(s.es)}px;width:${Math.max(6, x(s.ef) - x(s.es) - 2)}px;--c:${c}"></i>`;
+        bar = `<i class="tl-bar ${cls}" style="left:${x(s.es)}px;width:${Math.max(6, x(s.ef) - x(s.es) - 2)}px;--c:${c}">${tlGrip(s)}</i>`;
       }
-      const due = s.dueOff !== undefined && n.kind !== 'milestone' ? `<i class="tl-due${s.late ? ' late' : ''}" style="left:${x(s.dueOff)}px" title="Due ${esc(fmtDate(n.due))}"></i>` : '';
+      const due = s.dueOff !== undefined && (n.kind !== 'milestone' || s.late) ? `<i class="tl-due${s.late ? ' late' : ''}" style="left:${x(s.dueOff)}px" title="Due ${esc(fmtDate(n.due))}"></i>` : '';
       const tip = n.kind === 'milestone' ? (s.done ? 'Reached' : `Expected ${fmt(dateAtWork(Math.max(0, Math.ceil(s.ef) - 1)))}${isDate(n.due) ? ' · date ' + fmtDate(n.due) : ''}`)
         : s.done ? (n.doneAt ? 'Finished ' + fmt(new Date(n.doneAt)) : 'Finished') : `${fmt(dateAtWork(Math.floor(s.es)))} → ${fmt(dateAtWork(Math.max(Math.floor(s.es), Math.ceil(s.ef) - 1)))}${s.critical ? ' · critical path' : s.slack ? ` · ${Math.round(s.slack * 10) / 10}d of slack` : ''}${s.late ? ' · late for its due date' : ''}`;
       rows += `<button class="tl-row ${cls}" data-id="${esc(n.id)}" title="${esc(tip)}"><span class="tl-name">${n.kind === 'milestone' ? '◆ ' : ''}${esc(n.title || 'Untitled')}</span><span class="tl-track" style="width:${width}px">${due}${bar}</span></button>`;
@@ -7613,6 +7722,265 @@ function renderTimeline() {
   const sc = $('#tlBody');
   if (!sc._scrolled) { sc.scrollLeft = Math.max(0, x(0) - 120); sc._scrolled = true; }
 }
+
+/* ---------- timeline: drag a bar's end to change its estimate, a milestone to change its date ---------- */
+// The schedule follows as you drag (whatever waits on the card moves with it). Letting go is one step to undo, and
+// teammates see it live. Estimates snap to half days and are written like the app's own ("3d", "4h" for half a day).
+let tlDrag = null, tlNoClick = 0, tlRaf = 0;
+const tlGrip = s => (viewOnly() || s.done ? '' : `<b class="tl-grip" data-tl-est="${esc(s.n.id)}" title="Drag to change the estimate"></b>`);
+const tlMsDrag = s => (viewOnly() || s.done ? '' : ` data-tl-ms="${esc(s.n.id)}"`);
+function tlPaint() {
+  if (tlRaf) return;
+  tlRaf = requestAnimationFrame(() => { tlRaf = 0; if (!$('#timeline').hidden) renderTimeline(); if (tlDrag && tlDrag.moved) teamPreview([tlDrag.id]); });
+}
+function tlTip(e, text) {
+  let t = $('#tlTip');
+  if (!e) { if (t) t.remove(); return; }
+  if (!t) { t = mk('div', {id: 'tlTip', class: 'tl-tip', role: 'status'}); $('#timeline').appendChild(t); }
+  t.textContent = text; t.style.left = (e.clientX + 14) + 'px'; t.style.top = (e.clientY - 36) + 'px';
+}
+$('#tlBody').addEventListener('pointerdown', e => {
+  const g = e.target.closest('[data-tl-est], [data-tl-ms]');
+  if (!g || e.button !== 0) return;
+  e.preventDefault();
+  if (blocked()) return;
+  const id = g.dataset.tlEst || g.dataset.tlMs, n = idx.get(id), s = n && schedule().S.get(id), track = g.closest('.tl-track');
+  if (!s || !track) return;
+  // where day 0 of the track sits, independent of how far the timeline is scrolled
+  tlDrag = {id, kind: g.dataset.tlEst ? 'est' : 'ms', es: s.es, est0: n.est, due0: n.due, x0: e.clientX, moved: false, at: null,
+    origin: track.getBoundingClientRect().left + $('#tlBody').scrollLeft};
+});
+window.addEventListener('pointermove', e => {
+  const d = tlDrag; if (!d) return;
+  if (!d.moved && Math.abs(e.clientX - d.x0) < 3) return;
+  const n = idx.get(d.id);
+  if (!n) { tlEnd(true); return; }
+  if (!d.moved) { d.moved = true; document.documentElement.classList.add('tl-dragging'); }
+  const off = tl.from + (e.clientX - (d.origin - $('#tlBody').scrollLeft)) / tl.dayW;
+  if (d.kind === 'est') {
+    const est = fmtDays(Math.max(0.5, Math.round((off - d.es) * 2) / 2));
+    if (est !== n.est) { n.est = est; tlPaint(); }
+    tlTip(e, 'Estimate ' + est);
+  } else {
+    const at = Math.max(Math.ceil(tl.from) + 1, Math.round(off)), due = isoDay(dateAtWork(at - 1));
+    if (at !== d.at || due !== n.due) { d.at = at; n.due = due; tlPaint(); }
+    tlTip(e, 'Date ' + fmtDate(due));
+  }
+});
+window.addEventListener('pointerup', () => { if (tlDrag) tlEnd(false); });
+window.addEventListener('pointercancel', () => { if (tlDrag) tlEnd(true); });
+function tlEnd(cancel) {
+  const d = tlDrag; tlDrag = null; tlTip(null);
+  document.documentElement.classList.remove('tl-dragging');
+  if (!d || !d.moved) return;
+  tlNoClick = performance.now();
+  const n = idx.get(d.id);
+  if (n && cancel) { n.est = d.est0; n.due = d.due0; if (board.team) teamPreview([d.id]); }  // put teammates' view back too
+  if (n && (n.est !== d.est0 || n.due !== d.due0)) { refresh(); commit(); }
+  renderTimeline();
+}
+function timelineKeys(e) {
+  if (tlDrag && e.key === 'Escape') { e.preventDefault(); tlEnd(true); return true; }
+  const lk = e.key.toLowerCase();
+  if ((e.ctrlKey || e.metaKey) && (lk === 'z' || lk === 'y')) { e.preventDefault(); if (tlDrag) tlEnd(true); if (lk === 'y' || e.shiftKey) redo(); else undo(); return true; }
+  return false;
+}
+// the click that ends a drag isn't a click on the row (which would close the timeline and jump to the card)
+$('#timeline').addEventListener('click', e => { if (performance.now() - tlNoClick < 350) { e.stopImmediatePropagation(); e.preventDefault(); } }, true);
+
+/* ---------- kanban and calendar views ---------- */
+// Two more ways to see the same cards: columns by status, and a month of due dates and milestones. They never move
+// anything on the board. Dragging a tile to another column changes its status, dragging a card to another day
+// changes its due date: one step to undo, and live for the team. Idea notes have no status or date, so they stay out.
+const vw = {mode: 'kanban', month: null, f: {kinds: new Set(), phase: new Set(), disc: new Set(), who: new Set()}, raf: 0, drag: null, noClick: 0};
+const vwEl = $('#views'), vwBody = $('#vwBody');
+const VW_KINDS = [['task', 'Task'], ['milestone', 'Milestone'], ['bug', 'Bug']];
+const PRIO_ORDER = {must: 0, should: 1, could: 2, '': 3, wont: 4};
+const monthStart = d => new Date(d.getFullYear(), d.getMonth(), 1);
+function openViews(mode) {
+  if (editing) finishEdit();
+  hideMenus();
+  if (!$('#timeline').hidden) closeTimeline();
+  vw.mode = mode === 'calendar' ? 'calendar' : 'kanban';
+  if (!vw.month) vw.month = monthStart(new Date());
+  vwEl.hidden = false;
+  renderViews();
+}
+function closeViews() { if (vw.drag) vwEnd(true); vwEl.hidden = true; }
+// every change to the board (yours, an undo, a teammate's) redraws whichever of these is open
+function scheduleViews() {
+  if (!vwEl.hidden && !vw.drag && !vw.raf) vw.raf = requestAnimationFrame(() => { vw.raf = 0; if (!vwEl.hidden && !vw.drag) renderViews(); });
+  if (!$('#timeline').hidden && !tlDrag) tlPaint();
+}
+function vwCards() {  // board order: phase by phase, top to bottom
+  const out = [];
+  for (const g of boardGroups()) for (const n of g.cards) if (n.kind !== 'idea') out.push({n, g});
+  return out;
+}
+function vwMatch({n, g}) {
+  const f = vw.f;
+  if (f.kinds.size && !f.kinds.has(n.kind || 'task')) return false;
+  if (f.phase.size && !f.phase.has(g.frame ? g.frame.id : '')) return false;
+  if (f.disc.size && !f.disc.has(n.disc || '')) return false;
+  if (f.who.size) { const me = team.user && team.user.id; if (!(n.assignees || []).some(id => f.who.has(id) || (id === me && f.who.has('me')))) return false; }
+  return true;
+}
+function vwFiltersHTML(all) {
+  const f = vw.f, chip = (g, v, t, c) => pchip(g, v, t, f[g].has(v), c);
+  let h = `<div class="fg"><span class="fl">Type</span>${VW_KINDS.map(([k, t]) => chip('kinds', k, t)).join('')}</div>`;
+  const groups = boardGroups().filter(g => g.cards.some(n => n.kind !== 'idea'));
+  if (groups.some(g => g.frame)) h += `<div class="fg"><span class="fl">Phase</span>${groups.map(g => chip('phase', g.frame ? g.frame.id : '', g.title, g.frame ? g.frame.color : null)).join('')}</div>`;
+  const used = DISC.filter(d => all.some(({n}) => n.disc === d[0]));
+  if (used.length) h += `<div class="fg"><span class="fl">Discipline</span>${used.map(d => chip('disc', d[0], d[1], d[2])).join('')}</div>`;
+  if (board.team && team.members.length) h += `<div class="fg"><span class="fl">People</span>${team.user ? chip('who', 'me', 'Mine') : ''}${team.members.map(m => chip('who', m.id, m.name, m.color)).join('')}</div>`;
+  if (Object.values(f).some(s => s.size)) h += '<button class="pl-clear" type="button" data-vw="clear">Clear filters</button>';
+  return h;
+}
+function renderViews() {
+  if (vwEl.hidden) return;
+  const ro = viewOnly(), all = vwCards(), list = all.filter(vwMatch), cal = vw.mode === 'calendar';
+  $('#vwTitle').innerHTML = `${cal ? 'Calendar' : 'Kanban'}<em>.</em>`;
+  document.querySelectorAll('#vwMode button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === vw.mode)));
+  const late = list.filter(({n}) => n.status !== 'done' && isDate(n.due) && daysUntil(n.due) < 0).length;
+  const note = ro ? `<span class="vw-ro-note" title="${cal ? 'Due dates' : 'Statuses'} can't be changed on a locked board or as a viewer">View only</span>` : '';
+  $('#vwNav').innerHTML = cal
+    ? `${note}<button class="ib" type="button" data-vw="prev" title="Previous month (←)" aria-label="Previous month"><svg viewBox="0 0 20 20"><path d="M12 5l-5 5 5 5"/></svg></button><b>${esc(vw.month.toLocaleDateString(undefined, {month: 'long', year: 'numeric'}))}</b><button class="ib" type="button" data-vw="next" title="Next month (→)" aria-label="Next month"><svg viewBox="0 0 20 20"><path d="M8 5l5 5-5 5"/></svg></button><button class="tb" type="button" data-vw="today">Today</button>`
+    : `${note}<span class="vw-sum">${list.length} card${list.length === 1 ? '' : 's'}${late ? ` · ${late} overdue` : ''}</span>`;
+  $('#vwFilters').innerHTML = vwFiltersHTML(all);
+  vwEl.classList.toggle('vw-ro', ro);
+  // redrawing keeps each list where it was scrolled to, and the focused card focused
+  const keep = [...vwBody.querySelectorAll('.kb-list, .cal-evs')].map(e => e.scrollTop), top = vwBody.scrollTop, left = vwBody.scrollLeft;
+  const focused = document.activeElement && document.activeElement.closest && document.activeElement.closest('#vwBody [data-id]'), fid = focused && focused.dataset.id;
+  vwBody.innerHTML = cal ? calendarHTML(list, ro) : kanbanHTML(list, ro);
+  vwBody.querySelectorAll('.kb-list, .cal-evs').forEach((e, i) => { if (keep[i]) e.scrollTop = keep[i]; });
+  vwBody.scrollTop = top; vwBody.scrollLeft = left;
+  const again = fid && vwBody.querySelector(`[data-id="${CSS.escape(fid)}"]`); if (again) again.focus({preventScroll: true});
+}
+function kanbanHTML(list, ro) {
+  // with one type picked, the columns use its words (a bug is Open, Fixing, Fixed)
+  const kind = vw.f.kinds.size === 1 ? [...vw.f.kinds][0] : 'task';
+  const cols = STATUS.map(([k]) => ({k, label: statusLabel(kind, k).replace(/^✓\s*/, ''), cards: list.filter(({n}) => (n.status || 'todo') === k)}));
+  return `<div class="kb-cols">${cols.map(c => {
+    const est = c.k === 'done' ? 0 : c.cards.reduce((t, {n}) => t + (isWork(n) ? estDays(n.est) : 0), 0);
+    return `<section class="kb-col" data-drop="${c.k}" aria-label="${esc(c.label)}"><h3 class="kb-head"><i></i>${esc(c.label)}<em>${c.cards.length}${est ? ' · ' + fmtDays(est) : ''}</em></h3>`
+      + `<div class="kb-list">${c.cards.map(vwTile).join('') || `<p class="kb-empty">${ro ? 'Nothing here' : 'Drop cards here'}</p>`}</div></section>`;
+  }).join('')}</div>`;
+}
+function vwTile({n, g}) {
+  const k = n.kind || 'task', d = DISC_MAP[n.disc], sev = SEV_MAP[n.sev] || SEV_MAP.major;
+  const kind = k === 'milestone' ? 'Milestone' : k === 'bug' ? `Bug · ${sev[1]}` : 'Task';
+  const cls = ['vw-tile', k === 'milestone' ? 'ms' : k, n.status === 'done' ? 'done' : '', n.prio === 'wont' ? 'wont' : ''].filter(Boolean).join(' ');
+  return `<button type="button" class="${cls}" data-id="${esc(n.id)}" data-drag style="--c:${col(d && k !== 'milestone' ? d[2] : n.color)};--sev:${sev[2]}">`
+    + `<span class="vw-th"><span class="vw-k ${k}">${esc(kind)}</span>${d ? `<span class="vw-d" style="color:${col(d[2])}">${esc(d[1])}</span>` : ''}${n.prio ? `<span class="vw-p ${n.prio}">${esc(PRIO_LABEL[n.prio])}</span>` : ''}</span>`
+    + `<span class="vw-tt">${esc(n.title || 'Untitled')}</span><span class="vw-meta">${footHTML(n, openDeps.get(n.id) || 0)}</span>`
+    + `${g.frame ? `<span class="vw-ph" style="color:${col(g.frame.color)}">${esc(g.title)}</span>` : ''}</button>`;
+}
+function calendarHTML(list, ro) {
+  const y = vw.month.getFullYear(), mo = vw.month.getMonth(), lead = (new Date(y, mo, 1).getDay() + 6) % 7;  // weeks start on Monday
+  const weeks = Math.ceil((lead + new Date(y, mo + 1, 0).getDate()) / 7), today = isoDay(new Date());
+  const byDay = new Map(), undated = [];
+  for (const it of list) {
+    if (isDate(it.n.due)) { if (!byDay.has(it.n.due)) byDay.set(it.n.due, []); byDay.get(it.n.due).push(it); }
+    else if (it.n.status !== 'done' && it.n.prio !== 'wont') undated.push(it);
+  }
+  const order = (a, b) => ((b.n.kind === 'milestone') - (a.n.kind === 'milestone')) || ((a.n.status === 'done') - (b.n.status === 'done')) || (PRIO_ORDER[a.n.prio || ''] - PRIO_ORDER[b.n.prio || '']);
+  let cells = '';
+  for (let i = 0; i < weeks * 7; i++) {
+    const d = new Date(y, mo, 1 - lead + i), iso = isoDay(d), evs = (byDay.get(iso) || []).sort(order);
+    const cls = ['cal-day', d.getMonth() !== mo ? 'out' : '', iso === today ? 'today' : '', d.getDay() === 0 || d.getDay() === 6 ? 'we' : ''].filter(Boolean).join(' ');
+    const num = d.getDate() === 1 || i === 0 ? d.toLocaleDateString(undefined, {day: 'numeric', month: 'short'}) : String(d.getDate());
+    cells += `<div class="${cls}" data-drop="${iso}"><div class="cal-n"><b>${esc(num)}</b>${iso === today ? '<em>Today</em>' : ''}</div><div class="cal-evs">${evs.map(vwEvent).join('')}</div></div>`;
+  }
+  const dow = [0, 1, 2, 3, 4, 5, 6].map(i => new Date(2024, 0, 1 + i).toLocaleDateString(undefined, {weekday: 'short'}));  // 1 Jan 2024 was a Monday
+  return `<div class="cal"><div class="cal-main"><div class="cal-dow">${dow.map(s => `<span>${esc(s)}</span>`).join('')}</div>`
+    + `<div class="cal-grid" style="grid-template-rows:repeat(${weeks},minmax(96px,1fr))">${cells}</div></div>`
+    + `<aside class="cal-side" data-drop=""><h4>No due date<em>${undated.length}</em></h4>${ro ? '' : '<p>Drag a card onto a day to give it a date, or back here to clear it.</p>'}`
+    + `<div class="cal-evs">${undated.map(vwEvent).join('') || '<p class="kb-empty">Every open card has a date.</p>'}</div></aside></div>`;
+}
+function vwEvent({n}) {
+  const k = n.kind || 'task', d = DISC_MAP[n.disc], open = n.status !== 'done', late = open && isDate(n.due) && daysUntil(n.due) < 0;
+  const who = board.team ? (n.assignees || []).map(memberById).filter(Boolean) : [];
+  const tip = [KIND_NAME[k], statusLabel(k, n.status).replace(/^✓\s*/, ''), late ? 'overdue' : '', n.est && k !== 'milestone' ? n.est : '', who.map(m => m.name).join(', ')].filter(Boolean).join(' · ');
+  return `<button type="button" class="vw-ev${k === 'milestone' ? ' ms' : ''}${late ? ' late' : ''}${open ? '' : ' done'}" data-id="${esc(n.id)}" data-drag style="--c:${col(d && k !== 'milestone' ? d[2] : n.color)}" title="${esc(n.title + ' · ' + tip)}">`
+    + `<span>${k === 'bug' ? 'Bug: ' : ''}${esc(n.title || 'Untitled')}</span>${who.slice(0, 2).map(m => `<i class="mav" style="--c:${col(m.color)}">${esc(initials(m.name))}</i>`).join('')}</button>`;
+}
+function vwMonth(step) { vw.month = new Date(vw.month.getFullYear(), vw.month.getMonth() + step, 1); }
+/* dragging: a copy of the tile follows the pointer, and the column or day under it lights up */
+vwBody.addEventListener('pointerdown', e => {
+  const t = e.target.closest('[data-drag]');
+  if (!t || e.button !== 0 || viewOnly()) return;
+  vw.drag = {id: t.dataset.id, el: t, x: e.clientX, y: e.clientY, on: false, over: null};
+});
+window.addEventListener('pointermove', e => {
+  const d = vw.drag; if (!d) return;
+  if (!d.on) {
+    if (Math.hypot(e.clientX - d.x, e.clientY - d.y) < 5) return;
+    if (blocked()) { vw.drag = null; return; }
+    const r = d.el.getBoundingClientRect();
+    d.on = true; d.dx = d.x - r.left; d.dy = d.y - r.top;
+    d.ghost = d.el.cloneNode(true); d.ghost.classList.add('vw-ghost'); d.ghost.removeAttribute('data-drag'); d.ghost.style.width = r.width + 'px';
+    vwEl.appendChild(d.ghost); d.el.classList.add('vw-lift'); vwEl.classList.add('vw-dragging');
+  }
+  d.ghost.style.left = (e.clientX - d.dx) + 'px'; d.ghost.style.top = (e.clientY - d.dy) + 'px';
+  const hit = document.elementFromPoint(e.clientX, e.clientY), over = hit && hit.closest('#vwBody [data-drop]');
+  if (over !== d.over) { if (d.over) d.over.classList.remove('over'); d.over = over; if (over) over.classList.add('over'); }
+});
+window.addEventListener('pointerup', () => { if (vw.drag) vwEnd(false); });
+window.addEventListener('pointercancel', () => { if (vw.drag) vwEnd(true); });
+function vwEnd(cancel) {
+  const d = vw.drag; vw.drag = null;
+  if (!d || !d.on) return;
+  vw.noClick = performance.now();
+  d.ghost.remove(); d.el.classList.remove('vw-lift'); vwEl.classList.remove('vw-dragging');
+  if (d.over) d.over.classList.remove('over');
+  const n = idx.get(d.id), v = d.over ? d.over.dataset.drop : null;
+  if (!cancel && n && n.type === 'node' && v !== null) {
+    if (vw.mode === 'kanban') { if ((n.status || 'todo') !== v && STATUS_KEYS.includes(v)) setStatus([n], v); }  // sets or clears when it was finished
+    else if ((n.due || '') !== v && (v === '' || isDate(v)) && !blocked()) { n.due = v; refresh(); commit(); }
+  }
+  renderViews();
+}
+vwEl.addEventListener('click', e => {
+  if (performance.now() - vw.noClick < 350) return;  // the end of a drag
+  if (e.target === vwEl) { closeViews(); return; }
+  const f = e.target.closest('[data-f]');
+  if (f) { const s = vw.f[f.dataset.f]; if (s) { if (s.has(f.dataset.v)) s.delete(f.dataset.v); else s.add(f.dataset.v); renderViews(); } return; }
+  const m = e.target.closest('#vwMode [data-v]');
+  if (m) { vw.mode = m.dataset.v; renderViews(); return; }
+  const b = e.target.closest('[data-vw]');
+  if (b) { const a = b.dataset.vw; if (a === 'clear') Object.values(vw.f).forEach(s => s.clear()); else if (a === 'today') vw.month = monthStart(new Date()); else vwMonth(a === 'prev' ? -1 : 1); renderViews(); return; }
+  const t = e.target.closest('#vwBody [data-id]');
+  if (t) { closeViews(); focusCard(t.dataset.id, !!e.target.closest('[data-cm]')); }
+});
+$('#vwClose').onclick = closeViews;
+function viewsKeys(e) {
+  const lk = e.key.toLowerCase();
+  if (e.key === 'Escape') { e.preventDefault(); if (vw.drag && vw.drag.on) vwEnd(true); else closeViews(); return; }
+  if (isField(e.target)) return;
+  if ((e.ctrlKey || e.metaKey) && (lk === 'z' || lk === 'y')) { e.preventDefault(); if (vw.drag) vwEnd(true); if (lk === 'y' || e.shiftKey) redo(); else undo(); return; }
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  if (e.shiftKey && e.code === 'KeyG') { e.preventDefault(); closeViews(); openTimeline(); return; }
+  if (e.shiftKey && (e.code === 'KeyK' || e.code === 'KeyC')) {
+    e.preventDefault();
+    const m = e.code === 'KeyK' ? 'kanban' : 'calendar';
+    if (vw.mode === m) closeViews(); else { vw.mode = m; renderViews(); }
+    return;
+  }
+  if (vw.mode === 'calendar' && ['ArrowLeft', 'ArrowRight', 'PageUp', 'PageDown'].includes(e.key)) { e.preventDefault(); vwMonth(e.key === 'ArrowLeft' || e.key === 'PageUp' ? -1 : 1); renderViews(); }
+  // keyboard: a focused tile moves to the column on its left or right
+  const t = document.activeElement && document.activeElement.closest && document.activeElement.closest('#vwBody .vw-tile');
+  if (vw.mode === 'kanban' && t && (e.key === 'ArrowLeft' || e.key === 'ArrowRight') && !viewOnly()) {
+    e.preventDefault();
+    const n = idx.get(t.dataset.id), i = STATUS_KEYS.indexOf(n ? n.status || 'todo' : ''), to = STATUS_KEYS[i + (e.key === 'ArrowLeft' ? -1 : 1)];
+    if (!n || !to) return;
+    setStatus([n], to); renderViews();
+  }
+}
+// the Planner's header opens them, beside the Timeline
+$('#planner .pl-head [data-pl="timeline"]').insertAdjacentHTML('beforebegin',
+  '<button class="ib pl-tool" data-vw-open="kanban" title="Kanban: drag cards between statuses (Shift+K)" aria-label="Kanban"><svg viewBox="0 0 20 20"><rect x="3" y="3.5" width="4" height="13" rx="1.3"/><rect x="8.5" y="3.5" width="4" height="9" rx="1.3"/><rect x="14" y="3.5" width="3.5" height="6" rx="1.3"/></svg></button>'
+  + `<button class="ib pl-tool" data-vw-open="calendar" title="Calendar: due dates and milestones by month (Shift+C)" aria-label="Calendar"><svg viewBox="0 0 20 20">${ICON.cal}</svg></button>`);
+planner.addEventListener('click', e => { const b = e.target.closest('[data-vw-open]'); if (b) openViews(b.dataset.vwOpen); });
 
 /* ---------- burndown ---------- */
 // How much work is left each day, against a straight line to the next milestone. Cards remember when they were
