@@ -576,6 +576,61 @@ select.tm-in{padding-right:6px;cursor:pointer}
 .cp-opt .av{width:22px;height:22px;font-size:8.5px}
 .cp-opt b{font-size:12.5px}
 .cp-opt span{font:500 11px var(--font-mono);color:var(--bone-faint)}
+/* ---------- comment threads and feedback pins ---------- */
+.cp-thread{display:flex;flex-direction:column;gap:8px;margin:0 -8px;padding:6px 8px;border-radius:12px;transition:background .15s,opacity .15s}
+.cp-thread.focus{background:color-mix(in srgb,var(--fang) 8%,transparent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--fang) 28%,transparent)}
+.cp-thread.resolved{opacity:.6}
+.cp-thread.resolved:hover,.cp-thread.resolved:focus-within{opacity:1}
+.cp-replies{display:flex;flex-direction:column;gap:10px;margin-left:13px;padding-left:12px;border-left:2px solid var(--line-2)}
+.cp-replies .cm>.av{width:22px;height:22px;font-size:8.5px}
+.cp-replybtn{align-self:flex-start;margin-left:38px;font-size:11.5px}
+.cp-res,.cp-orphan{display:flex;align-items:center;gap:6px;margin-left:38px;font:600 11px var(--font-mono);color:var(--bone-faint)}
+.cp-res .tm-ico{color:var(--ok)}
+.cp-res .tm-link{margin-left:auto;font-size:11.5px}
+.cp-list .cm{position:relative}
+.cp-list .cm-tools{position:absolute;top:-7px;right:-4px;z-index:1;align-items:center;padding:3px 9px;border-radius:9px;background:var(--hide-2);border:1px solid var(--line-2);box-shadow:0 8px 18px -10px var(--shadow)}
+.cp-list .cp-resolve~.cm-tools{right:24px}
+.cm-react{text-decoration:none;display:inline-grid;place-items:center}
+.cm-react .tm-ico svg{width:16px;height:16px}
+.cp-resolve{margin-left:auto;align-self:center;display:grid;place-items:center;width:22px;height:22px;padding:0;border:1px solid var(--line-2);border-radius:50%;background:none;color:var(--bone-dim);cursor:pointer;flex:none}
+.cp-resolve:hover{color:var(--ok);border-color:color-mix(in srgb,var(--ok) 55%,transparent)}
+.cp-resolve .tm-ico svg{width:12px;height:12px}
+.cp-showres{display:inline-flex;align-items:center;gap:6px;align-self:flex-start;text-decoration:none;font-size:12px}
+.cp-showres .tm-ico{color:var(--ok)}
+.cm-rx{display:flex;flex-wrap:wrap;align-items:center;gap:5px;margin-top:3px}
+.rx{display:inline-flex;align-items:center;gap:4px;height:24px;padding:0 8px;border-radius:99px;border:1px solid var(--line);background:var(--hide-2);color:var(--bone-dim);font:700 11px var(--font-mono);cursor:pointer}
+.rx:hover:not(:disabled){border-color:var(--line-2);color:var(--bone)}
+.rx:disabled{cursor:default}
+.rx.on{border-color:color-mix(in srgb,var(--fang) 60%,transparent);background:color-mix(in srgb,var(--fang) 14%,var(--hide-2));color:var(--bone)}
+.rx-e{font-size:13px;line-height:1}
+.rx-add{padding:0 6px}
+.rx-add .tm-ico svg{width:14px;height:14px}
+.rx-pal{display:inline-flex;gap:2px;padding:2px;border-radius:99px;border:1px solid var(--line-2);background:var(--hide-2);box-shadow:0 10px 24px -10px var(--shadow)}
+.rx-pal button{width:28px;height:24px;border:0;border-radius:99px;background:none;font-size:15px;line-height:1;cursor:pointer;padding:0}
+.rx-pal button:hover,.rx-pal button.on{background:var(--hide-3)}
+.cp-ctx{display:flex;align-items:center;gap:8px;min-height:26px;padding:2px 2px 0;font:600 12px var(--font-ui);color:var(--bone-dim)}
+.cp-ctx b{color:var(--bone)}
+.cp-ctx>span:not(.cp-pinno){flex:1;min-width:0}
+.cp-ctx-x{width:26px;height:26px;margin-left:auto}
+.cp-ctx-x .tm-ico svg{width:14px;height:14px}
+.cp-pinno{flex:none;min-width:20px;height:20px;padding:0 5px;border-radius:50% 50% 50% 3px;border:0;background:var(--fang);color:#fff;font:800 10.5px/20px var(--font-ui);text-align:center;cursor:pointer;align-self:center}
+.cp-pinno.draft{background:none;color:var(--fang);box-shadow:inset 0 0 0 1.5px var(--fang);cursor:default}
+.cp-thread.resolved .cp-pinno{background:var(--bone-faint)}
+.cp-thumb{flex:none;width:44px;height:44px;border-radius:8px;overflow:hidden;background:var(--hide-3);box-shadow:inset 0 0 0 1px var(--line)}
+.cp-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.cp-card .cp-addpin{align-self:center;height:28px;padding:0 10px}
+#stage.pinning,#stage.pinning *{cursor:crosshair!important}
+#pinLayer{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.fbp{position:absolute;left:0;top:-26px;width:26px;height:26px;padding:0;border:0;border-radius:50% 50% 50% 3px;background:var(--fang);color:#fff;font:800 11.5px/26px var(--font-ui);text-align:center;pointer-events:auto;cursor:pointer;
+  box-shadow:0 0 0 2px var(--void),0 8px 16px -6px rgba(0,0,0,.7);transition:opacity .15s,box-shadow .15s}
+.fbp:hover,.fbp.on{box-shadow:0 0 0 2px var(--void),0 0 0 4px var(--bone),0 8px 16px -6px rgba(0,0,0,.7);z-index:1}
+.fbp.resolved{background:var(--hide-3);color:var(--bone-dim);opacity:.6}
+.fbp.resolved:hover,.fbp.resolved.on{opacity:1}
+.fbp.draft{background:var(--void);color:var(--fang);box-shadow:inset 0 0 0 2px var(--fang),0 0 0 2px var(--void),0 8px 16px -6px rgba(0,0,0,.7);animation:fbp-in .25s ease-out;transform-origin:0 100%}
+.fbp.dim{opacity:.18}
+.fbp.fbc{top:-11px;left:-12px;width:auto;min-width:24px;height:22px;padding:0 6px;border-radius:11px 11px 11px 3px;background:var(--hide-2);color:var(--bone);font:800 10.5px/22px var(--font-ui);box-shadow:0 0 0 1.5px var(--line-2),0 8px 16px -6px rgba(0,0,0,.7)}
+@keyframes fbp-in{from{scale:.4;opacity:0}to{scale:1;opacity:1}}
+@media (prefers-reduced-motion:reduce){.fbp.draft{animation:none}}
 .bellcount{position:absolute;top:3px;right:2px;min-width:16px;height:16px;padding:0 4px;border-radius:99px;background:var(--fang);color:#fff;font:800 9.5px/16px var(--font-ui);text-align:center;box-shadow:0 0 0 2px var(--hide)}
 #bellBtn{position:relative}
 .notepanel{width:min(360px,calc(100vw - 16px));padding:6px}
@@ -1771,6 +1826,7 @@ function renderUI() {
   s += drawPeers();
   if (tool === 'eraser' && hover && hover.eraser) s += `<circle class="u-eraser" cx="${rd(hover.eraser.x)}" cy="${rd(hover.eraser.y)}" r="${opts.eraser.size / 2}"/>`;
   ui.innerHTML = s;
+  renderFeedbackPins();
 }
 function hitHandle(p) {
   for (const h of handles) if (Math.hypot(h.x - p.x, h.y - p.y) <= (h.kind === 'resize' ? 8 : 10)) return h;
@@ -1780,7 +1836,7 @@ function render() { reindex(); computeDerived(); renderItems(); measure(); rende
 function renderMove() { renderItems(); renderLinks(); renderInk(); renderUI(); scheduleMini(); }
 function refresh() {
   render(); updateCtx(); schedulePlanner();
-  if (cp.open) { const one = sel.size === 1 ? idx.get([...sel][0]) : null; if (one && one.type === 'node' && one.id !== cp.card) { cp.card = one.id; cp.editing = null; buildCommentPanel(); } renderCardPanel(); }
+  if (cp.open) { const one = sel.size === 1 ? idx.get([...sel][0]) : null; if (one && (one.type === 'node' || one.type === 'image') && one.id !== cp.card) { cp.card = one.id; cp.editing = null; buildCommentPanel(); } renderCardPanel(); }
   if (board.team) { const s = [...sel].join(); if (s !== team.selSig) { team.selSig = s; teamPresence({sel: [...sel]}); } }
 }
 
@@ -1988,6 +2044,26 @@ function cleanComment(c) {
   if (!text) return null;
   const out = {id: c.id, type: 'comment', card: c.card, by: okId(c.by) ? c.by : '', at: okTime(c.at) ? c.at : 0, text};
   if (okTime(c.edited)) out.edited = c.edited;
+  Object.assign(out, cleanThread(c));
+  return out;
+}
+/* ---------- comment threads: what a comment can carry ---------- */
+// Optional, like the server's own cleaner: the comment it replies to, reactions (who reacted with each of a
+// small fixed set), when its thread was resolved and by whom, and a feedback pin's spot on a picture (0..1).
+const REACTIONS = ['\u{1F44D}', '\u{2764}\u{FE0F}', '\u{1F389}', '\u{1F602}', '\u{1F440}', '\u{2705}'];
+const REACT_NAME = {[REACTIONS[0]]: 'Thumbs up', [REACTIONS[1]]: 'Love it', [REACTIONS[2]]: 'Celebrate', [REACTIONS[3]]: 'Funny', [REACTIONS[4]]: 'Looking', [REACTIONS[5]]: 'Done'};
+function cleanThread(c) {
+  const out = {};
+  if (okId(c.re) && c.re !== c.id) out.re = c.re;
+  const r = c.react, react = {};
+  if (r && typeof r === 'object' && !Array.isArray(r)) for (const e of REACTIONS) { const who = [...new Set((Array.isArray(r[e]) ? r[e] : []).filter(okId))].slice(0, 100); if (who.length) react[e] = who; }
+  if (Object.keys(react).length) out.react = react;
+  if (!out.re && okTime(c.resolved)) { out.resolved = c.resolved; out.resolvedBy = okId(c.resolvedBy) ? c.resolvedBy : ''; }
+  const p = c.pin;
+  if (!out.re && p && typeof p === 'object' && Number.isFinite(Number(p.x)) && Number.isFinite(Number(p.y))) {
+    const f = v => Math.round(clamp(Number(v), 0, 1) * 10000) / 10000;
+    out.pin = {x: f(p.x), y: f(p.y)};
+  }
   return out;
 }
 function cleanEnd(e) {
@@ -3168,6 +3244,7 @@ function selCtx(list) {
     if (only('link')) h += vsep + seg('lstyle', STYLE_OPTS, common(list.map(o => o.style)), 'Line style') + seg('head', HEAD_OPTS, common(list.map(o => o.head)), 'Arrowheads') + chip('dash', 'Dashed', list.every(o => o.dash)) + chip('flow', 'Flow', list.every(o => o.flow)) + (one ? cbtn('label', 'Edit label', 'label') + cbtn('reverse', 'Reverse direction', 'swap') + cbtn('knot', 'Add a reroute point', 'plus') : '') + (list.some(o => o.via) ? chip('unknot', 'Straighten', false) : '');
     if (one && one.type === 'jam') h += vsep + cbtn('jamedit', 'Edit the jam', 'clock') + cbtn('jamcut', 'Cut scope', 'trash');
     if (only('image')) h += vsep + chip('flip', 'Flip', list.every(o => o.flip)) + chip('gray', 'Greyscale', list.every(o => o.gray)) + (one ? cbtn('orig', 'Original size', 'orig') + cbtn('replace', 'Replace with another picture or video', 'swap') : '');
+    if (one && one.type === 'image' && board.team) { const n = commentCounts.get(one.id) || 0; h += vsep + cbtn('fbpin', 'Add feedback pin', 'fbpin') + cbtn('comments', n ? `Comments (${n})` : 'Comments', 'label', false, cp.open && cp.card === one.id); }
     if (one && one.type === 'video') {
       const el = els.get(one.id), v = el && el.querySelector('video'), playing = one.embed ? !!(el && el.classList.contains('live')) : !!(v && !v.paused);
       h += vsep + chip('vplay', playing ? (one.embed ? 'Stop' : 'Pause') : 'Play', playing);
@@ -3257,6 +3334,7 @@ function act(a, v, btn) {
     case 'next': addNextCard(); break;
     case 'assignMenu': menuAt(btn, assignEntries()); break;
     case 'comments': if (list[0]) { if (cp.open && cp.card === list[0].id) closeComments(); else openComments(list[0].id); } break;
+    case 'fbpin': if (list[0] && list[0].type === 'image') startFeedbackPin(list[0]); break;
     case 'unlockBoard': toggleBoardLock(); break;
     case 'more': menuAt(btn, moreEntries()); break;
     case 'arrange': menuAt(btn, arrangeEntries()); break;
@@ -3347,6 +3425,7 @@ function contextEntries(hit, w) {
       KINDS.forEach(([k, t]) => { if ((hit.kind || 'task') !== k) E.push({label: t, icon: KIND_ICON[k], run: () => setKind(selObjs(), k)}); });
       E.push('-');
     } else if (hit.type === 'image') {
+      if (board.team) E.push(...(team.user && !team.watch ? [{label: 'Add feedback pin here', icon: 'fbpin', run: () => dropFeedbackPin(hit, w)}] : []), {label: 'Comments', icon: 'label', kb: (commentCounts.get(hit.id) || '') + '', run: () => openPictureComments(hit.id)});
       E.push({label: hit.flip ? 'Unflip' : 'Flip horizontal', run: () => act('flip')}, {label: hit.gray ? 'Show in colour' : 'Show in greyscale', run: () => act('gray')}, {label: 'Original size', run: () => originalSize(hit)}, {label: 'Zoom to image', run: () => fitTo([hit])}, ...replaceEntries(hit), '-');
     } else if (hit.type === 'video') {
       E.push({label: 'Zoom to video', run: () => fitTo([hit])}, ...replaceEntries(hit), '-');
@@ -5327,52 +5406,107 @@ function setMembers(list) {
 }
 
 /* ---------- comments ---------- */
-// One card's conversation, in a panel on the right. Comments belong to whoever wrote them: the server stamps the
-// author and time, and only lets the author edit and the author or a team admin delete.
-const cp = {open: false, card: null, editing: null, editText: '', draft: new Map(), sig: ''};
-function openComments(cardId) {
+// One card's (or picture's) conversation, in a panel on the right. Comments belong to whoever wrote them: the server
+// stamps the author and time, and only lets the author edit and the author or a team admin delete.
+// Threads: a reply hangs off a thread's first comment (one level deep); anyone who can comment can reply and add
+// or take back their own reactions; a thread's author or a team admin can resolve it, and resolved threads fold away.
+const cp = {open: false, card: null, editing: null, editText: '', draft: new Map(), sig: '', replyTo: null, draftPin: null, focus: null, scrollFocus: false, showRes: false, rx: null};
+const commentable = it => !!it && (it.type === 'node' || it.type === 'image');
+function openComments(cardId, focus) {
   if (!board.team) { toast('Comments are for team projects. Share this board with your team to talk about its cards.', 4000); return; }
   const it = idx.get(cardId);
-  if (!it || it.type !== 'node') return;
+  if (!commentable(it)) return;
   if (plannerOpen) setPlanner(false);
   if (team.panelOpen) setTeamPanel(false);
   cp.open = true; $('#cardPanel').hidden = false;
   if (cp.card !== cardId || !$('#cpList')) { cp.card = cardId; cp.editing = null; buildCommentPanel(); }
-  syncPanels(); renderCardPanel(true); updateCtx();
-  setTimeout(() => { const t = $('#cardPanel .cp-in'); if (t) t.focus(); }, 40);
+  if (focus) { const f = doc.comments.find(c => c.id === focus); cp.focus = focus; cp.scrollFocus = true; if (f && f.resolved) cp.showRes = true; }
+  syncPanels(); renderCardPanel(!focus); updateCtx(); renderFeedbackPins();
+  if (!focus) setTimeout(() => { const t = $('#cardPanel .cp-in'); if (t) t.focus(); }, 40);
 }
 function closeComments() {
   if (!cp.open) return;
   cp.open = false; $('#cardPanel').hidden = true;
-  syncPanels(); updateCtx();
+  cp.draftPin = cp.replyTo = cp.focus = cp.rx = null;
+  syncPanels(); updateCtx(); renderFeedbackPins();
 }
 function buildCommentPanel() {
-  cp.sig = '';
+  cp.sig = ''; cp.replyTo = cp.focus = cp.rx = null; cp.showRes = false;
+  if (cp.draftPin && cp.draftPin.card !== cp.card) cp.draftPin = null;
   $('#cpBody').replaceChildren(mk('div', {id: 'cpCard', class: 'cp-card'}), mk('div', {id: 'cpList', class: 'cp-list'}), commentComposer());
 }
 function commentHTML(text) {
   const names = new Set(team.members.map(m => m.username.toLowerCase()));
   return text.split(/(@[A-Za-z0-9_]{3,24})/g).map((part, i) => i % 2 && names.has(part.slice(1).toLowerCase()) ? `<b class="mention">${esc(part)}</b>` : linkify(part)).join('').replace(/\n/g, '<br>');
 }
+// a card's or picture's comments as threads, oldest first: each first comment with its replies
+function threadsOf(cardId) {
+  const all = doc.comments.filter(c => c.card === cardId), byId = new Map(all.map(c => [c.id, c])), at = (a, b) => (a.at || 0) - (b.at || 0);
+  const rootOf = c => { let r = c; for (let n = 0; n < 8 && r.re && byId.has(r.re); n++) r = byId.get(r.re); return r.re && byId.has(r.re) ? c : r; };
+  const kids = new Map(), roots = [];
+  for (const c of all) { const r = rootOf(c); if (r === c) roots.push(c); else { if (!kids.has(r.id)) kids.set(r.id, []); kids.get(r.id).push(c); } }
+  return roots.sort(at).map(root => ({root, replies: (kids.get(root.id) || []).sort(at)}));
+}
+// feedback pins on a picture are numbered in the order they were dropped
+const pinNumbers = cardId => new Map(doc.comments.filter(c => c.card === cardId && c.pin && !c.re).sort((a, b) => (a.at || 0) - (b.at || 0)).map((c, i) => [c.id, i + 1]));
+const reactKey = r => r ? REACTIONS.map(e => (r[e] || []).join(',')).join(';') : '';
+const cmName = id => (memberById(id) || {name: 'Former teammate'}).name;
 function renderCardPanel(toEnd) {
   if (!cp.open) return;
   const it = idx.get(cp.card);
-  if (!it || !board.team) { closeComments(); return; }
-  const list = doc.comments.filter(c => c.card === it.id).sort((a, b) => (a.at || 0) - (b.at || 0));
-  const sig = [it.title, it.status, it.color, (it.assignees || []).join(), team.membersSig, team.role, cp.editing, ...list.map(c => c.id + (c.at || 0) + (c.edited || 0) + c.text.length)].join('|');
-  if (sig === cp.sig && !toEnd) return;
+  if (!commentable(it) || !board.team) { closeComments(); return; }
+  const here = doc.comments.filter(c => c.card === it.id);
+  const sig = [it.type, it.title, it.status, it.color, it.name, it.flip, it.asset || it.src, (it.assignees || []).join(), team.membersSig, team.role, team.user && team.user.id, cp.editing, cp.replyTo, cp.focus, cp.showRes, cp.rx,
+    ...here.map(c => [c.id, c.at || 0, c.edited || 0, c.text.length, c.re || '', c.resolved || 0, c.resolvedBy || '', reactKey(c.react), c.pin ? c.pin.x + ',' + c.pin.y : ''].join(':'))].join('|');
+  if (sig === cp.sig && !toEnd) { syncComposer(); return; }
   cp.sig = sig;
-  const who = assigneeNames(it, true);
-  $('#cpCard').replaceChildren(mk('span', {class: 'cp-dot', css: {'--c': col(it.color)}}),
-    mk('button', {class: 'cp-ct', type: 'button', title: 'Show this card', onclick: () => flyTo(it)}, mk('b', {}, it.title || 'Untitled card'),
-      mk('span', {}, statusLabel(it.kind || 'task', it.status).replace('✓ ', '') + (who ? ' · ' + who : ''))));
+  const threads = threadsOf(it.id), nums = pinNumbers(it.id);
+  if (it.type === 'image') $('#cpCard').replaceChildren(...pictureHead(it, threads));
+  else {
+    const who = assigneeNames(it, true);
+    $('#cpCard').replaceChildren(mk('span', {class: 'cp-dot', css: {'--c': col(it.color)}}),
+      mk('button', {class: 'cp-ct', type: 'button', title: 'Show this card', onclick: () => flyTo(it)}, mk('b', {}, it.title || 'Untitled card'),
+        mk('span', {}, statusLabel(it.kind || 'task', it.status).replace('✓ ', '') + (who ? ' · ' + who : ''))));
+  }
   const el = $('#cpList'), atEnd = el.scrollHeight - el.scrollTop - el.clientHeight < 40;
-  const me = team.user && team.user.id, admin = ROLE_RANK[team.role] >= ROLE_RANK.admin;
-  el.replaceChildren(...(list.length ? list.map(c => commentRow(c, c.by === me && !team.watch, admin && !team.watch))
-    : [mk('p', {class: 'tm-note cp-empty'}, team.watch ? 'No comments on this card.' : 'No comments yet. Ask a question, leave feedback, or type @ to bring a teammate in.')]));
-  if (toEnd || atEnd) el.scrollTop = el.scrollHeight;
+  const open = threads.filter(t => !t.root.resolved), done = threads.filter(t => t.root.resolved);
+  const rows = [];
+  if (done.length) rows.push(mk('button', {class: 'tm-link cp-showres', type: 'button', 'aria-expanded': String(cp.showRes), onclick: () => { cp.showRes = !cp.showRes; renderCardPanel(); }},
+    icon('check'), cp.showRes ? `Hide resolved (${done.length})` : `Show resolved (${done.length})`));
+  if (cp.showRes) rows.push(...done.map(t => threadEl(t, nums)));
+  rows.push(...open.map(t => threadEl(t, nums)));
+  if (!threads.length) rows.push(mk('p', {class: 'tm-note cp-empty'}, it.type === 'image'
+    ? (team.watch ? 'No comments on this picture.' : 'No feedback yet. Add a pin to point at a spot, or write a comment below.')
+    : (team.watch ? 'No comments on this card.' : 'No comments yet. Ask a question, leave feedback, or type @ to bring a teammate in.')));
+  else if (!open.length && !cp.showRes) rows.push(mk('p', {class: 'tm-note cp-empty'}, 'Everything here is resolved.'));
+  el.replaceChildren(...rows);
+  const f = cp.scrollFocus && cp.focus && el.querySelector(`[data-thread="${CSS.escape(cp.focus)}"]`);
+  if (f) { cp.scrollFocus = false; f.scrollIntoView({block: 'center'}); }
+  else if (toEnd || atEnd) el.scrollTop = el.scrollHeight;
+  syncComposer();
 }
-function commentRow(c, mine, admin) {
+function pictureHead(it, threads) {
+  const pins = threads.filter(t => t.root.pin).length, open = threads.filter(t => !t.root.resolved).length;
+  const src = it.asset ? assets[it.asset] : it.src, thumb = mk('span', {class: 'cp-thumb'});
+  if (src) { const img = new Image(); if (teamAsset(src)) img.crossOrigin = 'anonymous'; img.src = src; img.alt = ''; img.draggable = false; if (it.flip) img.style.transform = 'scaleX(-1)'; thumb.append(img); }
+  return [thumb, mk('button', {class: 'cp-ct', type: 'button', title: 'Show this picture', onclick: () => fitTo([it])}, mk('b', {}, it.name || 'Picture'),
+      mk('span', {}, `${pins} pin${pins === 1 ? '' : 's'} · ${open} open`)),
+    team.watch ? null : mk('button', {class: 'tm-btn cp-addpin', type: 'button', title: 'Add a feedback pin, then click a spot on the picture', onclick: () => startFeedbackPin(it)}, icon('fbpin'), 'Add pin')];
+}
+function threadEl(t, nums) {
+  const {root, replies} = t, me = team.user && team.user.id, admin = ROLE_RANK[team.role] >= ROLE_RANK.admin, watch = !!team.watch;
+  // a reply whose first comment was deleted stands on its own
+  const orphan = !!root.re, canResolve = !watch && !orphan && (root.by === me || admin);
+  return mk('div', {class: 'cp-thread' + (root.resolved ? ' resolved' : '') + (cp.focus === root.id ? ' focus' : ''), 'data-thread': root.id,
+    onmouseenter: () => hoverFeedbackPin(root.id), onmouseleave: () => hoverFeedbackPin(null)},
+    root.resolved ? mk('div', {class: 'cp-res'}, icon('check'), mk('span', {title: new Date(root.resolved).toLocaleString()}, `Resolved by ${cmName(root.resolvedBy)} · ${ago(root.resolved)}`),
+      canResolve ? mk('button', {class: 'tm-link', type: 'button', onclick: () => resolveThread(root.id, false)}, 'Reopen') : null) : null,
+    orphan ? mk('div', {class: 'cp-orphan'}, 'Reply to a deleted comment') : null,
+    commentRow(root, root.by === me && !watch, admin && !watch, {pinNo: nums.get(root.id), resolve: canResolve && !root.resolved}),
+    replies.length ? mk('div', {class: 'cp-replies'}, ...replies.map(r => commentRow(r, r.by === me && !watch, admin && !watch, {}))) : null,
+    watch || root.resolved || orphan ? null : mk('button', {class: 'tm-link cp-replybtn', type: 'button', onclick: () => startReply(root.id)}, cp.replyTo === root.id ? 'Replying…' : 'Reply'));
+}
+function commentRow(c, mine, admin, o = {}) {
   const m = memberById(c.by) || {name: 'Former teammate', color: ''};
   if (cp.editing === c.id) {
     const ta = mk('textarea', {class: 'tm-in cp-edit', rows: 3, maxlength: 2000, 'aria-label': 'Edit comment'});
@@ -5386,14 +5520,33 @@ function commentRow(c, mine, admin) {
   }
   const body = mk('div', {class: 'cm-text'});
   body.innerHTML = commentHTML(c.text);
+  const tools = [team.user && !team.watch ? mk('button', {class: 'tm-link cm-react', type: 'button', title: 'Add a reaction', 'aria-label': 'Add a reaction', onclick: () => { cp.rx = cp.rx === c.id ? null : c.id; renderCardPanel(); }}, icon('rxadd')) : null,
+    mine ? mk('button', {class: 'tm-link', type: 'button', onclick: () => { cp.editing = c.id; cp.editText = c.text; renderCardPanel(); }}, 'Edit') : null,
+    mine || admin ? mk('button', {class: 'tm-link danger', type: 'button', onclick: () => deleteComment(c.id)}, 'Delete') : null].filter(Boolean);
   return mk('div', {class: 'cm' + (mine ? ' mine' : '')}, avatar(m),
     mk('div', {class: 'cm-main'},
-      mk('div', {class: 'cm-top'}, mk('b', {}, m.name), m.username ? mk('span', {class: 'cm-user'}, '@' + m.username) : null, mk('span', {title: c.at ? new Date(c.at).toLocaleString() : ''}, c.at ? ago(c.at) : 'just now'), c.edited ? mk('span', {class: 'cm-ed', title: new Date(c.edited).toLocaleString()}, 'edited') : null,
-        mk('span', {class: 'cm-tools'},
-          mine ? mk('button', {class: 'tm-link', type: 'button', onclick: () => { cp.editing = c.id; cp.editText = c.text; renderCardPanel(); }}, 'Edit') : null,
-          mine || admin ? mk('button', {class: 'tm-link danger', type: 'button', onclick: () => deleteComment(c.id)}, 'Delete') : null)),
-      body));
+      mk('div', {class: 'cm-top'}, o.pinNo ? mk('button', {class: 'cp-pinno', type: 'button', title: `Pin ${o.pinNo}: show it on the picture`, onclick: () => showFeedbackPin(c.id)}, String(o.pinNo)) : null,
+        mk('b', {}, m.name), m.username ? mk('span', {class: 'cm-user'}, '@' + m.username) : null, mk('span', {title: c.at ? new Date(c.at).toLocaleString() : ''}, c.at ? ago(c.at) : 'just now'), c.edited ? mk('span', {class: 'cm-ed', title: new Date(c.edited).toLocaleString()}, 'edited') : null,
+        o.resolve ? mk('button', {class: 'cp-resolve', type: 'button', title: 'Resolve this thread', 'aria-label': 'Resolve this thread', onclick: () => resolveThread(c.id, true)}, icon('check')) : null,
+        tools.length ? mk('span', {class: 'cm-tools'}, ...tools) : null),
+      body, reactRow(c)));
 }
+// reactions under a comment: who reacted with what, yours highlighted; click one to add or take back your own
+function reactRow(c) {
+  const me = team.user && team.user.id, r = c.react || {}, can = !!me && !team.watch;
+  const chips = REACTIONS.filter(e => r[e] && r[e].length).map(e => {
+    const names = r[e].map(cmName).join(', '), on = r[e].includes(me);
+    return mk('button', {class: 'rx' + (on ? ' on' : ''), type: 'button', title: `${REACT_NAME[e]}: ${names}`, 'aria-label': `${REACT_NAME[e]}: ${names}`, 'aria-pressed': String(on), disabled: !can, onclick: () => toggleReaction(c.id, e)},
+      mk('span', {class: 'rx-e'}, e), String(r[e].length));
+  });
+  const open = can && cp.rx === c.id;
+  if (!chips.length && !open) return null;
+  const add = can && chips.length && !open ? mk('button', {class: 'rx rx-add', type: 'button', title: 'Add a reaction', 'aria-label': 'Add a reaction', onclick: () => { cp.rx = c.id; renderCardPanel(); }}, icon('rxadd')) : null;
+  const pal = open ? mk('span', {class: 'rx-pal', role: 'group', 'aria-label': 'Reactions'}, ...REACTIONS.map(e => mk('button', {type: 'button', class: (r[e] || []).includes(me) ? 'on' : '', title: REACT_NAME[e], 'aria-label': REACT_NAME[e],
+    'aria-pressed': String((r[e] || []).includes(me)), onclick: () => { cp.rx = null; toggleReaction(c.id, e); }}, e))) : null;
+  return mk('div', {class: 'cm-rx'}, ...chips, add, pal);
+}
+document.addEventListener('pointerdown', e => { if (cp.rx && !(e.target.closest && e.target.closest('.cm-rx, .cm-react'))) { cp.rx = null; renderCardPanel(); } }, true);
 function commentComposer() {
   if (team.watch) return null;
   const ta = mk('textarea', {class: 'tm-in cp-in', rows: 2, maxlength: 2000, placeholder: 'Write a comment… type @ to mention someone', 'aria-label': 'Write a comment'});
@@ -5416,23 +5569,52 @@ function commentComposer() {
   const form = mk('form', {class: 'cp-form', onsubmit: e => {
     e.preventDefault();
     if (sendComment(ta.value)) { ta.value = ''; cp.draft.delete(cp.card); autosize(); opts = []; draw(); }
-  }}, pick, ta, mk('div', {class: 'cp-actions'}, mk('span', {class: 'hint'}, 'Ctrl+Enter to send'), mk('button', {class: 'tm-btn ok', type: 'submit'}, 'Send')));
+  }}, mk('div', {class: 'cp-ctx', hidden: true}), pick, ta, mk('div', {class: 'cp-actions'}, mk('span', {class: 'hint'}, 'Ctrl+Enter to send'), mk('button', {class: 'tm-btn ok', type: 'submit'}, 'Send')));
   ta.addEventListener('input', () => { cp.draft.set(cp.card, ta.value); autosize(); update(); });
   ta.addEventListener('click', update);
   ta.addEventListener('keydown', e => {
     if (opts.length && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) { e.preventDefault(); at = (at + (e.key === 'ArrowDown' ? 1 : opts.length - 1)) % opts.length; draw(); return; }
     if (opts.length && (e.key === 'Enter' || e.key === 'Tab')) { e.preventDefault(); choose(opts[at]); return; }
-    if (e.key === 'Escape') { e.stopPropagation(); if (opts.length) { opts = []; draw(); } else ta.blur(); return; }
+    if (e.key === 'Escape') { e.stopPropagation(); if (opts.length) { opts = []; draw(); } else if (cp.replyTo || cp.draftPin) cancelComposing(); else ta.blur(); return; }
     if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); form.requestSubmit(); }
   });
   setTimeout(autosize, 0);
   return form;
 }
+// what the composer is about to post: a reply in a thread, a new feedback pin, or a plain comment
+function syncComposer() {
+  const form = $('#cardPanel .cp-form');
+  if (!form) return;
+  const box = form.querySelector('.cp-ctx'), ta = form.querySelector('.cp-in');
+  const root = cp.replyTo && doc.comments.find(c => c.id === cp.replyTo && c.card === cp.card);
+  if (cp.replyTo && !root) cp.replyTo = null;
+  const pin = !root && cp.draftPin && cp.draftPin.card === cp.card ? cp.draftPin : null;
+  const key = root ? 're:' + root.id : pin ? 'pin:' + pin.x + ',' + pin.y : '';
+  if (box._k === key) return;
+  box._k = key; box.hidden = !key;
+  const cancel = mk('button', {class: 'ib cp-ctx-x', type: 'button', title: 'Cancel', 'aria-label': root ? 'Cancel the reply' : 'Cancel the new pin', onclick: cancelComposing}, icon('cpx'));
+  if (root) box.replaceChildren(mk('span', {}, 'Replying to ', mk('b', {}, cmName(root.by))), cancel);
+  else if (pin) box.replaceChildren(mk('span', {class: 'cp-pinno draft'}, String(pinNumbers(cp.card).size + 1)), mk('span', {}, 'New pin on this picture'), cancel);
+  else box.replaceChildren();
+  ta.placeholder = root ? 'Write a reply… type @ to mention someone' : pin ? 'What should change here? Type @ to mention someone' : 'Write a comment… type @ to mention someone';
+  ta.setAttribute('aria-label', root ? 'Write a reply' : pin ? 'Write feedback for the new pin' : 'Write a comment');
+}
+function cancelComposing() { cp.replyTo = null; cp.draftPin = null; renderCardPanel(); renderFeedbackPins(); }
+function startReply(rootId) {
+  cp.replyTo = rootId; cp.draftPin = null;
+  renderCardPanel(); renderFeedbackPins();
+  const ta = $('#cardPanel .cp-in'); if (ta) ta.focus();
+}
 function sendComment(text) {
   text = String(text || '').trim().slice(0, 2000);
   if (!text || !board.team || !team.user) return false;
   if (team.status !== 'live') { toast('Reconnecting… try again in a moment.'); return false; }
-  doc.comments.push({id: uid(), type: 'comment', card: cp.card, by: team.user.id, at: Date.now(), text});
+  const c = {id: uid(), type: 'comment', card: cp.card, by: team.user.id, at: Date.now(), text};
+  const root = cp.replyTo && doc.comments.find(x => x.id === cp.replyTo && x.card === cp.card);
+  if (root) c.re = root.id;
+  else if (cp.draftPin && cp.draftPin.card === cp.card && (idx.get(cp.card) || {}).type === 'image') { c.pin = {x: cp.draftPin.x, y: cp.draftPin.y}; cp.focus = c.id; }
+  cp.replyTo = null; cp.draftPin = null;
+  doc.comments.push(c);
   commit(); computeDerived(); render(); renderCardPanel(true); updateCtx();
   return true;
 }
@@ -5444,10 +5626,152 @@ function editComment(id, text) {
   renderCardPanel();
 }
 async function deleteComment(id) {
-  if (!(await ask('Delete this comment?', 'It disappears for everyone in the project.', 'Delete'))) return;
+  const c = doc.comments.find(x => x.id === id), replies = c && !c.re && doc.comments.some(x => x.re === id);
+  const msg = (c && c.pin ? 'The comment and its pin disappear for everyone in the project.' : 'It disappears for everyone in the project.') + (replies ? ' Its replies stay.' : '');
+  if (!(await ask('Delete this comment?', msg, 'Delete'))) return;
   doc.comments = doc.comments.filter(c => c.id !== id);
   commit(); computeDerived(); render(); renderCardPanel(); updateCtx();
 }
+// your own reaction: added or taken back (the server keeps everyone else's as they are)
+function toggleReaction(id, e) {
+  if (!board.team || !team.user || team.watch || !REACTIONS.includes(e)) return;
+  if (team.status !== 'live') { toast('Reconnecting… try again in a moment.'); return; }
+  const c = doc.comments.find(x => x.id === id);
+  if (!c) return;
+  const me = team.user.id, react = {...(c.react || {})}, had = (react[e] || []).includes(me);
+  react[e] = had ? react[e].filter(x => x !== me) : [...(react[e] || []), me];
+  if (!react[e].length) delete react[e];
+  if (Object.keys(react).length) c.react = react; else delete c.react;
+  commit(); renderCardPanel();
+}
+function resolveThread(id, on) {
+  if (!board.team || !team.user || team.watch) return;
+  if (team.status !== 'live') { toast('Reconnecting… try again in a moment.'); return; }
+  const c = doc.comments.find(x => x.id === id);
+  if (!c || c.re || !!c.resolved === on) return;
+  if (on) { c.resolved = Date.now(); c.resolvedBy = team.user.id; } else { delete c.resolved; delete c.resolvedBy; }
+  if (on && cp.replyTo === id) cp.replyTo = null;
+  commit(); renderCardPanel(); renderFeedbackPins();
+  toast(on ? 'Thread resolved' : 'Thread reopened');
+}
+
+/* ---------- feedback pins on pictures ---------- */
+// A numbered pin on a spot of a picture is a comment on that picture with pin: {x, y} in fractions of its size.
+// Pins are drawn over the board at a fixed size, follow the picture as it moves or resizes, fade once resolved and
+// hide when the picture is too small on screen to point at anything. Clicking one opens its thread.
+ICON.fbpin = '<path d="M10 17.6s-5.6-5.2-5.6-9.2a5.6 5.6 0 0 1 11.2 0c0 4-5.6 9.2-5.6 9.2z"/><circle cx="10" cy="8.4" r="2"/>';
+ICON.rxadd = '<circle cx="9" cy="11" r="6"/><path d="M6.6 12.8a3 3 0 0 0 4.8 0M7 9.6h.01M11 9.6h.01"/><path d="M15.6 2.4v4.4M13.4 4.6h4.4"/>';
+ICON.cpx = '<path d="M5.5 5.5l9 9M14.5 5.5l-9 9"/>';
+const fbPins = {layer: null, els: new Map(), hover: null, mode: null};
+function renderFeedbackPins() {
+  if (!fbPins.layer) {
+    fbPins.layer = mk('div', {id: 'pinLayer'});
+    stage.appendChild(fbPins.layer);
+    fbPins.layer.addEventListener('pointerdown', e => {
+      const b = e.target.closest('.fbp');
+      if (!b || e.button !== 0 || spaceDown || tool === 'hand') return;  // panning still works over a pin
+      e.stopPropagation(); e.preventDefault();
+      const pin = b.dataset.pin;
+      if (pin && pin !== 'draft') showFeedbackPin(pin, true); else openPictureComments(b.dataset.card);
+    });
+    fbPins.layer.addEventListener('dblclick', e => { if (e.target.closest('.fbp')) e.stopPropagation(); });
+  }
+  const want = new Map();
+  if (board.team) {
+    const byPic = new Map();
+    for (const c of doc.comments) {
+      if (c.re) continue;
+      const it = idx.get(c.card);
+      if (!it || it.type !== 'image') continue;
+      if (!byPic.has(it)) byPic.set(it, []);
+      byPic.get(it).push(c);
+    }
+    const d = cp.draftPin && idx.get(cp.draftPin.card);
+    if (d && d.type === 'image' && !byPic.has(d)) byPic.set(d, []);
+    const W = stageRect.width, H = stageRect.height;
+    for (const [it, list] of byPic) {
+      // too small on screen to point at anything: hidden until you zoom in
+      if (it.w * cam.z < 64 || it.h * cam.z < 44) continue;
+      const tl = toScreen(it.x, it.y);
+      if (tl.x > W + 40 || tl.y > H + 40 || tl.x + it.w * cam.z < -40 || tl.y + it.h * cam.z < -40) continue;
+      const at = p => toScreen(it.x + (it.flip ? 1 - p.x : p.x) * it.w, it.y + p.y * it.h), dim = !!dimSet && !dimSet.has(it.id);
+      const pinned = list.filter(c => c.pin).sort((a, b) => (a.at || 0) - (b.at || 0));
+      pinned.forEach((c, i) => {
+        const s = at(c.pin), on = cp.open && cp.card === it.id && (cp.focus === c.id || fbPins.hover === c.id);
+        const first = c.text.length > 80 ? c.text.slice(0, 79) + '…' : c.text;
+        want.set(c.id, {x: s.x, y: s.y, n: String(i + 1), card: it.id, pin: c.id, cls: 'fbp' + (c.resolved ? ' resolved' : '') + (on ? ' on' : '') + (dim ? ' dim' : ''),
+          title: `Pin ${i + 1}${c.resolved ? ' (resolved)' : ''} · ${cmName(c.by)}: ${first}`});
+      });
+      if (d === it && cp.open && cp.card === it.id) {
+        const s = at(cp.draftPin);
+        want.set('draft', {x: s.x, y: s.y, n: String(pinned.length + 1), card: it.id, pin: 'draft', cls: 'fbp draft on', title: 'New pin: write your feedback in the comments panel'});
+      }
+      // comments on the picture that aren't pinned to a spot: a count in its corner
+      const loose = list.filter(c => !c.pin && !c.resolved).length;
+      if (loose) { const s = toScreen(it.x + it.w, it.y); want.set('cnt:' + it.id, {x: s.x, y: s.y, n: String(loose), card: it.id, pin: '', cls: 'fbp fbc' + (dim ? ' dim' : ''), title: `${loose} comment${loose === 1 ? '' : 's'} on this picture`}); }
+    }
+  }
+  for (const [k, el] of fbPins.els) if (!want.has(k)) { el.remove(); fbPins.els.delete(k); }
+  for (const [k, p] of want) {
+    let el = fbPins.els.get(k);
+    if (!el) { el = mk('button', {type: 'button', class: p.cls}); fbPins.els.set(k, el); fbPins.layer.append(el); }
+    const key = [p.n, p.cls, p.title].join('|');
+    if (el._k !== key) {
+      el._k = key; el.className = p.cls; el.textContent = p.n; el.title = p.title; el.setAttribute('aria-label', p.title);
+      el.dataset.card = p.card; el.dataset.pin = p.pin;
+    }
+    const tf = `translate(${rd(p.x)}px, ${rd(p.y)}px)`;
+    if (el._tf !== tf) { el._tf = tf; el.style.transform = tf; }
+  }
+}
+function openPictureComments(id) {
+  if (sel.size !== 1 || !sel.has(id)) { sel.clear(); sel.add(id); refresh(); }
+  openComments(id);
+}
+function hoverFeedbackPin(id) { if (fbPins.hover !== id) { fbPins.hover = id; renderFeedbackPins(); } }
+// a pin's thread in the panel, and the picture brought into view if it's off screen
+function showFeedbackPin(id, fromCanvas) {
+  const c = doc.comments.find(x => x.id === id), it = c && idx.get(c.card);
+  if (!it) return;
+  if (sel.size !== 1 || !sel.has(it.id)) { sel.clear(); sel.add(it.id); refresh(); }
+  if (!fromCanvas) ensureVisible(it);
+  openComments(it.id, id);
+}
+// "Add feedback pin": the next click on a picture drops a pin there and opens the panel to write it
+function startFeedbackPin(img) {
+  if (!board.team) { toast('Feedback pins are for team projects. Share this board with your team to collect feedback on pictures.', 4000); return; }
+  if (!team.user || team.watch) return;
+  if (team.status !== 'live') { toast('Reconnecting… try again in a moment.'); return; }
+  fbPins.mode = img ? img.id : true;
+  stage.classList.add('pinning');
+  toast('Click a spot on the picture to pin your feedback. Esc cancels.', 4000);
+}
+function stopFeedbackPin() { fbPins.mode = null; stage.classList.remove('pinning'); }
+function dropFeedbackPin(img, w) {
+  if (!board.team || !team.user || team.watch) return;
+  if (team.status !== 'live') { toast('Reconnecting… try again in a moment.'); return; }
+  let x = (w.x - img.x) / Math.max(img.w, 1), y = (w.y - img.y) / Math.max(img.h, 1);
+  if (img.flip) x = 1 - x;
+  const f = v => Math.round(clamp(v, 0, 1) * 10000) / 10000;
+  if (sel.size !== 1 || !sel.has(img.id)) { sel.clear(); sel.add(img.id); refresh(); }
+  openComments(img.id);
+  cp.draftPin = {card: img.id, x: f(x), y: f(y)}; cp.replyTo = null; cp.focus = null;
+  renderCardPanel(); renderFeedbackPins();
+  setTimeout(() => { const t = $('#cardPanel .cp-in'); if (t) t.focus(); }, 40);
+}
+stage.addEventListener('pointerdown', e => {
+  if (!fbPins.mode) return;
+  e.preventDefault(); e.stopImmediatePropagation();
+  if (e.button !== 0) { stopFeedbackPin(); return; }
+  stageRect = stage.getBoundingClientRect();
+  const w = toWorld(screenPt(e)), top = itemAt(w, false);
+  stopFeedbackPin();
+  if (top && top.type === 'image') dropFeedbackPin(top, w);
+  else toast('Pins go on pictures. Choose Add feedback pin again and click a picture.', 3600);
+}, true);
+window.addEventListener('keydown', e => {
+  if (fbPins.mode && e.key === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); stopFeedbackPin(); toast('No pin added'); }
+}, true);
 
 /* ---------- notifications ---------- */
 const notes = {items: [], unread: 0};
@@ -5466,7 +5790,7 @@ function renderBell() {
 }
 function noteText(n) {
   const who = n.fromName || 'Someone', where = n.projectName ? ` in ${n.projectName}` : '';
-  return n.kind === 'mention' ? `${who} mentioned you${where}` : n.kind === 'assigned' ? `${who} assigned you “${n.text}”${where}` : n.text;
+  return n.kind === 'mention' ? `${who} mentioned you${where}` : n.kind === 'reply' ? `${who} replied to your comment${where}` : n.kind === 'assigned' ? `${who} assigned you “${n.text}”${where}` : n.text;
 }
 function toggleNotes(force) {
   const panel = $('#notePanel'), open = force !== undefined ? force : panel.hidden;
@@ -5482,13 +5806,13 @@ function renderNotes() {
     mk('div', {class: 'np-head'}, mk('b', {}, 'Notifications'), notes.unread ? mk('button', {class: 'tm-link', type: 'button', onclick: markAllRead}, 'Mark all read') : null),
     ...(notes.items.length ? notes.items.slice(0, 30).map(n => mk('button', {class: 'np-row' + (n.read ? '' : ' unread'), type: 'button', onclick: () => openNote(n)},
       avatar({name: n.fromName || '?', color: n.fromColor}),
-      mk('div', {class: 'np-main'}, mk('b', {}, noteText(n)), n.kind === 'mention' ? mk('span', {class: 'np-quote'}, n.text) : null, mk('em', {}, (n.fromUsername ? '@' + n.fromUsername + ' · ' : '') + ago(n.createdAt)))))
-      : [mk('p', {class: 'tm-note np-empty'}, 'Nothing new. Mentions and cards assigned to you show up here.')]));
+      mk('div', {class: 'np-main'}, mk('b', {}, noteText(n)), n.kind === 'mention' || n.kind === 'reply' ? mk('span', {class: 'np-quote'}, n.text) : null, mk('em', {}, (n.fromUsername ? '@' + n.fromUsername + ' · ' : '') + ago(n.createdAt)))))
+      : [mk('p', {class: 'tm-note np-empty'}, 'Nothing new. Mentions, replies and cards assigned to you show up here.')]));
 }
 function openNote(n) {
   toggleNotes(false);
   if (!n.read) { n.read = true; notes.unread = Math.max(0, notes.unread - 1); renderBell(); api('/api/notifications/read', 'POST', {ids: [n.id]}).catch(() => {}); }
-  if (n.projectId) goToCard(n.projectId, n.cardId, n.kind === 'mention');
+  if (n.projectId) goToCard(n.projectId, n.cardId, n.kind === 'mention' || n.kind === 'reply');
 }
 function markAllRead() {
   for (const n of notes.items) n.read = true;
@@ -5517,7 +5841,7 @@ function focusCard(id, comments) {
   const it = idx.get(id);
   if (!it) { toast('That card is no longer on the board.'); return; }
   setTool('select'); sel.clear(); sel.add(id); refresh(); flyTo(it);
-  if (comments && it.type === 'node') openComments(id);
+  if (comments && (it.type === 'node' || it.type === 'image')) openComments(id);
 }
 
 /* ---------- activity ---------- */
@@ -6388,9 +6712,9 @@ function notifyPane() {
     try { await api('/api/me', 'PATCH', {[key]: v}); team.notify = {...n, [field]: v}; toast(v ? 'Emails on' : 'Emails off'); } catch (e) { toast(e.message, 4000); }
   };
   return [
-    stGroup('In the app', stRow('Mentions and assignments', 'The bell at the top shows when someone @mentions you in a comment or assigns you a card, and opens it for you.', null)),
+    stGroup('In the app', stRow('Mentions, replies and assignments', 'The bell at the top shows when someone @mentions you, replies to your comment or assigns you a card, and opens it for you.', null)),
     stGroup('Email',
-      stRow('When someone mentions me', 'An email with their comment and a link to the card. At most a dozen a day.', stSwitch(n.mentions, 'Email me when someone mentions me', () => set('notifyMentions', 'mentions', !n.mentions))),
+      stRow('When someone mentions or replies to me', 'An email with their comment and a link to it. At most a dozen a day.', stSwitch(n.mentions, 'Email me when someone mentions me', () => set('notifyMentions', 'mentions', !n.mentions))),
       stRow('My tasks due soon', `One email in the morning (8am${n.timezone ? ', ' + n.timezone.replace(/_/g, ' ') : ' where you are'}) listing cards assigned to you that are due today or tomorrow, or late. Nothing due, no email.`,
         stSwitch(n.due, 'Email me about my tasks due soon', () => set('notifyDue', 'due', !n.due)))),
   ];
