@@ -2,6 +2,12 @@
 
 All notable changes to Venom Board are listed here. The project follows [Semantic Versioning](https://semver.org).
 
+## [Unreleased]
+
+### Fixed
+- **Tidy layout keeps phases apart**: a phase that grows to fit its tidied cards pushes the phases beside or below it along, with everything in them, so phases and cards no longer end up on top of each other. Pictures and notes already in a phase move below its tidied cards instead of being covered
+- **Notes stay with their card when tidying**: ink drawn on a card, a ring drawn around it, and the arrows and labels touching that ring all move with the card
+
 ## [1.5.1] - 2026-10-08
 
 ### Teams

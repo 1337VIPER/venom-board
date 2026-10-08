@@ -4226,7 +4226,9 @@ function arrange(mode) {
    on (longest-path layering over the connectors, loops broken where they close), each column is ordered to cross
    as few wires as possible (barycentre sweeps), columns and rows are evenly spaced, and each column slides up or
    down to line up with the cards it's wired to. Separate flows stack under each other and cards with no wires
-   fill a grid below. Cards inside a phase stay inside it (the phase grows if it has to). One undo step. */
+   fill a grid below. Cards inside a phase stay inside it: the phase grows if it has to, and pushes the phases
+   beside or below it along by as much, with everything in them. Ink and notes that belong to a card go with
+   it. One undo step. */
 const TIDY = {col: 110, row: 36, flow: 80, pad: 48};
 function tidy(list) {  // Arrange → Tidy layout, for the selection
   const n = tidyLayout(list.filter(o => o.type !== 'frame'), false);
@@ -4250,9 +4252,15 @@ function tidyBoard() {
 function tidyLayout(list, fit) {
   const frames = doc.items.filter(i => i.type === 'frame');
   const inner = o => { let best = null; for (const f of frames) if (f !== o && containsBox(f, rawBox(o)) && (!best || f.w * f.h < best.w * best.h)) best = f; return best; };
-  const parent = new Map(frames.map(f => [f, inner(f)])), groups = new Map(), old = new Map(), ink = new Map(), grew = [];
+  const parent = new Map(frames.map(f => [f, inner(f)])), groups = new Map(), old = new Map(), grew = new Set();
   for (const o of list) { const f = inner(o); if (!groups.has(f)) groups.set(f, []); groups.get(f).push(o); old.set(o.id, {x: o.x, y: o.y}); }
-  for (const s of doc.strokes) { const sb = strokeBox(s), o = list.find(c => containsBox(rawBox(c), sb, 4 / cam.z)); if (o) ink.set(s, o); }  // ink drawn on a card goes with it
+  const marks = tidyMarks(list);
+  // each phase as it was and what's in it, so a phase pushed aside takes all of it along
+  const before = new Map(frames.map(f => [f, rawBox(f)]));
+  const inside = new Map(frames.map(f => [f, {
+    items: doc.items.filter(o => o !== f && !marks.has(o) && containsBox(f, rawBox(o))),
+    strokes: doc.strokes.filter(k => !marks.has(k) && containsBox(f, strokeBox(k))),
+  }]));
   const P = TIDY.pad;
   for (const [f, cards] of groups) {
     const pos = tidyBlock(cards);
@@ -4265,15 +4273,87 @@ function tidyLayout(list, fit) {
       if (f) { ax = Math.max(ax, f.x + P); ay = Math.max(ay, f.y + P); }
     }
     for (const o of cards) { const q = pos.get(o.id); o.x = rd(ax + q.x); o.y = rd(ay + q.y); }
-    if (f) { const u = unionBox(cards.map(rawBox)); if (tidyGrow(f, u)) grew.push(f); }
+    let u = unionBox(cards.map(rawBox));
+    if (f && fit) {
+      // pictures and notes already in the phase move below the tidied cards, all together, rather than end up under them
+      const rest = inside.get(f).items.filter(o => !old.has(o.id) && o.type !== 'frame' && inner(o) === f);
+      if (rest.some(o => tidyHit(rawBox(o), u, 8))) {
+        const r = unionBox(rest.map(rawBox)), dy = rd(u.y + u.h + P - r.y);
+        for (const k of inside.get(f).strokes) if (tidyHit(strokeBox(k), r, 0)) k.pts = k.pts.map((v, i) => (i % 2 ? rd(v + dy) : v));
+        for (const o of rest) o.y = rd(o.y + dy);
+        u = unionBox([u, ...rest.map(rawBox)]);
+      }
+    }
+    if (f && tidyGrow(f, u)) grew.add(f);
   }
   // a phase that grew past the phase around it makes that one grow as well
-  for (let f of grew) for (let p = parent.get(f); p; f = p, p = parent.get(p)) tidyGrow(p, f);
-  for (const [s, o] of ink) { const q = old.get(o.id), dx = o.x - q.x, dy = o.y - q.y; if (dx || dy) s.pts = s.pts.map((v, i) => rd(v + (i % 2 ? dy : dx))); }
+  for (const f of [...grew]) for (let c = f, p = parent.get(c); p; c = p, p = parent.get(p)) if (tidyGrow(p, c)) grew.add(p);
+  // A phase that grew pushes the phases beside it (to its right) or below it along by as much as it grew, so the
+  // gaps between phases stay as they were and nothing ends up underneath. Pushes add up along a row of phases.
+  const push = new Map();
+  for (const f of grew) {
+    const b = before.get(f), dw = f.w - b.w, dh = f.h - b.h;
+    for (const g of frames) {
+      if (g === f || parent.get(g) !== parent.get(f)) continue;
+      const a = before.get(g), m = push.get(g) || {dx: 0, dy: 0};
+      if (dw > 0.05 && a.x >= b.x + b.w - 1 && a.y < b.y + b.h && a.y + a.h > b.y) m.dx += dw;
+      if (dh > 0.05 && a.y >= b.y + b.h - 1 && a.x < b.x + b.w && a.x + a.w > b.x) m.dy += dh;
+      if (m.dx || m.dy) push.set(g, m);
+    }
+  }
+  const moved = new Set();
+  for (const [g, {dx, dy}] of push) {
+    const take = o => { if (moved.has(o)) return; moved.add(o); o.x = rd(o.x + dx); o.y = rd(o.y + dy); };
+    take(g);
+    for (const o of inside.get(g).items) take(o);
+    for (const k of inside.get(g).strokes) if (!moved.has(k)) { moved.add(k); k.pts = k.pts.map((v, i) => rd(v + (i % 2 ? dy : dx))); }
+  }
+  // a phase pushed along inside a bigger phase makes that one grow to keep holding it
+  for (const g of push.keys()) for (let c = g, p = parent.get(c); p; c = p, p = parent.get(p)) tidyGrow(p, c);
+  // ink and notes that belong to a card move as far as the card did, wherever it ended up
+  for (const [m, o] of marks) {
+    const q = old.get(o.id), dx = o.x - q.x, dy = o.y - q.y;
+    if (!dx && !dy) continue;
+    if (m.type === 'stroke') m.pts = m.pts.map((v, i) => rd(v + (i % 2 ? dy : dx)));
+    else { m.x = rd(m.x + dx); m.y = rd(m.y + dy); }
+  }
   // reroute points between two cards that both moved were routed for the old layout
   for (const l of doc.links) if (l.via && old.has(l.from.id) && old.has(l.to.id)) delete l.via;
   return list.filter(o => { const q = old.get(o.id); return q.x !== o.x || q.y !== o.y; }).length;
 }
+// The ink and notes that belong to each card being tidied: ink drawn on it, a ring drawn around it (a loop that
+// circles its middle and isn't much bigger than it), and the arrows and labels touching such a ring.
+function tidyMarks(list) {
+  const marks = new Map(), rings = [], pad = 16;
+  const near = (a, b) => a.x - pad < b.x + b.w && b.x - pad < a.x + a.w && a.y - pad < b.y + b.h && b.y - pad < a.y + a.h;
+  for (const k of doc.strokes) {
+    const sb = strokeBox(k);
+    let o = list.find(c => containsBox(rawBox(c), sb, 4 / cam.z));
+    if (!o) {
+      o = list.find(c => { const b = rawBox(c), cx = b.x + b.w / 2, cy = b.y + b.h / 2; return cx > sb.x && cx < sb.x + sb.w && cy > sb.y && cy < sb.y + sb.h && sb.w * sb.h < b.w * b.h * 6; });
+      if (o) rings.push([k, o]);
+    }
+    if (o) marks.set(k, o);
+  }
+  // two steps out from a ring: the arrow touching it, then the label at the arrow's tail
+  const taken = new Set(list), free = [...doc.strokes.filter(k => !marks.has(k)), ...doc.items.filter(o => o.type === 'text' && !taken.has(o))];
+  let edge = rings;
+  for (let step = 0; step < 2 && edge.length; step++) {
+    const next = [];
+    for (const [m, o] of edge) {
+      const mb = m.type === 'stroke' ? strokeBox(m) : rawBox(m), ob = rawBox(o);
+      for (const x of free) {
+        if (marks.has(x)) continue;
+        const xb = x.type === 'stroke' ? strokeBox(x) : rawBox(x);
+        if (xb.w * xb.h > ob.w * ob.h * 2 || !near(mb, xb)) continue;  // small things only: never a heading or a big drawing
+        marks.set(x, o); next.push([x, o]);
+      }
+    }
+    edge = next;
+  }
+  return marks;
+}
+const tidyHit = (a, b, m) => a.x < b.x + b.w + m && b.x < a.x + a.w + m && a.y < b.y + b.h + m && b.y < a.y + a.h + m;
 function tidyGrow(f, b) {
   const r = Math.max(f.x + f.w, b.x + b.w + TIDY.pad), btm = Math.max(f.y + f.h, b.y + b.h + TIDY.pad);
   if (r - f.x <= f.w + 0.05 && btm - f.y <= f.h + 0.05) return false;
