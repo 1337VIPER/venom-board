@@ -163,6 +163,10 @@ html.ct-on body::after{content:"";position:fixed;inset:0;border:2px solid color-
 .n-body:empty{display:none}
 .node.edit-body .n-body{display:block;min-height:1.45em}
 .node.edit-body .n-body:empty::before{content:attr(data-ph);color:var(--bone-faint)}
+.n-git{display:flex;flex-wrap:wrap;gap:3px 10px;margin-top:6px}
+.n-git .n-gl{display:inline-flex;align-items:center;gap:4px;font:600 11px var(--font-mono);text-decoration:none}
+.n-git .n-gl:hover{text-decoration:underline}
+.n-git svg{width:12px;height:12px;flex:none;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .ln{white-space:pre-wrap;min-height:1.45em}
 .chk-line{display:flex;gap:7px;align-items:flex-start}
 .chk{flex:none;width:13px;height:13px;margin-top:2.5px;border:1.5px solid var(--bone-dim);border-radius:3px 6px 3px 6px;cursor:pointer;display:grid;place-items:center}
@@ -665,6 +669,18 @@ select.tm-in{padding-right:6px;cursor:pointer}
 .tm-checks{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:8px}
 .tm-check{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--bone-dim);cursor:pointer}
 .tm-check input{accent-color:var(--fang);margin:0}
+/* roles in one project, and GitHub and GitLab, in the Team panel */
+.tm-btn.tm-sm{height:24px;padding:0 8px;gap:4px;font-size:11px;border-radius:7px}
+.tm-btn.tm-sm .tm-ico svg{width:12px;height:12px}
+.tm-btn.on,.tm-btn[aria-pressed=true]{border-color:var(--fang);background:color-mix(in srgb,var(--fang) 14%,var(--hide-2))}
+.tm-count{font:700 10px var(--font-mono);font-style:normal;color:var(--fang)}
+.tm-people-box{display:flex;flex-direction:column;gap:2px;margin:2px 0 8px 14px;padding:2px 0 4px 10px;border-left:2px solid var(--line-2)}
+.tm-people-box .tm-note{margin:2px 0 4px}
+.tm-people-box .av{width:22px;height:22px;font-size:9px}
+.tm-tabs{display:flex;gap:4px}
+.tm-steps{margin:2px 0 4px;padding-left:18px;color:var(--bone-dim);font-size:12px;line-height:1.55}
+.tm-steps li{margin:2px 0}
+.tm-in.tm-mono{font:500 11.5px var(--font-mono)}
 .jam{--jc:#ff2a4f;padding:16px 18px 14px;border-radius:22px 22px 22px 6px;background:linear-gradient(180deg,color-mix(in srgb,var(--jc) 13%,var(--card)),var(--card));border:1.5px solid color-mix(in srgb,var(--jc) 55%,transparent);box-shadow:0 20px 50px -24px color-mix(in srgb,var(--jc) 60%,transparent);color:var(--bone)}
 .j-top{display:flex;align-items:baseline;gap:8px;font:700 10.5px var(--font-mono);letter-spacing:.12em;text-transform:uppercase;color:var(--jc);white-space:nowrap}
 .j-name{font:800 13px var(--font-display);letter-spacing:.04em;color:var(--bone);overflow:hidden;text-overflow:ellipsis}
@@ -1642,7 +1658,7 @@ function syncEl(el, it) {
     if (el._sig !== sig) { el._sig = sig; el.children[0].innerHTML = headHTML(it); el.children[3].innerHTML = footHTML(it, deps); }
     syncTrack(el, it);
     if (ed !== 'title') { const t = el.children[1]; if (t.textContent !== it.title) t.textContent = it.title; }
-    if (ed !== 'body') { const b = el.children[2], key = (it.body || '') + '|' + skin; if (b._k !== key) { b._k = key; b.innerHTML = bodyHTML(it.body || ''); } }
+    if (ed !== 'body') { const b = el.children[2], key = (it.body || '') + '|' + skin + '|' + (it.gitLinks || []).join(' '); if (b._k !== key) { b._k = key; b.innerHTML = bodyHTML(it.body || '') + gitLinksHTML(it); } }
   } else if (it.type === 'text') {
     el.style.setProperty('--tc', col(it.color));
     el.style.fontSize = it.size + 'px';
@@ -2107,6 +2123,7 @@ function cleanItem(i) {
       const spent = cleanSpent(i.spent), tags = cleanTags(i.tags);
       if (spent) n.spent = spent;  // tracked time, in minutes
       if (tags.length) n.tags = tags;
+      const gl = cleanGitLinks(i.gitLinks); if (gl.length) n.gitLinks = gl;  // linked pull requests and issues
       return n;
     }
     case 'text': return {...base, text: txt(i.text, 4000), size: clamp(num(i.size, 32), 4, 800), color: colorOr(i.color, BONE)};
@@ -2220,6 +2237,87 @@ function cleanStroke(s) {
   if (pts.length % 2) pts.pop();
   if (pts.length < 2) return null;
   return {id: s.id, type: 'stroke', kind: s.kind === 'hl' ? 'hl' : 'pen', color: colorOr(s.color, BONE), size: clamp(num(s.size, 4), 0.05, 500), pts};
+}
+/* ---------- GitHub and GitLab: card references and linked pull requests ---------- */
+// A card's links to pull requests, merge requests and issues: plain https addresses on github.com or gitlab.com only
+// (no other hosts, logins, queries or odd characters), ten at most. The server checks them the same way.
+function cleanGitLinks(v) {
+  const ok = u => typeof u === 'string' && u.length <= 300 && /^https:\/\/(?:www\.)?(?:github\.com|gitlab\.com)\/[A-Za-z0-9._~/-]{1,250}(?:#[A-Za-z0-9_-]{1,80})?$/.test(u) && !/(^|\/)\.\.?(\/|#|$)/.test(u.slice(8));
+  return [...new Set((Array.isArray(v) ? v : []).filter(ok))].slice(0, 10);
+}
+// "game #12" for a pull request or issue, "game !7" for a merge request, "game@1a2b3c4" for a commit
+function gitLinkLabel(u) {
+  const m = u.match(/^https:\/\/(?:www\.)?(?:github|gitlab)\.com\/(.+?)\/(?:-\/)?(pull|merge_requests|issues|commit)\/(\w+)/);
+  if (!m) return u.replace(/^https:\/\/(www\.)?/, '').slice(0, 40);
+  const repo = m[1].split('/').pop().slice(0, 30);
+  return m[2] === 'commit' ? `${repo}@${m[3].slice(0, 7)}` : `${repo} ${m[2] === 'merge_requests' ? '!' : '#'}${m[3]}`;
+}
+// shown under a card's notes as small links
+function gitLinksHTML(it) {
+  if (!it.gitLinks || !it.gitLinks.length) return '';
+  const pr = '<svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="5.5" cy="4.5" r="1.8"/><circle cx="5.5" cy="15.5" r="1.8"/><circle cx="14.5" cy="15.5" r="1.8"/><path d="M5.5 6.3v7.4M14.5 13.7V8.5a2.5 2.5 0 0 0-2.5-2.5H9M10.5 4 8.5 6l2 2"/></svg>';
+  return `<div class="n-git">${it.gitLinks.map(u => `<a class="lnk n-gl" href="${esc(u)}" target="_blank" rel="noopener" title="${esc(u)}">${/\/(pull|merge_requests)\//.test(u) ? pr : ic('link')}${esc(gitLinkLabel(u))}</a>`).join('')}</div>`;
+}
+// A team card's reference (VB- and eight characters) for commit messages and pull or merge requests. It comes from the
+// project and card ids, worked out exactly as the server does, so every card has one without storing anything. In a
+// project each is different: if two cards' first eight characters match, the newer card's reference runs longer.
+function refHash(s) {
+  const A = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';  // Crockford's base 32: no I, L, O or U to misread
+  let h1 = 0xdeadbeef, h2 = 0x41c6ce57;
+  for (let i = 0; i < s.length; i++) { const c = s.charCodeAt(i); h1 = Math.imul(h1 ^ c, 2654435761); h2 = Math.imul(h2 ^ c, 1597334677); }
+  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+  let a = h1 >>> 0, b = h2 >>> 0, out = '';
+  for (let i = 0; i < 12; i++) { out += A[a >>> 27]; a = ((a << 5) | (b >>> 27)) >>> 0; b = (b << 5) >>> 0; }
+  return out;
+}
+function cardRef(cardId) {
+  if (!board.team || !team.project || !team.project.id) return '';
+  const pid = team.project.id, taken = new Set();
+  const cards = doc.items.filter(i => i.type === 'node').map(c => ({c, h: refHash(pid + '/' + c.id)}))
+    .sort((x, y) => (x.c.createdAt || 0) - (y.c.createdAt || 0) || (x.c.id < y.c.id ? -1 : x.c.id > y.c.id ? 1 : 0));
+  for (const {c, h} of cards) {
+    let n = 8;
+    while (n < 12 && taken.has(h.slice(0, n))) n++;
+    if (c.id === cardId) return 'VB-' + h.slice(0, n);
+    for (let k = 8; k <= 12; k++) taken.add(h.slice(0, k));
+  }
+  return '';
+}
+function copyCardRef(it) {
+  const ref = cardRef(it.id);
+  if (!ref) return;
+  navigator.clipboard.writeText(ref).then(() => toast(`${ref} copied. Put it in a commit message or pull request to link them to this card.`, 4200), () => toast(ref, 6000));
+}
+async function addGitLink(it) {
+  if (blocked()) return;
+  const url = await askText('Link a pull request or issue', 'Paste a GitHub or GitLab link to a pull request, merge request or issue. It shows on the card.', 'Link', {placeholder: 'https://github.com/studio/game/pull/12', max: 300, type: 'url'});
+  const cur = idx.get(it.id);  // the card as it is now (a teammate may have changed it meanwhile)
+  if (!url || !cur || blocked()) return;
+  const have = cur.gitLinks || [];
+  if (!cleanGitLinks([url]).length) { toast('Only https links to github.com or gitlab.com work here.', 3600); return; }
+  if (have.includes(url)) { toast('That link is already on the card.'); return; }
+  if (have.length >= 10) { toast('A card can link to 10 pull requests and issues. Remove one first.', 3600); return; }
+  cur.gitLinks = [...have, url];
+  refresh(); commit();
+  toast('Linked to the card');
+}
+function removeGitLink(it, url) {
+  const cur = idx.get(it.id);
+  if (!cur || blocked()) return;
+  const left = (cur.gitLinks || []).filter(u => u !== url);
+  if (left.length) cur.gitLinks = left; else delete cur.gitLinks;
+  refresh(); commit();
+}
+// the card's right-click menu: its reference (team projects) and its links
+function gitEntries(it, readOnly) {
+  const E = [];
+  const ref = cardRef(it.id);
+  if (ref) E.push({label: 'Copy reference', icon: 'dup', kb: ref, run: () => copyCardRef(it)});
+  if (readOnly || teamReadOnly()) return E;
+  E.push({label: 'Link a pull request or issue…', icon: 'link', run: () => addGitLink(it)});
+  if (it.gitLinks && it.gitLinks.length) E.push({label: 'Remove a link…', icon: 'trash', run: () => showMenu(lastMenuPt.x, lastMenuPt.y, [{head: 'Remove from the card'}, ...it.gitLinks.map(u => ({label: gitLinkLabel(u), kb: hostOf(u), run: () => removeGitLink(it, u)}))])});
+  return E;
 }
 function normalizeDoc(d) {
   d = d && typeof d === 'object' ? d : {};
@@ -3558,6 +3656,7 @@ function contextEntries(hit, w) {
       if (board.team && team.members.length && !teamReadOnly()) E.push({label: 'Assign people…', icon: 'user', run: () => showMenu(lastMenuPt.x, lastMenuPt.y, assignEntries())});
       if (board.team && team.roadmap && !teamReadOnly()) { const off = list.filter(o => o.type === 'node').every(n => n.nopub); E.push({label: off ? 'Show on the public roadmap' : 'Hide from the public roadmap', icon: 'eye', run: () => setNopub(!off)}); }
       E.push(...trackEntries(hit));
+      E.push(...gitEntries(hit));  // its reference for commits, and linked pull requests
       E.push({label: 'Edit title', kb: 'Enter', run: () => startEdit(hit.id, 'title', true)}, {label: 'Edit notes', run: () => startEdit(hit.id, 'body', false)},
         {label: 'Add connected task', kb: 'Tab', icon: 'plus', run: addNextCard}, {label: trace === hit.id ? 'Stop tracing' : 'Trace dependencies', icon: 'trace', run: () => { trace = trace === hit.id ? null : hit.id; refresh(); }}, {head: 'Status'});
       STATUS.forEach(([v]) => E.push({label: statusLabel(hit.kind || 'task', v).replace('✓ ', ''), cur: hit.status === v, run: () => setStatus(selObjs(), v)}));
@@ -3638,6 +3737,7 @@ function viewMenu() {
 function lockedEntries(hit) {
   const E = [{head: 'Board locked · view only'}];
   if (hit) E.push({label: 'Zoom to selection', kb: 'Shift 2', icon: 'orig', run: () => fitTo(selObjs())}, {label: 'Copy', kb: 'Ctrl C', icon: 'dup', run: () => { clip = snapshotSel(); toast('Copied. Paste it into another board.'); }}, {label: 'Export selection as PNG', icon: 'image', run: exportPNG});
+  if (hit && hit.type === 'node') E.push(...gitEntries(hit, true));
   else E.push({label: 'Zoom to fit', kb: 'Shift 1', icon: 'orig', run: () => fitTo(allObjs())}, {label: 'Export board as PNG', icon: 'image', run: exportPNG});
   return E;
 }
@@ -5320,6 +5420,8 @@ function signedInView() {
     team.detail ? projectsSection() : null,
     team.detail ? membersSection() : null,
     team.detail ? discordSection() : null,
+    team.detail ? slackSection() : null,
+    team.detail ? gitSection() : null,
     mk('button', {class: 'tm-link tm-site', type: 'button', onclick: () => openLink(team.server + '/account')}, `Your account on ${hostOf(team.server)}`),
   ];
 }
@@ -5360,12 +5462,13 @@ function teamPicker() {
 const fmtMB = b => (b / 1048576).toFixed(b < 10485760 ? 1 : 0) + ' MB';
 function projectsSection() {
   const d = team.detail, canEdit = ROLE_RANK[d.role] >= ROLE_RANK.editor, canDelete = ROLE_RANK[d.role] >= ROLE_RANK.admin;
-  const rows = d.projects.map(p => mk('div', {class: 'tm-row' + (team.project && team.project.id === p.id ? ' on' : '')},
+  const rows = d.projects.map(p => [mk('div', {class: 'tm-row' + (team.project && team.project.id === p.id ? ' on' : '')},
     mk('button', {class: 'tm-row-main tm-open', type: 'button', title: 'Open and edit live', onclick: () => teamOpen(p.id)},
       mk('b', {}, p.name), mk('span', {}, `Updated ${ago(p.updatedAt)}${p.updatedBy ? ' by ' + p.updatedBy : ''}`)),
+    projectRoleTag(d, p), peopleButton(d, p),
     canDelete ? mk('button', {class: 'tm-icon', type: 'button', title: 'Delete project', 'aria-label': 'Delete ' + p.name, onclick: async () => {
       if (await ask('Delete this project?', `“${p.name}” will be deleted for everyone in ${d.team.name}. This can't be undone.`, 'Delete project')) teamAction(() => api('/api/projects/' + p.id, 'DELETE'), 'Project deleted');
-    }}, icon('trash')) : null));
+    }}, icon('trash')) : null), peoplePanel(d, p)]);
   const nameIn = mk('input', {class: 'tm-in', placeholder: 'Project name', maxlength: 80, 'aria-label': 'New project name'});
   const newForm = mk('form', {class: 'tm-inline', hidden: !team.ui.newProject, onsubmit: e => {
     e.preventDefault();
@@ -5420,6 +5523,96 @@ function membersSection() {
       mk('button', {class: 'tm-link danger', type: 'button', onclick: () => teamAction(() => api(`/api/teams/${d.team.id}/invites/${i.id}`, 'DELETE'), 'Invite cancelled')}, 'Cancel')))));
   } else out.push(mk('p', {class: 'tm-note'}, 'Team admins and the team leader can invite people and change roles.'));
   return section(d.limits && Number.isFinite(d.limits.members) ? `Members · ${d.members.length} of ${d.limits.members}` : `Members · ${d.members.length}`, ...out);
+}
+/* --- roles in one project ---
+   A team admin can give an editor or viewer a different role in one project: an editor who may only view "Steam
+   launch", or a viewer who may edit "Moodboard". The server applies it everywhere at once (open boards included). */
+function projectRoleTag(d, p) {  // your own role in a project, when it isn't your team role
+  if (!p.myRole || p.myRole === d.role || !ROLE_NAME[p.myRole]) return null;
+  return mk('span', {class: 'tm-role', title: `Your role in this project. In the team you're ${ROLE_NAME[d.role].toLowerCase()}.`}, p.myRole === 'viewer' ? 'View only' : 'Editor here');
+}
+function peopleButton(d, p) {
+  if (ROLE_RANK[d.role] < ROLE_RANK.admin || !p.people) return null;
+  const open = team.ui.people === p.id, n = Object.keys(p.people).length;
+  return mk('button', {class: 'tm-btn tm-sm' + (open ? ' on' : ''), type: 'button', title: 'Choose who can edit this project', 'aria-expanded': String(open), 'aria-label': 'People in ' + p.name,
+    onclick: () => { team.ui.people = open ? '' : p.id; renderTeam(); }}, icon('user'), 'People', n ? mk('i', {class: 'tm-count'}, String(n)) : null);
+}
+function peoplePanel(d, p) {
+  if (team.ui.people !== p.id || !p.people) return null;
+  const set = (m, role) => teamAction(() => api(`/api/projects/${p.id}/people/${m.id}`, 'PUT', {role: role || null}),
+    role ? `${m.displayName} ${role === 'viewer' ? 'can only view' : 'can edit'} “${p.name}”` : `${m.displayName} has their team role in “${p.name}” again`);
+  const rows = d.members.map(m => {
+    const own = p.people[m.id] || '', fixed = ROLE_RANK[m.role] >= ROLE_RANK.admin;
+    const ctl = fixed ? mk('span', {class: 'tm-role', title: 'Team admins and the leader can always edit every project'}, ROLE_NAME[m.role])
+      : mk('select', {class: 'tm-role-sel', 'aria-label': `${m.displayName}'s role in ${p.name}`, onchange: e => set(m, e.target.value)},
+        mk('option', {value: '', selected: !own}, `Team role · ${ROLE_NAME[m.role]}`), mk('option', {value: 'editor', selected: own === 'editor'}, 'Editor here'), mk('option', {value: 'viewer', selected: own === 'viewer'}, 'View only here'));
+    return mk('div', {class: 'tm-row'}, avatar(m), mk('div', {class: 'tm-row-main'}, mk('b', {}, m.displayName + (m.id === team.user.id ? ' (you)' : '')),
+      mk('span', {}, own ? `${ROLE_NAME[m.role]} in the team` : '@' + m.username)), ctl);
+  });
+  return mk('div', {class: 'tm-people-box'}, mk('p', {class: 'tm-note'}, `Who can change “${p.name}”. Give someone a different role here than in the team; admins and the leader can always edit.`), ...rows);
+}
+/* --- Slack, for team admins --- */
+function slackSection() {
+  const d = team.detail, info = d && d.integrations && d.integrations.slack;
+  if (!info) return null;
+  const input = mk('input', {class: 'tm-in', maxlength: 300, placeholder: info.connected ? `Connected (${info.hint}). Paste a new link to replace it` : 'Paste a Slack webhook link', 'aria-label': 'Slack webhook link', autocomplete: 'off'});
+  const boxes = DISCORD_EVENTS.map(([k, label]) => mk('label', {class: 'tm-check'}, mk('input', {type: 'checkbox', name: 'slack', value: k, checked: info.events.includes(k)}), label));
+  const save = () => teamAction(async () => {
+    const body = {slackEvents: boxes.map(b => b.firstChild).filter(c => c.checked).map(c => c.value)};
+    if (input.value.trim()) body.slackWebhook = input.value.trim();
+    await api(`/api/teams/${d.team.id}/integrations/slack`, 'PATCH', body);
+  }, 'Slack settings saved');
+  return section('Slack',
+    mk('p', {class: 'tm-note'}, info.connected ? `Posting to a Slack channel (${info.hint}).` : 'Post this team’s progress in a Slack channel. In Slack: create an app at api.slack.com/apps, turn on Incoming Webhooks, choose Add New Webhook, pick a channel and copy the Webhook URL, then paste it here.'),
+    mk('form', {onsubmit: e => { e.preventDefault(); save(); }}, input, mk('div', {class: 'tm-checks'}, ...boxes),
+      mk('div', {class: 'tm-actions'}, mk('button', {class: 'tm-btn ok', type: 'submit'}, 'Save'),
+        info.connected ? mk('button', {class: 'tm-btn', type: 'button', onclick: () => teamAction(() => api(`/api/teams/${d.team.id}/integrations/slack/test`, 'POST'), 'Test message sent. Check your Slack channel.')}, 'Send a test') : null,
+        info.connected ? mk('button', {class: 'tm-link danger', type: 'button', onclick: () => teamAction(() => api(`/api/teams/${d.team.id}/integrations/slack`, 'PATCH', {slackWebhook: ''}), 'Disconnected from Slack')}, 'Disconnect') : null)));
+}
+/* --- GitHub and GitLab, for team admins ---
+   One webhook address and secret per team. Commits and pull or merge requests that mention a card's reference (right-
+   click a card → Copy reference) comment on it; "fixes VB-…" on the default branch or a merge marks it done. */
+const GIT_STEPS = {
+  github: ['In your repository on GitHub, open Settings → Webhooks → Add webhook.', 'Paste the payload URL below, and set Content type to application/json.',
+    'Paste the secret below into Secret.', 'Choose “Let me select individual events”, tick Pushes and Pull requests, then Add webhook.'],
+  gitlab: ['In your project on GitLab, open Settings → Webhooks → Add new webhook.', 'Paste the URL below.', 'Paste the secret below into Secret token.',
+    'Under Trigger, tick Push events and Merge request events, then Add webhook.'],
+};
+const gitCopy = (t, what) => navigator.clipboard.writeText(t).then(() => toast(what + ' copied'), () => toast(t, 6000));
+function gitSection() {
+  const d = team.detail, info = d && d.integrations && d.integrations.git;
+  if (!info) return null;
+  const teamId = d.team.id, keep = r => { team.ui.gitSecret = {team: teamId, value: r.secret}; };
+  const about = 'Commits and pull requests that mention a card’s reference (right-click a card → Copy reference) add a comment to it with a link. “Fixes VB-…” in a commit on the default branch, or merging a pull request that mentions it, marks the card done.';
+  if (!info.connected) return section('GitHub and GitLab', mk('p', {class: 'tm-note'}, about),
+    mk('div', {class: 'tm-actions'}, mk('button', {class: 'tm-btn', type: 'button', onclick: () => teamAction(async () => keep(await api(`/api/teams/${teamId}/git`, 'POST')), 'Webhook ready. Add it to your repository with the steps shown.')}, icon('link'), 'Connect a repository')));
+  const tab = team.ui.gitTab === 'gitlab' ? 'gitlab' : 'github', name = tab === 'gitlab' ? 'GitLab' : 'GitHub';
+  const secret = team.ui.gitSecret && team.ui.gitSecret.team === teamId ? team.ui.gitSecret.value : '';
+  const field = (label, value) => mk('div', {class: 'tm-inline'}, mk('input', {class: 'tm-in tm-mono', readonly: true, value, 'aria-label': label, onfocus: e => e.target.select()}), mk('button', {class: 'tm-btn', type: 'button', onclick: () => gitCopy(value, label)}, 'Copy'));
+  const reveal = async () => { try { keep(await api(`/api/teams/${teamId}/git/secret`)); } catch (e) { toast(e.message, 4000); } renderTeam(); };
+  const rotate = async () => {
+    if (!(await ask('Make a new secret?', 'Repositories using the old one stop updating cards until you paste the new secret into their webhook settings.', 'New secret'))) return;
+    teamAction(async () => keep(await api(`/api/teams/${teamId}/git`, 'POST')), 'New secret made. Paste it into each repository’s webhook settings.');
+  };
+  const disconnect = async () => {
+    if (!(await ask('Disconnect GitHub and GitLab?', 'The webhook address stops working, so commits and pull requests no longer update cards. Comments already on cards stay.', 'Disconnect'))) return;
+    team.ui.gitSecret = null;
+    teamAction(() => api(`/api/teams/${teamId}/git`, 'DELETE'), 'Disconnected from GitHub and GitLab');
+  };
+  const tabBtn = (k, label) => mk('button', {class: 'tm-btn tm-sm', type: 'button', 'aria-pressed': String(tab === k), onclick: () => { team.ui.gitTab = k; renderTeam(); }}, label);
+  return section('GitHub and GitLab', mk('p', {class: 'tm-note'}, about),
+    mk('div', {class: 'tm-share'},
+      mk('div', {class: 'tm-tabs', role: 'group', 'aria-label': 'Instructions for'}, tabBtn('github', 'GitHub'), tabBtn('gitlab', 'GitLab')),
+      mk('ol', {class: 'tm-steps'}, ...GIT_STEPS[tab].map(s => mk('li', {}, s))),
+      mk('h5', {}, tab === 'gitlab' ? 'URL' : 'Payload URL'), field(`${name} webhook address`, tab === 'gitlab' ? info.gitlab : info.github),
+      mk('h5', {}, tab === 'gitlab' ? 'Secret token' : 'Secret'),
+      secret ? field('Secret', secret) : mk('div', {class: 'tm-inline'}, mk('input', {class: 'tm-in tm-mono', readonly: true, value: '••••••••••••••••' + (info.hint || '').replace('…', ''), 'aria-label': 'Secret (hidden)'}),
+        mk('button', {class: 'tm-btn', type: 'button', onclick: reveal}, 'Show')),
+      mk('h5', {}, 'Repositories'),
+      info.repos.length ? mk('div', {class: 'tm-list'}, ...info.repos.map(r => mk('div', {class: 'tm-row'}, mk('div', {class: 'tm-row-main'}, mk('b', {}, r.repo),
+        mk('span', {}, `${r.provider === 'gitlab' ? 'GitLab' : 'GitHub'} · last heard from ${ago(r.at)}`)))))
+        : mk('p', {class: 'tm-note'}, 'Nothing has arrived yet. GitHub sends a test when you add the webhook; GitLab has a Test button. The repository shows up here.'),
+      mk('div', {class: 'tm-actions'}, mk('button', {class: 'tm-btn', type: 'button', onclick: rotate}, 'New secret'), mk('button', {class: 'tm-link danger', type: 'button', onclick: disconnect}, 'Disconnect'))));
 }
 
 /* --- live connection --- */
@@ -5496,7 +5689,7 @@ function onLive(m) {
       if (!ROLE_RANK[m.role]) break;
       team.role = m.role; setLiveStatus(team.status); refresh();
       if (team.presenting && ROLE_RANK[m.role] < ROLE_RANK.editor) { team.presenting = false; renderFollowBar(); renderTeam(); }
-      toast(`Your role in this team is now ${ROLE_NAME[m.role].toLowerCase()}`, 3600);
+      toast(`Your role in this ${m.scope === 'project' ? 'project' : 'team'} is now ${ROLE_NAME[m.role].toLowerCase()}`, 3600);
       break;
     case 'renamed': if (board.team && typeof m.name === 'string') { team.project.name = board.name = txt(m.name, 80); $('#boardName').value = board.name; renderTeam(); } break;
     case 'kicked': case 'deleted': toast(txt(m.message, 200) || 'You left the project.', 4000); leaveProject(); refreshMe(true); break;
@@ -5971,6 +6164,8 @@ settingsEl.addEventListener('click', e => { if (e.target === settingsEl && stDow
 
 /* ---------- people on a team board ---------- */
 const memberById = id => team.members.find(m => m.id === id) || null;
+// comments the server adds for a team's connected repositories (commits and pull requests that mention a card)
+const GIT_AUTHORS = {'vb-github': {name: 'GitHub', color: '#f1eef2'}, 'vb-gitlab': {name: 'GitLab', color: '#ff7a1a'}};
 function sidePanel() { return plannerOpen || team.panelOpen || cp.open; }
 function syncPanels() { $('#wrap').classList.toggle('pl-open', sidePanel()); scheduleMini(); }
 function assignLabel(list) {
@@ -6105,7 +6300,7 @@ function threadEl(t, nums) {
     watch || root.resolved || orphan ? null : mk('button', {class: 'tm-link cp-replybtn', type: 'button', onclick: () => startReply(root.id)}, cp.replyTo === root.id ? 'Replying…' : 'Reply'));
 }
 function commentRow(c, mine, admin, o = {}) {
-  const m = memberById(c.by) || {name: 'Former teammate', color: ''};
+  const m = memberById(c.by) || GIT_AUTHORS[c.by] || {name: 'Former teammate', color: ''};
   if (cp.editing === c.id) {
     const ta = mk('textarea', {class: 'tm-in cp-edit', rows: 3, maxlength: 2000, 'aria-label': 'Edit comment'});
     ta.value = cp.editText;
