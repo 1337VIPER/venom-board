@@ -201,6 +201,19 @@ html.ct-on body::after{content:"";position:fixed;inset:0;border:2px solid color-
 .frame.f-tight .f-bar{display:none}
 .f-bar{width:96px;height:6px;border-radius:99px;background:color-mix(in srgb,var(--fc) 18%,transparent);overflow:hidden}
 .f-bar i{display:block;height:100%;background:var(--fc);border-radius:inherit}
+/* a collapsed phase: just its title bar, with a count of what's tucked inside */
+.frame.collapsed{background:color-mix(in srgb,var(--fc) 12%,var(--void));border-color:color-mix(in srgb,var(--fc) 55%,transparent);border-radius:4px 16px 16px 16px;box-shadow:0 14px 30px -18px var(--shadow)}
+.f-fold{position:absolute;left:8px;top:8px;width:24px;height:24px;display:grid;place-items:center;border-radius:8px;color:var(--fc);opacity:0;cursor:pointer;transition:opacity .15s ease,background .15s ease}
+.f-fold svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;transition:transform .15s ease}
+.frame:hover .f-fold,.frame.collapsed .f-fold{opacity:.85}
+.f-fold:hover{opacity:1;background:color-mix(in srgb,var(--fc) 20%,transparent)}
+.frame.collapsed .f-fold{top:9px}
+.frame.collapsed .f-fold svg{transform:rotate(-90deg)}
+html.board-locked .frame:not(.collapsed) .f-fold{display:none}
+.f-sum{display:none;position:absolute;left:42px;right:16px;top:50%;transform:translateY(-50%);font:600 12.5px/1.2 var(--font-mono);color:var(--fc);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none}
+.frame.collapsed .f-sum{display:block}
+.frame.collapsed.f-tight .f-meta{display:none}
+.item.tucked{visibility:hidden}
 [contenteditable]{user-select:text;-webkit-user-select:text;cursor:text;caret-color:var(--fang)}
 
 /* ---------- ink + links ---------- */
@@ -231,6 +244,10 @@ html.ct-on body::after{content:"";position:fixed;inset:0;border:2px solid color-
 .u-target{fill:color-mix(in srgb,var(--fang) 8%,transparent);stroke:var(--fang);stroke-width:2;stroke-dasharray:6 4}
 .u-eraser{fill:color-mix(in srgb,var(--bone) 7%,transparent);stroke:var(--bone);stroke-width:1.2}
 .u-guide{stroke:var(--fang);stroke-width:1;stroke-dasharray:3 3}
+.u-pin{fill:var(--void);stroke:color-mix(in srgb,var(--pc,var(--bone)) 65%,var(--bone));stroke-width:1.6;opacity:.92}
+.u-pin.on{fill:var(--pc,var(--bone))}
+.u-pin.hot{fill:var(--fang);stroke:var(--void);stroke-width:2;opacity:1}
+.u-tuck{fill:none;stroke:var(--bone-faint);stroke-width:1;stroke-dasharray:3 5}
 .u-lock{fill:var(--hide-2);stroke:var(--bone);stroke-width:1.4}
 
 /* ---------- tool spine ---------- */
@@ -1172,6 +1189,9 @@ body:has(#views:not([hidden])) #toast,body:has(#timeline:not([hidden])) #toast{p
       <section><h3>Planning</h3><dl>
         <dt><kbd>Tab</kbd></dt><dd>Add a connected task after the selected card</dd>
         <dt><kbd>Red dot</kbd></dt><dd>Drag it out: drop on a card to connect, or on empty space to choose what comes next</dd>
+        <dt><kbd>Card pins</kbd></dt><dd>Drag the dot on a card's right edge to connect what comes next, or the left one to connect what it waits on</dd>
+        <dt><kbd>Collapse</kbd></dt><dd>Right-click a phase to fold it to its title bar. Double-click the bar to open it</dd>
+        <dt><kbd>Tidy</kbd></dt><dd>Right-click the board or a phase, or use Arrange, to lay cards out by what they wait on</dd>
         <dt><kbd>Enter</kbd></dt><dd>Edit the selected card</dd>
         <dt><kbd>Ctrl F</kbd></dt><dd>Planner search and filters</dd>
         <dt><kbd>PgDn</kbd> <kbd>PgUp</kbd></dt><dd>Fly to the next or previous phase</dd>
@@ -1466,6 +1486,7 @@ function bboxOf(o) {
   if (!o) return null;
   if (o.type === 'stroke') return strokeBox(o);
   if (o.type === 'link') { const g = geom.get(o.id); return g ? polyBox(g.poly) : null; }
+  if (o.collapsed && o.type === 'frame') return barBox(o);  // a collapsed phase is just its title bar
   return {x: o.x, y: o.y, w: o.w || 0, h: o.h || 0};
 }
 function outerBox(o) {  // includes a frame's title tab, for fitting and export
@@ -1604,6 +1625,7 @@ function computeDerived() {
     for (const n of doc.items) if (isWork(n) && containsBox(f, bboxOf(n))) { total++; if (n.status === 'done') done++; else est += estDays(n.est); }
     frameStats.set(f.id, {total, done, est});
   }
+  tucked = tuckFor(doc, true);
   dimSet = null;
   if (trace && idx.get(trace)) dimSet = traceSet(trace);
   else { if (trace) trace = null; if (plannerOpen && filterActive()) { dimSet = new Set(); for (const n of doc.items) if (n.type === 'node' && matches(n)) dimSet.add(n.id); } }
@@ -1786,6 +1808,7 @@ function renderItems() {
     if (!el) { el = makeEl(it); els.set(it.id, el); }
     seen.add(it.id);
     syncEl(el, it);
+    tuckEl(el, it);
     const isF = it.type === 'frame', layer = isF ? frameLayer : itemLayer, k = isF ? 'f' : 'i';
     const want = prev[k] ? prev[k].nextSibling : layer.firstChild;
     if (want !== el) layer.insertBefore(el, want);
@@ -1808,14 +1831,134 @@ function measure() {
   }
 }
 
+/* ---------- collapsed phases ---------- */
+/* A phase can be collapsed to its title bar, like folding a comment box away in a node editor. What's inside is
+   tucked out of sight (not drawn, not clickable, not picked by a marquee), connectors to it meet the bar instead,
+   and moving the bar carries everything along. It's stored as `collapsed: true` on the frame, which keeps its size,
+   so expanding puts everything back exactly. Whatever is selected (from the Planner or a search, say) peeks out
+   until it's let go. The Planner, Timeline, search and minimap count tucked cards as usual. */
+const BAR_H = 44;
+let tucked = {by: new Map(), frames: [], sum: new Map()}, foldTip = false;
+const rawBox = o => ({x: o.x, y: o.y, w: o.w || 0, h: o.h || 0});
+const barBox = f => ({x: f.x, y: f.y, w: f.w, h: BAR_H});
+function tuckSummary(n) {
+  const many = (k, w) => `${k} ${w}${k === 1 ? '' : 's'}`, out = [];
+  if (n.cards) out.push(many(n.cards, 'card'), `${n.done} done`);
+  if (n.phases) out.push(many(n.phases, 'phase'));
+  if (n.pics) out.push(many(n.pics, 'picture'));
+  if (n.notes) out.push(many(n.notes, 'note'));
+  return out.join(' · ') || 'Empty';
+}
+// what each collapsed phase hides (the outermost one wins when they nest), and a line saying what's in it
+function tuckFor(d, live) {
+  const by = new Map(), frames = [], sum = new Map();
+  const cf = d.items.filter(f => f.type === 'frame' && f.collapsed);
+  if (!cf.length) return {by, frames, sum};
+  cf.sort((a, b) => b.w * b.h - a.w * a.h || idCmp(a.id, b.id));
+  for (const f of cf) {
+    if (by.has(f.id)) continue;
+    frames.push(f);
+    const n = {cards: 0, done: 0, phases: 0, pics: 0, notes: 0};
+    for (const o of d.items) {
+      if (o === f || by.has(o.id) || !containsBox(f, rawBox(o))) continue;
+      by.set(o.id, f);
+      if (o.type === 'node') { n.cards++; if (o.status === 'done') n.done++; }
+      else if (o.type === 'frame') n.phases++;
+      else if (o.type === 'image' || o.type === 'video') n.pics++;
+      else if (o.type === 'text') n.notes++;
+    }
+    for (const s of d.strokes) if (!by.has(s.id) && containsBox(f, strokeBox(s))) by.set(s.id, f);
+    sum.set(f.id, tuckSummary(n));
+  }
+  if (live) { for (const id of sel) by.delete(id); if (editing) by.delete(editing.id); }
+  return {by, frames, sum};
+}
+// a connector end on something tucked away (or on a collapsed phase itself) meets the phase's title bar
+function tuckHost(it) {
+  const f = tucked.by.get(it.id) || (it.type === 'frame' && it.collapsed ? it : null);
+  return f ? {...barBox(f), solid: true, key: f.id, fold: f} : null;
+}
+function tuckAt(p) { for (const f of tucked.frames) if (inRect(p, f)) return f; return null; }
+function tuckEl(el, it) {
+  const t = tucked.by.has(it.id);
+  if (el._tk !== t) { el._tk = t; el.classList.toggle('tucked', t); }
+  if (it.type !== 'frame') return;
+  if (!el._fold) {
+    const b = document.createElement('i'); b.className = 'f-fold'; b.innerHTML = ic('chev');
+    const s = document.createElement('span'); s.className = 'f-sum';
+    el.append(b, s); el._fold = b; el._sum = s;
+  }
+  const on = !!it.collapsed;
+  el.classList.toggle('collapsed', on);
+  el._fold.title = on ? 'Expand this phase' : 'Collapse this phase';
+  if (on) { el.style.height = BAR_H + 'px'; const t2 = tucked.sum.get(it.id) || ''; if (el._sum.textContent !== t2) el._sum.textContent = t2; }
+}
+function setCollapsed(frames, on) {
+  frames = frames.filter(f => f && f.type === 'frame' && !!f.collapsed !== on);
+  if (!frames.length || blocked()) return;
+  if (editing) finishEdit();
+  for (const f of frames) { if (on) f.collapsed = true; else delete f.collapsed; }
+  if (on) {  // let go of what's going out of sight, so it tucks away too
+    for (const id of [...sel]) { const o = idx.get(id); if (o && !frames.includes(o) && o.type !== 'link' && frames.some(f => containsBox(f, o.type === 'stroke' ? strokeBox(o) : rawBox(o)))) sel.delete(id); }
+    render();
+    for (const id of [...sel]) { const o = idx.get(id); if (o && o.type === 'link' && !geom.has(id)) sel.delete(id); }
+  }
+  refresh(); commit();
+  if (on && !foldTip) { foldTip = true; toast('Collapsed · double-click the bar to expand it', 3500); }
+}
+function phaseEntries(hit) {
+  const frs = sel.has(hit.id) ? selObjs().filter(o => o.type === 'frame') : [hit], shut = frs.every(f => f.collapsed);
+  return [{label: shut ? 'Expand phase' : 'Collapse phase', icon: 'chev', run: () => setCollapsed(frs, !shut)},
+    {label: 'Tidy this phase', icon: 'trace', run: () => tidyPhase(hit)}];
+}
+// the chevron in a phase's corner folds it; double-clicking a collapsed bar opens it again
+stage.addEventListener('pointerdown', e => {
+  const b = e.button === 0 && tool === 'select' && !spaceDown && e.target.closest && e.target.closest('.f-fold');
+  if (!b) return;
+  e.stopPropagation(); e.preventDefault();
+  if (editing) finishEdit();
+  hideMenus();
+  const f = idx.get(b.closest('.item').dataset.id);
+  if (f) setCollapsed([f], !f.collapsed);
+}, true);
+stage.addEventListener('dblclick', e => {
+  if (e.target.closest && e.target.closest('.f-fold')) { e.stopPropagation(); return; }
+  if (editing || tool !== 'select' || viewOnly()) return;
+  stageRect = stage.getBoundingClientRect();
+  const w = toWorld(screenPt(e)), hit = hitTest(w);
+  if (hit && hit.type === 'frame' && hit.collapsed && inRect(w, barBox(hit))) { e.stopPropagation(); setCollapsed([hit], false); }
+}, true);
+// while something tucked into a collapsed phase is selected (or a collapsed phase is), a faint outline shows the room it keeps
+function tuckUI() {
+  if (!tucked.frames.length || !sel.size) return '';
+  let s = '';
+  for (const f of tucked.frames) {
+    const show = sel.has(f.id) || [...sel].some(id => { const o = idx.get(id); return o && o !== f && o.type !== 'link' && containsBox(f, o.type === 'stroke' ? strokeBox(o) : rawBox(o)); });
+    if (!show) continue;
+    const a = toScreen(f.x, f.y);
+    s += `<rect class="u-tuck" x="${rd(a.x - 4)}" y="${rd(a.y - 4)}" width="${rd(f.w * cam.z + 8)}" height="${rd(f.h * cam.z + 8)}" rx="8"/>`;
+  }
+  return s;
+}
+function paintBar(g, f, c, info, tok, F) {  // a collapsed phase in an exported picture
+  rrect(g, f.x, f.y, f.w, BAR_H, [4, 16, 16, 16]);
+  g.fillStyle = tok('--void'); g.fill(); g.globalAlpha = 0.12; g.fillStyle = c; g.fill(); g.globalAlpha = 1;
+  const cy = f.y + BAR_H / 2;
+  g.save(); g.strokeStyle = c; g.lineWidth = 2.2; g.lineCap = 'round'; g.lineJoin = 'round'; g.globalAlpha = 0.85;
+  g.stroke(new Path2D(`M${f.x + 18} ${cy - 4}l4 4-4 4`)); g.restore();
+  g.font = `600 12.5px ${F.mono}`; g.fillStyle = c; g.textBaseline = 'middle';
+  g.fillText(clipText(g, (info.tucked && info.tucked.sum.get(f.id)) || '', Math.max(0, f.w - 58)), f.x + 42, cy);
+}
+
 /* --- connectors: "tendrils" --- */
 function endBox(e) {
   if (e.id) {
     const it = idx.get(e.id);
     if (!it || it.type === 'link' || it.type === 'stroke') return null;
-    return {x: it.x, y: it.y, w: it.w || 0, h: it.h || 0, solid: true};
+    const bar = tuckHost(it); if (bar) return bar;  // tucked into a collapsed phase: the wire meets its title bar
+    return {x: it.x, y: it.y, w: it.w || 0, h: it.h || 0, solid: true, key: it.id};
   }
-  return {x: e.x, y: e.y, w: 0, h: 0, solid: false};
+  return {x: e.x, y: e.y, w: 0, h: 0, solid: false, fold: tuckAt(e)};
 }
 function edgePoint(b, c, t, gap) {
   const dx = t.x - c.x, dy = t.y - c.y; if (!dx && !dy) return c;
@@ -1843,15 +1986,16 @@ function port(A, ca, B, cb, gap) {
 }
 // The bends between two points, like wiring in a node editor: elbow turns at right angles, circuit runs
 // straight and takes a 45° diagonal in the middle (like Electric Nodes' subway wires in Unreal).
-function bends(a, b, horiz, style) {
+// `lane` slides the run across the middle sideways, so wires sharing a corridor sit side by side.
+function bends(a, b, horiz, style, lane = 0) {
   const H = (x, y) => (horiz ? {x, y} : {x: y, y: x});
   const ax = horiz ? a.x : a.y, ay = horiz ? a.y : a.x, bx = horiz ? b.x : b.y, by = horiz ? b.y : b.x;
   const dx = bx - ax, dy = by - ay, sx = dx >= 0 ? 1 : -1, sy = dy >= 0 ? 1 : -1, adx = Math.abs(dx), ady = Math.abs(dy);
-  if (style === 'elbow') { const m = ax + dx / 2; return [H(m, ay), H(m, by)]; }
+  if (style === 'elbow') { const m = ax + dx / 2 + lane; return [H(m, ay), H(m, by)]; }
   if (adx >= ady) { const run = (adx - ady) / 2; return [H(ax + sx * run, ay), H(bx - sx * run, by)]; }
   // more across than along: a short straight start, diagonals, and a straight run across the middle
-  const stub = Math.min(18, adx / 4), k = (adx - 2 * stub) / 2;
-  return [H(ax + sx * stub, ay), H(ax + sx * (stub + k), ay + sy * k), H(bx - sx * (stub + k), by - sy * k), H(bx - sx * stub, by)];
+  const stub = Math.min(18, adx / 4), k = (adx - 2 * stub) / 2, ka = k + sx * lane, kb = k - sx * lane;
+  return [H(ax + sx * stub, ay), H(ax + sx * (stub + ka), ay + sy * ka), H(bx - sx * (stub + kb), by - sy * kb), H(bx - sx * stub, by)];
 }
 const tidyPts = pts => pts.filter((q, i) => i === 0 || dist(q, pts[i - 1]) > 0.5);
 function halfway(poly) {
@@ -1861,21 +2005,23 @@ function halfway(poly) {
   return poly[0];
 }
 function linkGeom(l) {
-  const A = endBox(l.from), B = endBox(l.to); if (!A || !B) return null;
+  const A = endBox(l.from), B = endBox(l.to); if (!A || !B || (A.fold && A.fold === B.fold)) return null;  // both ends tucked into one phase
   const ca = {x: A.x + A.w / 2, y: A.y + A.h / 2}, cb = {x: B.x + B.w / 2, y: B.y + B.h / 2};
   const w = clamp(Number(l.width) || 2.5, 1, 12), hasEnd = l.head === 'end' || l.head === 'both', hasStart = l.head === 'both';
-  const cut = (9 + w * 2.2) * 0.55, GAP = 7, via = l.via || [], K = via.length;
+  const cut = (9 + w * 2.2) * 0.55, GAP = 7, via = wireVia(l, A, B), K = via.length, pl = wirePlan && wirePlan.get(l.id);
   // each end faces the next point along the way: a reroute knot, or the other end
   const toA = K ? {...via[0], w: 0, h: 0} : B, toB = K ? {...via[K - 1], w: 0, h: 0} : A;
   const ta = K ? via[0] : cb, tb = K ? via[K - 1] : ca;
-  let p0, p1, n0, n1;
+  let p0, p1, n0, n1, runs = null;
   if (l.style === 'straight') {
     p0 = A.solid ? edgePoint(A, ca, ta, GAP) : ca;
     p1 = B.solid ? edgePoint(B, cb, tb, GAP) : cb;
+    if (pl && pl.s) { p0 = {x: p0.x + pl.n.x * pl.s, y: p0.y + pl.n.y * pl.s}; p1 = {x: p1.x + pl.n.x * pl.s, y: p1.y + pl.n.y * pl.s}; }  // side by side with its twins
     n0 = unit(ta.x - p0.x, ta.y - p0.y); n1 = unit(tb.x - p1.x, tb.y - p1.y);
     if (!K) { const u = unit(p1.x - p0.x, p1.y - p0.y); n0 = u; n1 = {x: -u.x, y: -u.y}; }
   } else {
     const a = port(A, ca, toA, ta, GAP), b = port(B, cb, toB, tb, GAP);
+    if (pl) { slidePort(a, pl.o0); slidePort(b, pl.o1); }  // spread along the side it shares with other wires
     p0 = a.p; n0 = a.n; p1 = b.p; n1 = b.n;
   }
   const q0 = hasStart ? {x: p0.x + n0.x * cut, y: p0.y + n0.y * cut} : p0;
@@ -1892,8 +2038,9 @@ function linkGeom(l) {
       const a = P[i], b = P[i + 1];
       // the ends leave and arrive the way their sides face; between knots the longer direction leads
       const horiz = i === 0 ? n0.x !== 0 : i === P.length - 2 ? n1.x !== 0 : Math.abs(b.x - a.x) >= Math.abs(b.y - a.y);
-      const mids = bends(a, b, horiz, l.style), next = i === P.length - 2 ? q1 : b;
+      const mids = bends(a, b, horiz, l.style, pl && pl.lanes && pl.lanes[i] || 0), next = i === P.length - 2 ? q1 : b;
       pts.push(...mids, next); poly.push(...mids, b); seg.push(...mids.map(() => i), i);
+      if (wirePlan) { const r = wireRun(a, b, horiz, l.style); if (r) { r.id = l.id; r.seg = i; r.w = w; (runs = runs || []).push(r); } }
     }
     seg.unshift(0);
     d = roundedPath(tidyPts(pts), l.style === 'circuit' ? 10 : 14);
@@ -1919,7 +2066,109 @@ function linkGeom(l) {
     }
     mid = halfway(poly);
   }
-  return {d, poly, seg, mid, p0, p1, dir0: {x: -n0.x, y: -n0.y}, dir1: {x: -n1.x, y: -n1.y}, w};
+  return {d, poly, seg, mid, p0, p1, dir0: {x: -n0.x, y: -n0.y}, dir1: {x: -n1.x, y: -n1.y}, w, via, runs};
+}
+
+/* ---------- spread parallel wires ---------- */
+/* Wires that share a route are drawn a few pixels apart so each one stays visible, like pins on a Blueprint
+   node: ends that meet the same side of a card are spread along it (ordered by where each wire is heading,
+   so they don't cross as they leave), and elbow and circuit runs that share a corridor get lanes of their own.
+   A wire on its own is drawn exactly as before. The plan is worked out for every draw, in link id order. */
+let wirePlan = null;
+const idCmp = (a, b) => (a < b ? -1 : a > b ? 1 : 0);
+function slidePort(pt, o) { if (o) pt.p = pt.n.x ? {x: pt.p.x, y: pt.p.y + o} : {x: pt.p.x + o, y: pt.p.y}; }
+// the knots a wire runs through; any tucked inside a collapsed phase drop out while it's collapsed
+function wireVia(l, A, B) {
+  const v = l.via || [];
+  if (!v.length || !(A.fold || B.fold) || !tucked.frames.length) return v;
+  const keep = v.filter(k => !tucked.frames.some(f => inRect(k, f)));
+  return keep.length === v.length ? v : keep;
+}
+// the straight run across the middle of an elbow or circuit bend, in the bend's own along/across frame
+function wireRun(a, b, horiz, style) {
+  const ax = horiz ? a.x : a.y, ay = horiz ? a.y : a.x, bx = horiz ? b.x : b.y, by = horiz ? b.y : b.x;
+  const adx = Math.abs(bx - ax), ady = Math.abs(by - ay);
+  if (ady < 2 || adx < 24) return null;
+  const stub = Math.min(18, adx / 4), room = style === 'elbow' ? adx / 2 - 10 : adx < ady ? adx / 2 - stub - 1 : 0;
+  if (room <= 0) return null;
+  // a circuit's straight run is what's left between its two diagonals
+  const fwd = bx >= ax, k = style === 'elbow' ? 0 : (adx - 2 * stub) / 2, lo = Math.min(ay, by) + k, hi = Math.max(ay, by) - k;
+  return {horiz, c: ax + (bx - ax) / 2, s0: lo, s1: hi, L: fwd ? ay : by, R: fwd ? by : ay, room};
+}
+function planWires(list) {
+  const plan = new Map(), sides = new Map(), pairs = new Map();
+  const add = (m, k, v) => { const a = m.get(k); if (a) a.push(v); else m.set(k, [v]); };
+  for (const l of list) {
+    if (l.id === '__temp' || (l.from.id && l.from.id === l.to.id)) continue;
+    const A = endBox(l.from), B = endBox(l.to);
+    if (!A || !B || (A.fold && A.fold === B.fold) || (A.key && A.key === B.key)) continue;
+    const via = wireVia(l, A, B), K = via.length, w = clamp(Number(l.width) || 2.5, 1, 12);
+    const ca = {x: A.x + A.w / 2, y: A.y + A.h / 2}, cb = {x: B.x + B.w / 2, y: B.y + B.h / 2};
+    if (l.style === 'straight') {  // straight wires only overlap when they join the same two things
+      if (!K && A.solid && B.solid) { const ab = A.key < B.key; add(pairs, ab ? A.key + '|' + B.key : B.key + '|' + A.key, {l, w, p: ab ? ca : cb, q: ab ? cb : ca}); }
+      continue;
+    }
+    const toA = K ? {...via[0], w: 0, h: 0} : B, toB = K ? {...via[K - 1], w: 0, h: 0} : A, ta = K ? via[0] : cb, tb = K ? via[K - 1] : ca;
+    for (const [box, c, to, t, end] of [[A, ca, toA, ta, 0], [B, cb, toB, tb, 1]]) {
+      if (!box.solid) continue;
+      const n = port(box, c, to, t, 7).n;
+      add(sides, box.key + (n.x > 0 ? '>r' : n.x < 0 ? '>l' : n.y > 0 ? '>b' : '>t'), {l, end, w, t: n.x ? t.y : t.x, len: n.x ? box.h : box.w});
+    }
+  }
+  const slot = id => { let e = plan.get(id); if (!e) plan.set(id, e = {o0: 0, o1: 0}); return e; };
+  for (const g of sides.values()) {
+    if (g.length < 2) continue;
+    g.sort((a, b) => a.t - b.t || idCmp(a.l.id, b.l.id) || a.end - b.end);
+    const want = Math.max(...g.map(e => e.w)) + 8, room = g[0].len - (g[0].len < 64 ? 12 : 28), sp = Math.min(want, room / (g.length - 1));
+    if (sp < 1) continue;
+    g.forEach((e, i) => { slot(e.l.id)['o' + e.end] = (i - (g.length - 1) / 2) * sp; });
+  }
+  for (const g of pairs.values()) {
+    if (g.length < 2) continue;
+    g.sort((a, b) => idCmp(a.l.id, b.l.id));
+    const sp = Math.max(...g.map(e => e.w)) + 8, u = unit(g[0].q.x - g[0].p.x, g[0].q.y - g[0].p.y), n = {x: -u.y, y: u.x};
+    g.forEach((e, i) => { const s = slot(e.l.id); s.s = (i - (g.length - 1) / 2) * sp; s.n = n; });
+  }
+  plan.slot = slot;
+  return plan;
+}
+// runs that lie in the same corridor (close together and overlapping) are spread into lanes, in the order
+// that crosses the fewest of their neighbours' horizontal legs
+function planLanes(G, plan) {
+  const runs = [];
+  for (const g of G.values()) if (g.runs) runs.push(...g.runs);
+  if (runs.length < 2) return false;
+  let any = false;
+  const inside = (v, r) => v > r.s0 + 0.5 && v < r.s1 - 0.5, cost = (a, b) => (inside(a.R, b) ? 1 : 0) + (inside(b.L, a) ? 1 : 0);
+  for (const hz of [true, false]) {
+    const rs = runs.filter(r => r.horiz === hz).sort((a, b) => a.c - b.c || idCmp(a.id, b.id) || a.seg - b.seg);
+    const up = rs.map((_, i) => i), root = i => { while (up[i] !== i) i = up[i] = up[up[i]]; return i; };
+    for (let i = 0; i < rs.length; i++) for (let j = i + 1; j < rs.length && rs[j].c - rs[i].c < 10; j++)
+      if (Math.min(rs[i].s1, rs[j].s1) - Math.max(rs[i].s0, rs[j].s0) > 2) up[root(j)] = root(i);
+    const groups = new Map();
+    rs.forEach((r, i) => { const k = root(i), a = groups.get(k); if (a) a.push(r); else groups.set(k, [r]); });
+    for (const g of groups.values()) {
+      if (g.length < 2) continue;
+      g.sort((a, b) => (cost(a, b) - cost(b, a)) || a.c - b.c || idCmp(a.id, b.id) || a.seg - b.seg);
+      const mid = g.reduce((t, r) => t + r.c, 0) / g.length, sp = Math.max(...g.map(r => r.w)) + 8;
+      g.forEach((r, i) => {
+        const lane = clamp(mid + (i - (g.length - 1) / 2) * sp - r.c, -r.room, r.room);
+        if (Math.abs(lane) < 0.05) return;
+        const e = plan.slot(r.id); (e.lanes = e.lanes || [])[r.seg] = lane; any = true;
+      });
+    }
+  }
+  return any;
+}
+// every wire's shape for one draw: plan the spreading, then lay out the wires that got lanes again
+function wireGeoms(list) {
+  const G = new Map();
+  wirePlan = planWires(list);
+  try {
+    for (const l of list) { const g = linkGeom(l); if (g) G.set(l.id, g); }
+    if (planLanes(G, wirePlan)) for (const l of list) { const e = wirePlan.get(l.id); if (e && e.lanes) { const g = linkGeom(l); if (g) G.set(l.id, g); } }
+  } finally { wirePlan = null; }
+  return G;
 }
 function headPath(t, d, w) {  // a barbed fang
   const L = 9 + w * 2.2, W = 7 + w * 1.8, n = {x: -d.y, y: d.x};
@@ -1935,8 +2184,9 @@ function renderLinks() {
   if (pending) list.push(pending.temp);
   let s = ''; geom.clear();
   mctx.font = LABEL_FONT;
+  const G = wireGeoms(list);
   for (const l of list) {
-    const g = linkGeom(l); if (!g) continue;
+    const g = G.get(l.id); if (!g) continue;
     geom.set(l.id, g);
     const c = col(l.color), w = g.w;
     const dim = dimSet && !((l.from.id && dimSet.has(l.from.id)) && (l.to.id && dimSet.has(l.to.id)));
@@ -1948,7 +2198,7 @@ function renderLinks() {
     if (l.flow) s += `<path d="${g.d}" class="l-flow" stroke="${l.color === BONE ? 'var(--fang)' : 'var(--bone)'}" stroke-width="${w + 1.6}"/>`;
     if (l.head === 'end' || l.head === 'both') s += `<path d="${headPath(g.p1, g.dir1, w)}" fill="${c}"/>`;
     if (l.head === 'both') s += `<path d="${headPath(g.p0, g.dir0, w)}" fill="${c}"/>`;
-    for (const k of l.via || []) s += `<circle class="l-knot" cx="${rd(k.x)}" cy="${rd(k.y)}" r="${rd(w + 2.5)}" fill="${c}"/>`;
+    for (const k of g.via) s += `<circle class="l-knot" cx="${rd(k.x)}" cy="${rd(k.y)}" r="${rd(w + 2.5)}" fill="${c}"/>`;
     if (l.label) {
       const tw = mctx.measureText(l.label).width, pw = tw + 18, ph = 22;
       g.lab = {x: g.mid.x - pw / 2, y: g.mid.y - ph / 2, w: pw, h: ph};
@@ -1982,6 +2232,7 @@ function renderInk() {
       p.setAttribute('stroke-width', s.size);
       p.setAttribute('class', s.kind === 'hl' ? 'ink hl' : 'ink pen');
     }
+    const tk = tucked.by.has(s.id); if (p._tk !== tk) { p._tk = tk; p.style.display = tk ? 'none' : ''; }  // inside a collapsed phase
     const kk = s.kind === 'hl' ? 'hl' : 'pen', layer = kk === 'hl' ? hlSvg : penSvg;
     const want = prev[kk] ? prev[kk].nextSibling : layer.firstChild;
     if (want !== p) layer.insertBefore(p, want);
@@ -2008,8 +2259,8 @@ function renderUI() {
   const busy = drag && (drag.type === 'move' || drag.type === 'marquee' || drag.type === 'pan');
   const one = list.length === 1 && tool === 'select' && !editing && !busy && !pending && !viewOnly() ? list[0] : null;
   if (one && one.type === 'link') {
-    const g = geom.get(one.id);
-    (one.via || []).forEach((k, i) => { const q = toScreen(k.x, k.y); handles.push({kind: 'knot', i, x: q.x, y: q.y}); s += `<circle class="u-knot" cx="${rd(q.x)}" cy="${rd(q.y)}" r="6"/>`; });
+    const g = geom.get(one.id), knots = !g || !one.via || g.via === one.via ? one.via || [] : [];  // none while some are tucked away
+    knots.forEach((k, i) => { const q = toScreen(k.x, k.y); handles.push({kind: 'knot', i, x: q.x, y: q.y}); s += `<circle class="u-knot" cx="${rd(q.x)}" cy="${rd(q.y)}" r="6"/>`; });
     if (g) for (const [end, pt] of [['from', g.p0], ['to', g.p1]]) {
       const q = toScreen(pt.x, pt.y); handles.push({kind: 'end', end, x: q.x, y: q.y});
       s += `<circle class="u-end" cx="${rd(q.x)}" cy="${rd(q.y)}" r="6"/>`;
@@ -2017,9 +2268,11 @@ function renderUI() {
   } else if (one && one.type !== 'stroke' && !one.locked) {
     const b = bboxOf(one), a = toScreen(b.x, b.y), W = b.w * z, H = b.h * z;
     const px = a.x + W + 24, py = a.y + H / 2;
-    handles.push({kind: 'port', x: px, y: py});
-    s += `<path class="u-port-line" d="M${rd(a.x + W + 3)} ${rd(py)}C${rd(a.x + W + 11)} ${rd(py - 7)} ${rd(px - 12)} ${rd(py + 7)} ${rd(px - 7)} ${rd(py)}"/><circle class="u-port" cx="${rd(px)}" cy="${rd(py)}" r="7.5"/><path class="u-port-plus" d="M${rd(px - 3)} ${rd(py)}h6M${rd(px)} ${rd(py - 3)}v6"/>`;
-    const corners = {nw: [a.x, a.y], ne: [a.x + W, a.y], sw: [a.x, a.y + H], se: [a.x + W, a.y + H]};
+    if (one.type !== 'node' || !pinsOn()) {  // cards show their pins instead (see "pins on cards")
+      handles.push({kind: 'port', x: px, y: py});
+      s += `<path class="u-port-line" d="M${rd(a.x + W + 3)} ${rd(py)}C${rd(a.x + W + 11)} ${rd(py - 7)} ${rd(px - 12)} ${rd(py + 7)} ${rd(px - 7)} ${rd(py)}"/><circle class="u-port" cx="${rd(px)}" cy="${rd(py)}" r="7.5"/><path class="u-port-plus" d="M${rd(px - 3)} ${rd(py)}h6M${rd(px)} ${rd(py - 3)}v6"/>`;
+    }
+    const corners = one.collapsed ? {} : {nw: [a.x, a.y], ne: [a.x + W, a.y], sw: [a.x, a.y + H], se: [a.x + W, a.y + H]};
     for (const c in corners) {
       const [x, y] = corners[c]; handles.push({kind: 'resize', corner: c, x, y});
       s += `<rect class="u-h" x="${rd(x - 5)}" y="${rd(y - 5)}" width="10" height="10" rx="1.5" transform="rotate(45 ${rd(x)} ${rd(y)})"/>`;
@@ -2035,6 +2288,7 @@ function renderUI() {
   }
   const tgt = drag && (drag.type === 'link' || drag.type === 'relink') ? drag.target : (tool === 'link' && !drag && hover && hover.id ? idx.get(hover.id) : null);
   if (tgt) { const b = bboxOf(tgt); if (b) { const a = toScreen(b.x, b.y); s += `<rect class="u-target" x="${rd(a.x - 5)}" y="${rd(a.y - 5)}" width="${rd(b.w * z + 10)}" height="${rd(b.h * z + 10)}" rx="8"/>`; } }
+  s += tuckUI() + pinUI();
   s += drawPeers();
   if (tool === 'eraser' && hover && hover.eraser) s += `<circle class="u-eraser" cx="${rd(hover.eraser.x)}" cy="${rd(hover.eraser.y)}" r="${opts.eraser.size / 2}"/>`;
   ui.innerHTML = s;
@@ -2228,7 +2482,12 @@ function cleanItem(i) {
       return n;
     }
     case 'text': return {...base, text: txt(i.text, 4000), size: clamp(num(i.size, 32), 4, 800), color: colorOr(i.color, BONE)};
-    case 'frame': { const f = {...base, title: txt(i.title, 200), color: colorOr(i.color, '#a66bff')}, sp = cleanSprint(i.sprint); if (sp) f.sprint = sp; return f; }
+    case 'frame': {
+      const f = {...base, title: txt(i.title, 200), color: colorOr(i.color, '#a66bff')}, sp = cleanSprint(i.sprint);
+      if (sp) f.sprint = sp;  // a phase used as a sprint
+      if (i.collapsed === true) f.collapsed = true;  // folded down to its title bar
+      return f;
+    }
     case 'jam': {  // a game jam's clock: deadline, theme and a scope check
       if (!okTime(i.end)) return null;
       const j = {...base, w: clamp(num(i.w, 360), 280, 720), title: txt(i.title, 80), theme: txt(i.theme, 120), end: i.end, people: clamp(Math.round(num(i.people, 1)), 1, 50), color: colorOr(i.color, '#ff2a4f')};
@@ -2549,7 +2808,7 @@ function placeImages(placed, at) {
   if (imageLinkFrom) { const d = imageLinkFrom.dir; x = d.x < -0.5 ? at.x - total : d.x > 0.5 ? at.x : at.x - total / 2; at = {x: at.x, y: d.y > 0.5 && Math.abs(d.x) <= 0.5 ? at.y + maxH / 2 : d.y < -0.5 && Math.abs(d.x) <= 0.5 ? at.y - maxH / 2 : at.y}; }
   for (const p of placed) { p.x = rd(x); p.y = rd(at.y - maxH / 2); x += p.w + gap; }
   doc.items.push(...placed);
-  if (imageLinkFrom) { const l = {...imageLinkFrom.temp, id: uid(), to: {id: placed[0].id}}; doc.links.push(l); grown = l.id; imageLinkFrom = null; pending = null; }
+  if (imageLinkFrom) { const l = {...imageLinkFrom.temp, id: uid(), [imageLinkFrom.rev ? 'from' : 'to']: {id: placed[0].id}}; doc.links.push(l); grown = l.id; imageLinkFrom = null; pending = null; }
   sel.clear(); placed.forEach(p => sel.add(p.id));
   if (tool !== 'select') setTool('select');
   refresh(); commit();
@@ -2785,23 +3044,24 @@ function linkHit(l, w) {
 function frameHit(f, w) {
   const tb = titleBox.get(f.id) || {w: 140, h: 33};
   if (w.x >= f.x && w.x <= f.x + tb.w && w.y >= f.y - tb.h - 10 && w.y <= f.y) return true;
+  if (f.collapsed) return inRect(w, barBox(f));  // the whole bar is solid
   const m = 9 / cam.z;
   const outer = w.x >= f.x - m && w.x <= f.x + f.w + m && w.y >= f.y - m && w.y <= f.y + f.h + m;
   const inner = w.x > f.x + m && w.x < f.x + f.w - m && w.y > f.y + m && w.y < f.y + f.h - m;
   return outer && !inner;
 }
 function itemAt(w, frames = true, withLocked = true) {
-  for (let i = doc.items.length - 1; i >= 0; i--) { const it = doc.items[i]; if (it.type !== 'frame' && (withLocked || !it.locked) && inRect(w, bboxOf(it))) return it; }
-  if (frames) for (let i = doc.items.length - 1; i >= 0; i--) { const f = doc.items[i]; if (f.type === 'frame' && (withLocked || !f.locked) && frameHit(f, w)) return f; }
+  for (let i = doc.items.length - 1; i >= 0; i--) { const it = doc.items[i]; if (it.type !== 'frame' && (withLocked || !it.locked) && !tucked.by.has(it.id) && inRect(w, bboxOf(it))) return it; }
+  if (frames) for (let i = doc.items.length - 1; i >= 0; i--) { const f = doc.items[i]; if (f.type === 'frame' && (withLocked || !f.locked) && !tucked.by.has(f.id) && frameHit(f, w)) return f; }
   return null;
 }
 function hitTest(w, withLocked = false) {
   const tol = 5 / cam.z;
-  for (let i = doc.strokes.length - 1; i >= 0; i--) { const s = doc.strokes[i]; if (s.kind !== 'hl' && strokeHit(s, w, tol)) return s; }
+  for (let i = doc.strokes.length - 1; i >= 0; i--) { const s = doc.strokes[i]; if (s.kind !== 'hl' && !tucked.by.has(s.id) && strokeHit(s, w, tol)) return s; }
   const it = itemAt(w, false, withLocked); if (it) return it;
-  for (let i = doc.strokes.length - 1; i >= 0; i--) { const s = doc.strokes[i]; if (s.kind === 'hl' && strokeHit(s, w, 0)) return s; }
+  for (let i = doc.strokes.length - 1; i >= 0; i--) { const s = doc.strokes[i]; if (s.kind === 'hl' && !tucked.by.has(s.id) && strokeHit(s, w, 0)) return s; }
   for (let i = doc.links.length - 1; i >= 0; i--) if (linkHit(doc.links[i], w)) return doc.links[i];
-  for (let i = doc.items.length - 1; i >= 0; i--) { const f = doc.items[i]; if (f.type === 'frame' && (withLocked || !f.locked) && frameHit(f, w)) return f; }
+  for (let i = doc.items.length - 1; i >= 0; i--) { const f = doc.items[i]; if (f.type === 'frame' && (withLocked || !f.locked) && !tucked.by.has(f.id) && frameHit(f, w)) return f; }
   return null;
 }
 
@@ -2810,7 +3070,7 @@ function carrySet() {
   const set = new Set([...sel].filter(id => { const o = idx.get(id); return o && !o.locked; }));
   for (const id of [...set]) {
     const host = idx.get(id); if (!host || host.type === 'link' || host.type === 'stroke') continue;
-    const hb = bboxOf(host);
+    const hb = host.type === 'frame' ? rawBox(host) : bboxOf(host);  // a collapsed phase carries what's tucked under it
     if (host.type === 'frame') {
       for (const o of doc.items) if (o.id !== host.id && !o.locked && containsBox(hb, bboxOf(o))) set.add(o.id);
       for (const s of doc.strokes) if (containsBox(hb, strokeBox(s))) set.add(s.id);
@@ -2911,11 +3171,68 @@ function updateToolDots() {
   $('#penDot').style.setProperty('--c', col(opts.pen.color));
   $('#hlDot').style.setProperty('--c', opts.hl.color);
 }
-function startLink(from, w, fromPort) {
-  const o = opts.link;
-  drag = {type: 'link', fromPort, start: w, cur: w, target: null,
-    temp: {id: '__temp', type: 'link', from, to: {x: w.x, y: w.y}, color: o.color, style: o.style, head: o.head, dash: o.dash, flow: false, label: ''}};
+// `rev`: dragged out of a card's input pin, so the wire runs from wherever it's dropped into that card
+function startLink(from, w, fromPort, rev) {
+  const o = opts.link, end = {x: w.x, y: w.y};
+  drag = {type: 'link', fromPort, rev: !!rev, start: w, cur: w, target: null,
+    temp: {id: '__temp', type: 'link', from: rev ? end : from, to: rev ? from : end, color: o.color, style: o.style, head: o.head, dash: o.dash, flow: false, label: ''}};
 }
+
+/* ---------- pins on cards ---------- */
+/* Like pins on a Blueprint node: a small input dot on a card's left edge and an output dot on its right edge,
+   shown on the card under the pointer and on the selected card. Drag the output pin to connect what comes next,
+   or the input pin to connect what this card waits on; let go on empty space to pick a new card for it.
+   A pin fills in when something is already wired to that side. Hidden when zoomed far out and when the board
+   can't be edited. */
+const PIN_ZOOM = 0.35;
+let pinHover = null, pinPtr = null;
+const pinsOn = () => tool === 'select' && cam.z >= PIN_ZOOM && !editing && !pending && !viewOnly();
+function pinCardAt(w) {  // the card under the pointer, counting a margin at its sides where the pins sit
+  const m = 12 / cam.z;
+  for (let i = doc.items.length - 1; i >= 0; i--) {
+    const o = doc.items[i];
+    if (o.type === 'frame' || tucked.by.has(o.id)) continue;
+    if (inRect(w, o.type === 'node' ? {x: o.x - m, y: o.y, w: o.w + m * 2, h: o.h || 0} : rawBox(o))) return o.type === 'node' && !o.locked ? o.id : null;
+  }
+  return null;
+}
+function pinUI() {
+  if (!pinsOn() || (drag && drag.type !== 'link')) return '';
+  const lit = new Map();  // card id → the pin to light up ('in', 'out' or '')
+  if (drag) {
+    const src = idx.get((drag.rev ? drag.temp.to : drag.temp.from).id), t = drag.target;
+    if (src && src.type === 'node') lit.set(src.id, drag.rev ? 'in' : 'out');
+    if (t && t.type === 'node') lit.set(t.id, drag.rev ? 'out' : 'in');
+  } else {
+    const one = sel.size === 1 ? idx.get([...sel][0]) : null;
+    if (one && one.type === 'node') lit.set(one.id, '');
+    if (pinHover && !lit.has(pinHover)) lit.set(pinHover, '');
+  }
+  let s = '';
+  for (const [id, on] of lit) {
+    const c = idx.get(id); if (!c || c.locked || tucked.by.has(id)) continue;
+    const a = toScreen(c.x, c.y), y = a.y + (c.h || 0) * cam.z / 2;
+    for (const [side, x] of [['in', a.x], ['out', a.x + c.w * cam.z]]) {
+      const hot = on === side || (!drag && pinPtr && pinPtr.id === id && pinPtr.side === side);
+      const wired = doc.links.some(l => side === 'in' ? l.to.id === id : l.from.id === id);
+      if (!drag) handles.push({kind: 'pin', id, rev: side === 'in', x, y});
+      s += `<circle class="u-pin${wired ? ' on' : ''}${hot ? ' hot' : ''}" cx="${rd(x)}" cy="${rd(y)}" r="${hot ? 6.5 : 5}" style="--pc:${col(c.color)}"/>`;
+    }
+  }
+  return s;
+}
+stage.addEventListener('pointermove', e => {
+  if (e.pointerType === 'touch') return;
+  let id = null, hot = null;
+  if (!drag && pinsOn()) {
+    const p = screenPt(e);
+    hot = handles.find(h => h.kind === 'pin' && Math.hypot(h.x - p.x, h.y - p.y) <= 10) || null;
+    id = hot ? hot.id : pinCardAt(toWorld(p));
+  }
+  const k = hot ? hot.id + (hot.rev ? '<' : '>') : '';
+  if (id !== pinHover || k !== (pinPtr ? pinPtr.k : '')) { pinHover = id; pinPtr = hot ? {id: hot.id, side: hot.rev ? 'in' : 'out', k} : null; renderUI(); }
+});
+stage.addEventListener('pointerleave', () => { if (pinHover || pinPtr) { pinHover = pinPtr = null; renderUI(); } });
 
 /* ---------- pointer input ---------- */
 const touches = new Map(); let pinch = null;
@@ -2958,6 +3275,7 @@ stage.addEventListener('pointerdown', e => {
 function downSelect(e, p, w) {
   const h = viewOnly() ? null : hitHandle(p);
   if (h) {
+    if (h.kind === 'pin') { startLink({id: h.id}, w, true, h.rev); return; }
     const it = selObjs()[0]; if (!it) return;
     if (h.kind === 'resize') { drag = {type: 'resize', id: it.id, corner: h.corner, o: {...it}}; return; }
     if (h.kind === 'port') { startLink({id: it.id}, w, true); return; }
@@ -2971,8 +3289,8 @@ function downSelect(e, p, w) {
     else if (!sel.has(hit.id)) { sel.clear(); sel.add(hit.id); }
     if (e.altKey && !viewOnly()) duplicateSelection(0);
     const carry = viewOnly() ? new Set() : carrySet();
-    const box0 = unionBox([...carry].map(id => idx.get(id)).filter(o => o && o.type !== 'link' && o.type !== 'stroke').map(bboxOf));
-    const cands = doc.items.filter(o => !carry.has(o.id)).map(bboxOf);
+    const box0 = unionBox([...carry].map(id => idx.get(id)).filter(o => o && o.type !== 'link' && o.type !== 'stroke' && !tucked.by.has(o.id)).map(bboxOf));
+    const cands = doc.items.filter(o => !carry.has(o.id) && !tucked.by.has(o.id)).map(bboxOf);
     const a = e.target.closest && e.target.closest('a.lnk');
     drag = {type: 'move', sp: p, start: w, applied: {x: 0, y: 0}, moved: false, hitId: hit.id, shift: e.shiftKey, carry, box0, cands, guides: [], href: a ? a.getAttribute('href') : null};
   } else {
@@ -3019,8 +3337,8 @@ stage.addEventListener('pointermove', e => {
     case 'marquee': {
       drag.b = w; const r = normRect(drag.a, drag.b);
       sel.clear(); drag.base.forEach(id => sel.add(id));
-      for (const it of doc.items) { if (it.locked) continue; const b = bboxOf(it); if (it.type === 'frame' ? containsBox(r, b) : intersects(r, b)) sel.add(it.id); }
-      for (const s of doc.strokes) { const q = s.pts; for (let i = 0; i < q.length; i += 2) if (inRect({x: q[i], y: q[i+1]}, r)) { sel.add(s.id); break; } }
+      for (const it of doc.items) { if (it.locked || tucked.by.has(it.id)) continue; const b = bboxOf(it); if (it.type === 'frame' ? containsBox(r, b) : intersects(r, b)) sel.add(it.id); }
+      for (const s of doc.strokes) { if (tucked.by.has(s.id)) continue; const q = s.pts; for (let i = 0; i < q.length; i += 2) if (inRect({x: q[i], y: q[i+1]}, r)) { sel.add(s.id); break; } }
       for (const l of doc.links) { const g = geom.get(l.id); if (g && inRect(g.p0, r) && inRect(g.p1, r)) sel.add(l.id); }
       renderMove(); break;
     }
@@ -3040,8 +3358,9 @@ stage.addEventListener('pointermove', e => {
     case 'erase': hover = {eraser: p}; eraseAt(w); renderUI(); break;
     case 'frame': { const f = idx.get(drag.id), r = normRect(drag.a, w); Object.assign(f, {x: rd(r.x), y: rd(r.y), w: rd(r.w), h: rd(r.h)}); render(); teamPreview([drag.id]); break; }
     case 'link': {
-      const h = itemAt(w, true), t = h && h.id !== drag.temp.from.id ? h : null;
-      drag.target = t; drag.cur = w; drag.temp.to = t ? {id: t.id} : {x: rd(w.x), y: rd(w.y)};
+      const fixed = drag.rev ? drag.temp.to : drag.temp.from;
+      const h = itemAt(w, true), t = h && h.id !== fixed.id ? h : null;
+      drag.target = t; drag.cur = w; drag.temp[drag.rev ? 'from' : 'to'] = t ? {id: t.id} : {x: rd(w.x), y: rd(w.y)};
       renderLinks(); renderUI(); break;
     }
     case 'knot': {
@@ -3107,9 +3426,9 @@ function onUp(e) {
         doc.links.push(l); sel.clear(); sel.add(l.id); grown = l.id;
         setTimeout(() => { if (grown === l.id) grown = null; }, 700);
         commit();
-      } else if (moved && d.temp.from.id) {
-        // released on empty space from a card: ask what comes next (Blueprint-style)
-        pending = {temp: d.temp, at: {x: rd(d.cur.x), y: rd(d.cur.y)}, dir: unit(d.cur.x - d.start.x, d.cur.y - d.start.y)};
+      } else if (moved && (d.rev ? d.temp.to : d.temp.from).id) {
+        // released on empty space from a card: ask what comes next (Blueprint-style), or what it waits on from an input pin
+        pending = {temp: d.temp, rev: d.rev, at: {x: rd(d.cur.x), y: rd(d.cur.y)}, dir: unit(d.cur.x - d.start.x, d.cur.y - d.start.y)};
         refresh(); openPicker({x: e.clientX, y: e.clientY});
         return;
       } else if (moved) {
@@ -3226,14 +3545,14 @@ function placeNext(k) {
   if (k === 'image') { imageLinkFrom = p; lastPtr = p.at; ptrInStage = true; $('#fileImg').click(); return; }
   pending = null;
   if (k === 'arrow') { const l = {...p.temp, id: uid()}; doc.links.push(l); sel.clear(); sel.add(l.id); refresh(); commit(); return; }
-  const src = idx.get(p.temp.from.id);
+  const src = idx.get((p.rev ? p.temp.to : p.temp.from).id);
   let it, hEst = 110;
   if (k === 'text') { const size = Math.round(opts.text.size / cam.z); it = {id: uid(), type: 'text', x: 0, y: 0, w: size * 3, h: size * 1.2, text: 'Text', size, color: opts.text.color}; hEst = size * 1.2; }
   else if (k === 'frame') { const n = doc.items.filter(i => i.type === 'frame').length + 1; it = {id: uid(), type: 'frame', x: 0, y: 0, w: 600, h: 400, title: `Phase ${pad2(n)}`, color: opts.frame.color}; hEst = 400; }
   else { it = cardObj(k, src); hEst = k === 'idea' ? 80 : 110; }
   positionNear(it, p.at, p.dir, hEst);
   doc.items.push(it);
-  const l = {...p.temp, id: uid(), to: {id: it.id}}; doc.links.push(l); grown = l.id;
+  const l = {...p.temp, id: uid(), [p.rev ? 'from' : 'to']: {id: it.id}}; doc.links.push(l); grown = l.id;
   setTimeout(() => { if (grown === l.id) grown = null; }, 700);
   sel.clear(); sel.add(it.id); refresh();
   startEdit(it.id, it.type === 'node' ? 'title' : null, true);
@@ -3381,6 +3700,7 @@ let knotTip = false;
 function addKnot(l, w) {
   if (blocked()) return;
   const g = geom.get(l.id); if (!g) return;
+  if (l.via && g.via !== l.via) { toast('Expand the phase first to reroute this wire'); return; }  // some of its knots are tucked away
   if ((l.via || []).length >= MAX_KNOTS) { toast(`A connector can have up to ${MAX_KNOTS} reroute points`); return; }
   // which stretch of the wire is nearest decides where the knot goes in the list
   let best = 0, bd = Infinity, at = w || g.mid;
@@ -3491,25 +3811,189 @@ function arrange(mode) {
   }
   refresh(); commit();
 }
-function tidy(list, B) {
-  const ids = new Set(list.map(o => o.id)), out = new Map(list.map(o => [o.id, []])), indeg = new Map(list.map(o => [o.id, 0]));
-  for (const l of doc.links) if (l.from.id && l.to.id && l.from.id !== l.to.id && ids.has(l.from.id) && ids.has(l.to.id)) { out.get(l.from.id).push(l.to.id); indeg.set(l.to.id, indeg.get(l.to.id) + 1); }
-  const layer = new Map(), q = list.filter(o => !indeg.get(o.id)).map(o => o.id);
-  q.forEach(id => layer.set(id, 0));
+/* ---------- tidy layout ---------- */
+/* Lays cards out left to right by what they wait on: each card goes one column after the last card it waits
+   on (longest-path layering over the connectors, loops broken where they close), each column is ordered to cross
+   as few wires as possible (barycentre sweeps), columns and rows are evenly spaced, and each column slides up or
+   down to line up with the cards it's wired to. Separate flows stack under each other and cards with no wires
+   fill a grid below. Cards inside a phase stay inside it (the phase grows if it has to). One undo step. */
+const TIDY = {col: 110, row: 36, flow: 80, pad: 48};
+function tidy(list) {  // Arrange → Tidy layout, for the selection
+  const n = tidyLayout(list.filter(o => o.type !== 'frame'), false);
+  toast(n ? `Tidied ${n} item${n === 1 ? '' : 's'}` : 'Already tidy');
+}
+function tidyPhase(f) {
+  if (blocked()) return;
+  const cards = doc.items.filter(o => o.type === 'node' && !o.locked && containsBox(f, rawBox(o)));
+  if (cards.length < 2) { toast('Tidy needs two or more cards in the phase'); return; }
+  const n = tidyLayout(cards, true); refresh(); commit();
+  toast(n ? `Tidied ${n} card${n === 1 ? '' : 's'} in ${f.title || 'the phase'}` : 'Already tidy');
+}
+function tidyBoard() {
+  if (blocked()) return;
+  const cards = doc.items.filter(o => o.type === 'node' && !o.locked);
+  if (cards.length < 2) { toast('Add two or more cards to tidy'); return; }
+  const n = tidyLayout(cards, true); refresh(); commit();
+  toast(n ? `Tidied ${n} card${n === 1 ? '' : 's'}` : 'Already tidy');
+}
+// `fit`: each phase's cards start from its top-left corner; otherwise each group starts where it is now
+function tidyLayout(list, fit) {
+  const frames = doc.items.filter(i => i.type === 'frame');
+  const inner = o => { let best = null; for (const f of frames) if (f !== o && containsBox(f, rawBox(o)) && (!best || f.w * f.h < best.w * best.h)) best = f; return best; };
+  const parent = new Map(frames.map(f => [f, inner(f)])), groups = new Map(), old = new Map(), ink = new Map(), grew = [];
+  for (const o of list) { const f = inner(o); if (!groups.has(f)) groups.set(f, []); groups.get(f).push(o); old.set(o.id, {x: o.x, y: o.y}); }
+  for (const s of doc.strokes) { const sb = strokeBox(s), o = list.find(c => containsBox(rawBox(c), sb, 4 / cam.z)); if (o) ink.set(s, o); }  // ink drawn on a card goes with it
+  const P = TIDY.pad;
+  for (const [f, cards] of groups) {
+    const pos = tidyBlock(cards);
+    let ax, ay;
+    if (f && fit) {  // from the phase's corner, below any phases inside it
+      ax = f.x + P; ay = f.y + P;
+      for (const c of frames) if (parent.get(c) === f && !cards.includes(c)) ay = Math.max(ay, c.y + c.h + P);
+    } else {
+      const u = unionBox(cards.map(rawBox)); ax = u.x; ay = u.y;
+      if (f) { ax = Math.max(ax, f.x + P); ay = Math.max(ay, f.y + P); }
+    }
+    for (const o of cards) { const q = pos.get(o.id); o.x = rd(ax + q.x); o.y = rd(ay + q.y); }
+    if (f) { const u = unionBox(cards.map(rawBox)); if (tidyGrow(f, u)) grew.push(f); }
+  }
+  // a phase that grew past the phase around it makes that one grow as well
+  for (let f of grew) for (let p = parent.get(f); p; f = p, p = parent.get(p)) tidyGrow(p, f);
+  for (const [s, o] of ink) { const q = old.get(o.id), dx = o.x - q.x, dy = o.y - q.y; if (dx || dy) s.pts = s.pts.map((v, i) => rd(v + (i % 2 ? dy : dx))); }
+  // reroute points between two cards that both moved were routed for the old layout
+  for (const l of doc.links) if (l.via && old.has(l.from.id) && old.has(l.to.id)) delete l.via;
+  return list.filter(o => { const q = old.get(o.id); return q.x !== o.x || q.y !== o.y; }).length;
+}
+function tidyGrow(f, b) {
+  const r = Math.max(f.x + f.w, b.x + b.w + TIDY.pad), btm = Math.max(f.y + f.h, b.y + b.h + TIDY.pad);
+  if (r - f.x <= f.w + 0.05 && btm - f.y <= f.h + 0.05) return false;
+  f.w = rd(r - f.x); f.h = rd(btm - f.y);
+  return true;
+}
+// positions (from 0,0) for a group of cards: wired flows first, each laid out in columns, then the loose cards
+function tidyBlock(cards) {
+  const N = cards.length, at = new Map(cards.map((c, i) => [c.id, i])), succ = cards.map(() => []), pred = cards.map(() => []), seen = new Set();
+  for (const l of doc.links) {
+    const a = at.get(l.from.id), b = at.get(l.to.id);
+    if (a === undefined || b === undefined || a === b || seen.has(a * N + b)) continue;
+    seen.add(a * N + b); succ[a].push(b); pred[b].push(a);
+  }
+  const up = cards.map((_, i) => i), root = i => { while (up[i] !== i) i = up[i] = up[up[i]]; return i; };
+  succ.forEach((s, a) => s.forEach(b => { up[root(b)] = root(a); }));
+  const comps = new Map();
+  cards.forEach((_, i) => { const r = root(i); if (!comps.has(r)) comps.set(r, []); comps.get(r).push(i); });
+  const flows = [], loose = [];
+  for (const c of comps.values()) { if (c.length > 1) flows.push(c); else loose.push(c[0]); }
+  const top = c => Math.min(...c.map(i => cards[i].y)), left = c => Math.min(...c.map(i => cards[i].x));
+  flows.sort((a, b) => top(a) - top(b) || left(a) - left(b));
+  const pos = new Map();
+  let y = 0, width = 0;
+  for (const c of flows) {
+    const f = tidyFlow(cards, c, succ, pred);
+    for (const [i, q] of f.pos) pos.set(cards[i].id, {x: q.x, y: y + q.y});
+    y += f.h + TIDY.flow; width = Math.max(width, f.w);
+  }
+  if (loose.length) {  // cards with no wires: a grid in reading order
+    loose.sort((a, b) => cards[a].y - cards[b].y || cards[a].x - cards[b].x || idCmp(cards[a].id, cards[b].id));
+    const cw = Math.max(...loose.map(i => cards[i].w)), gap = 40;
+    const per = Math.min(loose.length, Math.max(Math.ceil(Math.sqrt(loose.length)), Math.floor((width + gap) / (cw + gap))));
+    for (let r = 0; r < loose.length; r += per) {
+      const row = loose.slice(r, r + per);
+      row.forEach((i, k) => pos.set(cards[i].id, {x: k * (cw + gap) + (cw - cards[i].w) / 2, y}));
+      y += Math.max(...row.map(i => cards[i].h || 0)) + gap;
+    }
+  }
+  return pos;
+}
+function tidyFlow(cards, ids, succ, pred) {
+  const order = ids.slice().sort((a, b) => cards[a].x - cards[b].x || cards[a].y - cards[b].y || idCmp(cards[a].id, cards[b].id));
+  // 1. loops: walk the wires from the leftmost card; a wire back to a card still being walked closes a loop and is left out
+  const state = new Map(), keep = [];
+  for (const r of order) {
+    if (state.get(r)) continue;
+    const st = [[r, 0]]; state.set(r, 1);
+    while (st.length) {
+      const top = st[st.length - 1], v = top[0];
+      if (top[1] < succ[v].length) { const u = succ[v][top[1]++], s = state.get(u); if (s === 1) continue; keep.push([v, u]); if (!s) { state.set(u, 1); st.push([u, 0]); } }
+      else { state.set(v, 2); st.pop(); }
+    }
+  }
+  // 2. columns: one after the furthest card it waits on; cards that wait on nothing sit just before what they lead to
+  const outs = new Map(ids.map(v => [v, []])), ins = new Map(ids.map(v => [v, []]));
+  for (const [v, u] of keep) { outs.get(v).push(u); ins.get(u).push(v); }
+  const deg = new Map(ids.map(v => [v, ins.get(v).length])), layer = new Map(), q = order.filter(v => !deg.get(v)), topo = [];
+  q.forEach(v => layer.set(v, 0));
   while (q.length) {
-    const id = q.shift();
-    for (const t of out.get(id)) { layer.set(t, Math.max(layer.get(t) || 0, layer.get(id) + 1)); indeg.set(t, indeg.get(t) - 1); if (!indeg.get(t)) q.push(t); }
+    const v = q.shift(); topo.push(v);
+    for (const u of outs.get(v)) { layer.set(u, Math.max(layer.get(u) || 0, layer.get(v) + 1)); deg.set(u, deg.get(u) - 1); if (!deg.get(u)) q.push(u); }
   }
-  const cols = [];
-  list.forEach(o => { const L = layer.has(o.id) ? layer.get(o.id) : 0; (cols[L] = cols[L] || []).push(o); });
-  let x = B.x;
-  for (const c of cols) {
-    if (!c) continue;
-    c.sort((a, b) => a.y - b.y);
-    let y = B.y; const cw = Math.max(...c.map(o => o.w));
-    c.forEach(o => { o.x = rd(x + (cw - o.w) / 2); o.y = rd(y); y += (o.h || 0) + 36; });
-    x += cw + 90;
+  for (let i = topo.length - 1; i >= 0; i--) { const v = topo[i], o = outs.get(v); if (!ins.get(v).length && o.length) layer.set(v, Math.min(...o.map(u => layer.get(u))) - 1); }
+  // 3. a stand-in in every column a wire passes through, so long wires take part in the ordering
+  const nodes = new Map(), L = [];
+  const put = nd => { (L[nd.k] = L[nd.k] || []).push(nd); return nd; };
+  for (const v of ids) nodes.set(v, put({v, k: layer.get(v), up: [], dn: [], y0: cards[v].y + (cards[v].h || 0) / 2}));
+  for (const [v, u] of keep) {
+    let a = nodes.get(v); const b = nodes.get(u);
+    for (let k = a.k + 1; k < b.k; k++) { const d = put({dummy: true, k, up: [a], dn: [], y0: a.y0 + (b.y0 - a.y0) * (k - nodes.get(v).k) / (b.k - nodes.get(v).k)}); a.dn.push(d); a = d; }
+    a.dn.push(b); b.up.push(a);
   }
+  for (let k = 0; k < L.length; k++) L[k] = (L[k] || []).sort((a, b) => a.y0 - b.y0 || (a.dummy ? 1 : 0) - (b.dummy ? 1 : 0) || (a.v || 0) - (b.v || 0));
+  const index = () => L.forEach(col => col.forEach((nd, i) => { nd.i = i; }));
+  const crossings = () => {
+    let n = 0;
+    for (let k = 0; k + 1 < L.length; k++) {
+      const e = [];
+      for (const nd of L[k]) for (const m of nd.dn) e.push([nd.i, m.i]);
+      for (let i = 0; i < e.length; i++) for (let j = i + 1; j < e.length; j++) if ((e[i][0] - e[j][0]) * (e[i][1] - e[j][1]) < 0) n++;
+    }
+    return n;
+  };
+  // 4. barycentre sweeps, keeping the order with the fewest crossings
+  index();
+  let best = L.map(c => c.slice()), fewest = crossings();
+  const edges = keep.length;
+  for (let it = 0; it < (edges > 600 ? 2 : 12) && fewest > 0; it++) {
+    const down = it % 2 === 0;
+    for (let s = 1; s < L.length; s++) {
+      const k = down ? s : L.length - 1 - s, col = L[k];
+      const bc = new Map(col.map(nd => { const nb = down ? nd.up : nd.dn; return [nd, nb.length ? nb.reduce((t, m) => t + m.i, 0) / nb.length : nd.i]; }));
+      col.sort((a, b) => bc.get(a) - bc.get(b) || a.i - b.i);
+      col.forEach((nd, i) => { nd.i = i; });
+    }
+    const c = crossings();
+    if (c < fewest) { fewest = c; best = L.map(col => col.slice()); }
+  }
+  for (let k = 0; k < L.length; k++) L[k] = best[k];
+  index();
+  // 5. evenly spaced columns and rows; then each column slides to line up with the cards it's wired to
+  const real = L.map(col => col.filter(nd => !nd.dummy)), cw = real.map(col => Math.max(0, ...col.map(nd => cards[nd.v].w)));
+  const colX = [], colH = [], shift = [];
+  let x = 0;
+  real.forEach((col, k) => {
+    colX[k] = x; x += cw[k] + TIDY.col;
+    let y = 0; for (const nd of col) { nd.y = y; y += (cards[nd.v].h || 0) + TIDY.row; }
+    colH[k] = Math.max(0, y - TIDY.row);
+  });
+  const H = Math.max(...colH);
+  real.forEach((_, k) => { shift[k] = (H - colH[k]) / 2; });
+  const mid = nd => shift[nd.k] + nd.y + (cards[nd.v].h || 0) / 2;
+  const wired = (nd, back) => { const out = [], walk = m => (m.dummy ? (back ? m.up : m.dn).forEach(walk) : out.push(m)); (back ? nd.up : nd.dn).forEach(walk); return out; };
+  for (let it = 0; it < 4; it++) for (const back of [true, false]) {
+    for (let s = 1; s < real.length; s++) {
+      const k = back ? s : real.length - 1 - s;
+      let sum = 0, n = 0;
+      for (const nd of real[k]) for (const m of wired(nd, back)) { sum += mid(m) - mid(nd); n++; }
+      if (n) shift[k] += sum / n;
+    }
+  }
+  const lowest = Math.min(...real.map((col, k) => col.length ? shift[k] : Infinity));
+  const pos = new Map();
+  let w = 0, h = 0;
+  real.forEach((col, k) => col.forEach(nd => {
+    const c = cards[nd.v], q = {x: colX[k] + (cw[k] - c.w) / 2, y: shift[k] - lowest + nd.y};
+    pos.set(nd.v, q); w = Math.max(w, q.x + c.w); h = Math.max(h, q.y + (c.h || 0));
+  }));
+  return {pos, w, h};
 }
 
 /* ---------- context strip ---------- */
@@ -3575,6 +4059,7 @@ function selCtx(list) {
     if (only('stroke')) h += vsep + range(1, list.every(s => s.kind === 'hl') ? 80 : 40, list[0].size * cam.z);
     if (only('text')) h += vsep + range(8, 200, list[0].size * cam.z);
     if (only('link')) h += vsep + seg('lstyle', STYLE_OPTS, common(list.map(o => o.style)), 'Line style') + seg('head', HEAD_OPTS, common(list.map(o => o.head)), 'Arrowheads') + chip('dash', 'Dashed', list.every(o => o.dash)) + chip('flow', 'Flow', list.every(o => o.flow)) + (one ? cbtn('label', 'Edit label', 'label') + cbtn('reverse', 'Reverse direction', 'swap') + cbtn('knot', 'Add a reroute point', 'plus') : '') + (list.some(o => o.via) ? chip('unknot', 'Straighten', false) : '');
+    if (only('frame')) { const shut = list.every(f => f.collapsed); h += vsep + chip('fold', shut ? 'Expand' : 'Collapse', shut) + (one ? cbtn('tidyPhase', 'Tidy this phase', 'trace') : ''); }
     if (one && one.type === 'jam') h += vsep + cbtn('jamedit', 'Edit the jam', 'clock') + cbtn('jamcut', 'Cut scope', 'trash');
     if (one && one.type === 'frame') h += vsep + chip('sprint', one.sprint ? 'Sprint…' : 'Make a sprint…', !!one.sprint);
     if (only('image')) h += vsep + chip('flip', 'Flip', list.every(o => o.flip)) + chip('gray', 'Greyscale', list.every(o => o.gray)) + (one ? cbtn('orig', 'Original size', 'orig') + cbtn('replace', 'Replace with another picture or video', 'swap') : '');
@@ -3631,7 +4116,7 @@ function arrangeEntries() {
     {label: 'Left edges', run: () => arrange('left')}, {label: 'Centres (vertical line)', run: () => arrange('hcenter')}, {label: 'Right edges', run: () => arrange('right')},
     {label: 'Top edges', run: () => arrange('top')}, {label: 'Middles (horizontal line)', run: () => arrange('vcenter')}, {label: 'Bottom edges', run: () => arrange('bottom')},
     {head: 'Spread'}, {label: 'Distribute horizontally', run: () => arrange('hdist')}, {label: 'Distribute vertically', run: () => arrange('vdist')},
-    {head: 'Layout'}, {label: 'Pack into a grid', icon: 'arrange', run: () => arrange('grid')}, {label: 'Tidy by dependencies', icon: 'trace', run: () => arrange('tidy')}];
+    {head: 'Layout'}, {label: 'Pack into a grid', icon: 'arrange', run: () => arrange('grid')}, {label: 'Tidy layout', icon: 'trace', run: () => arrange('tidy')}];
 }
 function act(a, v, btn) {
   const list = tool === 'select' ? selObjs() : [], has = list.length > 0;
@@ -3677,6 +4162,8 @@ function act(a, v, btn) {
     case 'more': menuAt(btn, moreEntries()); break;
     case 'arrange': menuAt(btn, arrangeEntries()); break;
     case 'replace': if (list.length === 1) menuAt(btn, replaceEntries(list[0])); break;
+    case 'fold': { const frs = list.filter(o => o.type === 'frame'); setCollapsed(frs, !frs.every(f => f.collapsed)); break; }
+    case 'tidyPhase': if (list[0] && list[0].type === 'frame') tidyPhase(list[0]); break;
     case 'knot': if (links.length === 1) addKnot(links[0], null); break;
     case 'unknot': clearKnots(links); break;
     case 'kindMenu': menuAt(btn, KINDS.map(([k, t]) => ({label: t, icon: KIND_ICON[k], cur: nodes.every(n => (n.kind || 'task') === k), run: () => setKind(selObjs(), k)}))); break;
@@ -3777,6 +4264,7 @@ function contextEntries(hit, w) {
         ...STYLE_OPTS.map(([v, t]) => ({label: t, cur: hit.style === v, run: () => { (sel.has(hit.id) ? selObjs().filter(o => o.type === 'link') : [hit]).forEach(o => { o.style = v; }); opts.link.style = v; refresh(); commit(); }})), '-');
     } else if (hit.type === 'text' || hit.type === 'frame') {
       if (hit.type === 'frame') E.push(...sprintEntries(hit));
+      if (hit.type === 'frame') E.push(...phaseEntries(hit));
       E.push({label: hit.type === 'frame' ? 'Rename phase' : 'Edit text', run: () => startEdit(hit.id, null, true)}, '-');
     }
     if (list.filter(o => o.type !== 'link' && o.type !== 'stroke').length >= 2) E.push({label: 'Arrange…', icon: 'arrange', run: () => showMenu(lastMenuPt.x, lastMenuPt.y, arrangeEntries())});
@@ -3792,6 +4280,7 @@ function contextEntries(hit, w) {
       {label: 'Game jam clock', icon: 'clock', run: () => addJam(w)},
       {label: 'Template…', icon: 'arrange', run: openTemplates},
       ...(doc.links.length ? [{label: 'Style every connector…', icon: 'link', run: () => showMenu(lastMenuPt.x, lastMenuPt.y, [{head: 'Every connector'}, ...STYLE_OPTS.map(([v, t]) => ({label: t, cur: doc.links.every(l => l.style === v), run: () => styleAllLinks(v)}))])}] : []),
+      ...(doc.items.filter(o => o.type === 'node').length >= 2 ? [{label: 'Tidy layout', icon: 'trace', run: tidyBoard}] : []),
       '-', {label: 'Zoom to fit', kb: 'Shift 1', run: () => fitTo(allObjs())},
       {label: 'Select all', kb: 'Ctrl A', run: selectAll});
   }
@@ -4593,12 +5082,12 @@ function drawCard(g, it, tok, F, deps = openDeps) {
 // What drawing a board needs beyond what's stored in it: connector shapes, frame totals, open dependencies and
 // frame title sizes. The open board has them already; any other board (a saved version) gets its own, worked out here.
 function drawInfo(d) {
-  if (d === doc) return {geom, frameStats, openDeps, titleBox};
+  if (d === doc) return {geom, frameStats, openDeps, titleBox, tucked};
   const index = new Map();
   for (const k of COLS) for (const o of d[k] || []) index.set(o.id, o);
-  const g2 = new Map(), fs2 = new Map(), od = new Map(), tb = new Map(), saved = idx;
-  idx = index;  // connector shapes look their ends up here; this runs straight through, so nothing else sees it
-  try { for (const l of d.links) { const gm = linkGeom(l); if (gm) g2.set(l.id, gm); } } finally { idx = saved; }
+  const g2 = new Map(), fs2 = new Map(), od = new Map(), tb = new Map(), saved = idx, savedTuck = tucked, tk = tuckFor(d, false);
+  idx = index; tucked = tk;  // connector shapes look their ends up here; this runs straight through, so nothing else sees it
+  try { wireGeoms(d.links).forEach((gm, id) => g2.set(id, gm)); } finally { idx = saved; tucked = savedTuck; }
   mctx.font = LABEL_FONT;
   for (const l of d.links) { const gm = g2.get(l.id); if (gm && l.label) { const pw = mctx.measureText(l.label).width + 18; gm.lab = {x: gm.mid.x - pw / 2, y: gm.mid.y - 11, w: pw, h: 22}; } }
   for (const l of d.links) {
@@ -4614,12 +5103,13 @@ function drawInfo(d) {
     const t = String(f.title || '').toUpperCase();
     tb.set(f.id, {w: mctx.measureText(t).width + t.length * 1.05 + 30, h: 33});
   }
-  return {geom: g2, frameStats: fs2, openDeps: od, titleBox: tb};
+  return {geom: g2, frameStats: fs2, openDeps: od, titleBox: tb, tucked: tk};
 }
 const drawTokens = () => { const cs = getComputedStyle(document.documentElement), tok = n => cs.getPropertyValue(n).trim(); return {tok, F: {ui: tok('--font-ui'), display: tok('--font-display'), mono: tok('--font-mono')}}; };
 // an object's full extent on a drawn board (a frame's includes its title tab)
 function drawBox(o, info) {
-  if (o.type === 'frame') { const t = info.titleBox.get(o.id) || {w: 160, h: 33}; return {x: o.x, y: o.y - t.h - 8, w: Math.max(o.w, t.w), h: o.h + t.h + 8}; }
+  if (info.tucked && info.tucked.by.has(o.id)) return null;  // tucked into a collapsed phase
+  if (o.type === 'frame') { const t = info.titleBox.get(o.id) || {w: 160, h: 33}; return {x: o.x, y: o.y - t.h - 8, w: Math.max(o.w, t.w), h: (o.collapsed ? BAR_H : o.h) + t.h + 8}; }
   if (o.type === 'link') { const gm = info.geom.get(o.id); return gm ? polyBox(gm.poly) : null; }
   return o.type === 'stroke' ? strokeBox(o) : {x: o.x, y: o.y, w: o.w || 0, h: o.h || 0};
 }
@@ -4640,14 +5130,15 @@ async function boardImages(d, ids, cache = new Map()) {
 // Draws a board in world coordinates, in the order the app shows it: frames, connectors, cards and pictures,
 // then ink. `area` is the world rectangle to fill with the background; `ids`, if given, limits what's drawn.
 function paintBoard(g, d, info, ids, imgs, tok, F, area) {
-  const has = o => !ids || ids.has(o.id);
+  const has = o => (!ids || ids.has(o.id)) && !(info.tucked && info.tucked.by.has(o.id));
   g.fillStyle = tok('--void'); g.fillRect(area.x, area.y, area.w, area.h);
   g.fillStyle = tok('--grid');
   for (let x = Math.ceil(area.x / 24) * 24; x < area.x + area.w; x += 24) for (let y = Math.ceil(area.y / 24) * 24; y < area.y + area.h; y += 24) g.fillRect(x - 0.75, y - 0.75, 1.5, 1.5);
   for (const f of d.items) {
     if (f.type !== 'frame' || !has(f)) continue;
     const c = col(f.color);
-    rrect(g, f.x, f.y, f.w, f.h, [4, 26, 26, 26]); g.globalAlpha = 0.05; g.fillStyle = c; g.fill();
+    if (f.collapsed) paintBar(g, f, c, info, tok, F);
+    else { rrect(g, f.x, f.y, f.w, f.h, [4, 26, 26, 26]); g.globalAlpha = 0.05; g.fillStyle = c; g.fill(); }
     g.globalAlpha = 0.42; g.strokeStyle = c; g.lineWidth = 1.5; g.stroke(); g.globalAlpha = 1;
     g.font = `700 15px ${F.display}`; if ('letterSpacing' in g) g.letterSpacing = '1px';
     const t = String(f.title || '').toUpperCase(), tw = g.measureText(t).width + 30, th = 33, ty = f.y - 8 - th;
@@ -4659,7 +5150,7 @@ function paintBoard(g, d, info, ids, imgs, tok, F, area) {
       // beside the title, or inside the frame's top corner when the frame is too narrow for both (as on screen)
       g.font = `600 12px ${F.mono}`; g.textAlign = 'right';
       const label = `${st.done}/${st.total} · ${Math.round(st.done / st.total * 100)}%${st.est ? ` · ${fmtDays(st.est)} left` : ''}`;
-      if (tw + g.measureText(label).width + 24 > f.w) g.fillText(label, f.x + f.w - 16, f.y + 19); else g.fillText(label, f.x + f.w - 4, f.y - 22);
+      if (tw + g.measureText(label).width + 24 > f.w) { if (!f.collapsed) g.fillText(label, f.x + f.w - 16, f.y + 19); } else g.fillText(label, f.x + f.w - 4, f.y - 22);
       g.textAlign = 'left';
     }
   }
