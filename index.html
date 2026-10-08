@@ -141,6 +141,9 @@ html.ct-on body::after{content:"";position:fixed;inset:0;border:2px solid color-
 .image img{display:block;width:100%;height:100%;pointer-events:none;-webkit-user-drag:none;user-select:none}
 .image.flip img{transform:scaleX(-1)}
 .image.gray img{filter:grayscale(1)}
+.image.xf{overflow:hidden}
+.image.xf img{position:absolute;left:0;top:0;max-width:none;transform-origin:0 0}
+.image.cropping{overflow:visible;z-index:3}
 
 .node{--tag:var(--fang);--sev:var(--fang);background:linear-gradient(158deg,var(--card-hi),var(--card) 46%);border:1px solid color-mix(in srgb,var(--tag) 40%,var(--line));border-radius:3px 18px 18px 18px;padding:11px 14px 14px;color:var(--bone);box-shadow:inset 0 1px 0 var(--gloss),0 18px 36px -16px var(--shadow)}
 .n-head{display:flex;align-items:center;gap:7px;height:20px;margin-bottom:6px;min-width:0;overflow:hidden}
@@ -227,6 +230,15 @@ html.ct-on body::after{content:"";position:fixed;inset:0;border:2px solid color-
 .u-target{fill:color-mix(in srgb,var(--fang) 8%,transparent);stroke:var(--fang);stroke-width:2;stroke-dasharray:6 4}
 .u-eraser{fill:color-mix(in srgb,var(--bone) 7%,transparent);stroke:var(--bone);stroke-width:1.2}
 .u-guide{stroke:var(--fang);stroke-width:1;stroke-dasharray:3 3}
+.u-crop-dim{fill:rgba(4,4,7,.66)}
+.u-crop{fill:none;stroke:#f1eef2;stroke-width:1.5}
+.u-crop-grid{fill:none;stroke:rgba(241,238,242,.38);stroke-width:1}
+.u-crop-h{fill:none;stroke:#f1eef2;stroke-width:4;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 2px rgba(0,0,0,.6))}
+.u-pick circle{stroke:#f1eef2;stroke-width:3;filter:drop-shadow(0 2px 6px rgba(0,0,0,.55))}
+.u-pick rect{fill:var(--hide-2);stroke:var(--line-2)}
+.u-pick text{fill:var(--bone);font:700 12px var(--font-mono)}
+.cb.ok,.cb.ok:hover{color:var(--ok)}
+#stage.picking,#stage.picking *{cursor:crosshair!important}
 .u-lock{fill:var(--hide-2);stroke:var(--bone);stroke-width:1.4}
 
 /* ---------- tool spine ---------- */
@@ -973,6 +985,7 @@ html.watching #tools .tool:not([data-tool=select]):not([data-tool=hand]),html.wa
       </dl></section>
       <section><h3>Ink and files</h3><dl>
         <dt><kbd>1</kbd>–<kbd>8</kbd></dt><dd>Pick a colour</dd>
+        <dt><kbd>K</kbd></dt><dd>Pick a colour from any picture</dd>
         <dt><kbd>[</kbd> <kbd>]</kbd></dt><dd>Smaller or bigger brush</dd>
         <dt><kbd>Shift</kbd></dt><dd>Hold while drawing for a straight line</dd>
         <dt><kbd>Ctrl S</kbd> <kbd>Ctrl O</kbd></dt><dd>Save, open board file</dd>
@@ -1172,6 +1185,7 @@ let snapOn = pref('snap', true), showMini = pref('mini', true), uiOff = false, p
 let filt = {q: '', kinds: new Set(), status: new Set(), prio: new Set(), disc: new Set(), who: new Set(), ready: false};
 let trace = null, dimSet = null, openDeps = new Map(), frameStats = new Map();
 let pending = null, imageLinkFrom = null, TOK = {};
+let cropping = null, picking = null;  // crop mode and the colour picker (see "cropping and turning pictures")
 let topbarOn = pref('topbar', true);
 let deskState = {pinned: false, opacity: 1, locked: false, clickThrough: false, clickKey: 'CommandOrControl+Shift+X', keyLabel: 'Ctrl+Shift+X', keyOk: true};
 
@@ -1466,6 +1480,7 @@ function syncEl(el, it) {
     const img = el.firstChild;
     if (img._src !== src) { img._src = src; if (teamAsset(src)) img.crossOrigin = 'anonymous'; else img.removeAttribute('crossorigin'); if (src) img.src = src; }
     el.classList.toggle('flip', !!it.flip); el.classList.toggle('gray', !!it.gray);
+    picStyle(el, img, it);  // cropped or turned: the visible part fills the box
   } else if (it.type === 'video') {
     el.style.width = it.w + 'px'; el.style.height = it.h + 'px';
     const tag = it.embed ? (it.embed.p === 'yt' ? 'YouTube' : 'Vimeo') : 'Video';
@@ -1726,7 +1741,7 @@ function renderInk() {
 /* --- screen-space overlay: selection, handles, guides --- */
 function renderUI() {
   const z = cam.z; let s = ''; handles = [];
-  const list = selObjs();
+  const list = cropping ? [] : selObjs();  // while cropping, the crop frame takes the selection's place
   for (const o of list) {
     if (o.type === 'link') continue;
     const b = bboxOf(o); if (!b) continue;
@@ -1768,6 +1783,7 @@ function renderUI() {
   }
   const tgt = drag && (drag.type === 'link' || drag.type === 'relink') ? drag.target : (tool === 'link' && !drag && hover && hover.id ? idx.get(hover.id) : null);
   if (tgt) { const b = bboxOf(tgt); if (b) { const a = toScreen(b.x, b.y); s += `<rect class="u-target" x="${rd(a.x - 5)}" y="${rd(a.y - 5)}" width="${rd(b.w * z + 10)}" height="${rd(b.h * z + 10)}" rx="8"/>`; } }
+  s += refsUI();
   s += drawPeers();
   if (tool === 'eraser' && hover && hover.eraser) s += `<circle class="u-eraser" cx="${rd(hover.eraser.x)}" cy="${rd(hover.eraser.y)}" r="${opts.eraser.size / 2}"/>`;
   ui.innerHTML = s;
@@ -1967,6 +1983,8 @@ function cleanItem(i) {
       const img = {...base, name: txt(i.name, 200), flip: !!i.flip, gray: !!i.gray};
       if (okId(i.asset)) img.asset = i.asset;
       else if (typeof i.src === 'string' && /^(https?:|data:image\/)/i.test(i.src)) img.src = i.src;
+      const crop = cleanCrop(i.crop); if (crop) img.crop = crop;  // the part of the picture that shows
+      if (i.rot === 90 || i.rot === 180 || i.rot === 270) img.rot = i.rot;  // quarter turns, clockwise
       return img;
     }
     case 'video': {
@@ -1982,6 +2000,14 @@ function cleanItem(i) {
 const okTime = v => Number.isFinite(v) && v > 1.5e12 && v < 4e12;
 // a YouTube or Vimeo video, played from their site only when someone clicks it
 const cleanEmbed = e => e && typeof e === 'object' && ((e.p === 'yt' && /^[\w-]{11}$/.test(e.id)) || (e.p === 'vimeo' && /^\d{5,12}$/.test(e.id))) ? {p: e.p, id: e.id} : null;
+// a picture's crop: x, y, w, h as fractions of the whole picture, inside it and not too thin; the whole picture is no crop
+function cleanCrop(c) {
+  if (!c || typeof c !== 'object' || ![c.x, c.y, c.w, c.h].every(v => typeof v === 'number' && Number.isFinite(v))) return null;
+  if (c.x < 0 || c.y < 0 || c.w <= 0.01 || c.h <= 0.01 || c.x + c.w > 1.0001 || c.y + c.h > 1.0001) return null;
+  const k = v => Math.round(v * 1e5) / 1e5, out = {x: k(c.x), y: k(c.y)};
+  out.w = Math.min(k(c.w), k(1 - out.x)); out.h = Math.min(k(c.h), k(1 - out.y));
+  return out.w > 0.01 && out.h > 0.01 && (out.x > 0 || out.y > 0 || out.w < 1 || out.h < 1) ? out : null;
+}
 function cleanComment(c) {
   if (!c || !okId(c.id) || !okId(c.card)) return null;
   const text = txt(c.text, 2000).trim();
@@ -2245,6 +2271,7 @@ function swapMedia(id, m, name) {
   if (it.locked) next.locked = true;
   if (type === 'image') { next.flip = it.type === 'image' && !!it.flip; next.gray = it.type === 'image' && !!it.gray; }
   else { next.loop = it.type === 'video' ? it.loop !== false : true; next.autoplay = it.type === 'video' && !!it.autoplay; }
+  if (type === 'image' && it.type === 'image' && it.rot) keepTurn(next, it, m);  // turned stays turned; a crop belongs to the old picture
   if (it.type === 'video') playVideo(it, false);
   doc.items[i] = next;
   if (next.id !== id) {
@@ -2260,6 +2287,377 @@ async function fetchImageBlob(url) {  // null when the site doesn't allow its pi
     const r = await fetch(url, {mode: 'cors'}); if (!r.ok) return null;
     const b = await r.blob(); return b.type.startsWith('image/') ? b : null;
   } catch (e) { return null; }
+}
+
+/* ---------- cropping and turning pictures ---------- */
+// A picture can show just part of itself (crop: x, y, w, h as fractions of the whole picture) and turn in quarter
+// turns (rot: 90, 180 or 270 degrees clockwise). Nothing is re-encoded: the whole picture is drawn moved, turned and
+// clipped to the item's box, and the box is the size the visible part has on the board. Flip mirrors what you see.
+const FULL = {x: 0, y: 0, w: 1, h: 1};
+const sideways = it => (it.rot || 0) % 180 === 90;  // turned on its side: the box's width is the picture's height
+Object.assign(ICON, {
+  crop: '<path d="M6 2.5V14h11.5"/><path d="M2.5 6H14v11.5"/>',
+  rotl: '<path d="M4.6 8.4a5.8 5.8 0 1 1 1 5.9"/><path d="M4.2 4.4l.4 4 4-.6"/>',
+  rotr: '<path d="M15.4 8.4a5.8 5.8 0 1 0-1 5.9"/><path d="M15.8 4.4l-.4 4-4-.6"/>',
+  drop: '<path d="M3.8 16.2l.8-2.6 6.3-6.3 1.8 1.8-6.3 6.3z"/><path d="M9.6 5.9l4.5 4.5"/><path d="M12.4 7.1l2.2-2.2a1.75 1.75 0 0 1 2.5 2.5l-2.2 2.2"/>',
+  close: '<path d="M5.5 5.5l9 9M14.5 5.5l-9 9"/>',
+});
+// where a point of the picture (u, v: fractions of its own width and height) shows in the item's box (fractions), and back
+function picToView(it, u, v) {
+  const r = it.rot || 0, x = r === 90 ? 1 - v : r === 180 ? 1 - u : r === 270 ? v : u, y = r === 90 ? u : r === 180 ? 1 - v : r === 270 ? 1 - u : v;
+  return [it.flip ? 1 - x : x, y];
+}
+function viewToPic(it, x, y) {
+  const r = it.rot || 0; if (it.flip) x = 1 - x;
+  return [r === 90 ? y : r === 180 ? 1 - x : r === 270 ? 1 - y : x, r === 90 ? 1 - x : r === 180 ? 1 - y : r === 270 ? x : y];
+}
+function mapRect(f, r) {
+  const [ax, ay] = f(r.x, r.y), [bx, by] = f(r.x + r.w, r.y + r.h);
+  return {x: Math.min(ax, bx), y: Math.min(ay, by), w: Math.abs(bx - ax), h: Math.abs(by - ay)};
+}
+// where the whole picture would sit on the board, at the scale it shows now
+function wholeBox(it) {
+  const R = mapRect((u, v) => picToView(it, u, v), it.crop || FULL), w = it.w / R.w, h = it.h / R.h;
+  return {x: it.x - R.x * w, y: it.y - R.y * h, w, h};
+}
+// keeps the part R of the whole picture, given as fractions of the whole box the way it shows on the board
+function setCrop(it, R) {
+  const c = mapRect((x, y) => viewToPic(it, x, y), R);
+  const x = c.x < 1e-4 ? 0 : Math.min(c.x, 1), y = c.y < 1e-4 ? 0 : Math.min(c.y, 1);
+  const crop = cleanCrop({x, y, w: x + c.w > 0.9999 ? 1 - x : c.w, h: y + c.h > 0.9999 ? 1 - y : c.h});
+  if (crop) it.crop = crop; else delete it.crop;
+}
+// the visible part's size in the picture's own pixels, turned the way it shows
+function pixelSize(it, img) {
+  const c = it.crop || FULL, w = rd(img.naturalWidth * c.w), h = rd(img.naturalHeight * c.h);
+  return sideways(it) ? {w: h, h: w} : {w, h};
+}
+// on screen: the <img> is the whole picture, placed so the visible part fills the item's box
+function picStyle(el, img, it) {
+  const C = cropping && cropping.id === it.id ? cropping : null, r = it.rot || 0, c = C ? FULL : it.crop || (r ? FULL : null);
+  el.classList.toggle('cropping', !!C);
+  if (!c) { if (el._xf) { el._xf = ''; el.classList.remove('xf'); img.removeAttribute('style'); } return; }
+  const W = C ? C.F.w : it.w, H = C ? C.F.h : it.h, s = sideways(it);
+  if (C) { el.style.transform = `translate(${C.F.x}px, ${C.F.y}px)`; el.style.width = W + 'px'; el.style.height = H + 'px'; }
+  const key = [W, H, c.x, c.y, c.w, c.h, r, !!it.flip].join();
+  if (el._xf === key) return;
+  el._xf = key; el.classList.add('xf');
+  const IW = (s ? H : W) / c.w, IH = (s ? W : H) / c.h, cx = (c.x + c.w / 2) * IW, cy = (c.y + c.h / 2) * IH;
+  img.style.width = IW + 'px'; img.style.height = IH + 'px';
+  img.style.transform = `translate(${W / 2}px, ${H / 2}px)${it.flip ? ' scaleX(-1)' : ''} rotate(${r}deg) translate(${-cx}px, ${-cy}px)`;
+}
+// the same on a canvas (PNG export and timelapses)
+function drawPicture(g, it, img) {
+  const c = it.crop || FULL, nw = img.naturalWidth || img.width, nh = img.naturalHeight || img.height, s = sideways(it);
+  const w = s ? it.h : it.w, h = s ? it.w : it.h;
+  g.translate(it.x + it.w / 2, it.y + it.h / 2);
+  if (it.flip) g.scale(-1, 1);
+  if (it.rot) g.rotate(it.rot * Math.PI / 180);
+  g.drawImage(img, c.x * nw, c.y * nh, c.w * nw, c.h * nh, -w / 2, -h / 2, w, h);
+}
+function rotatePics(list, dir) {
+  list = list.filter(o => o.type === 'image' && !o.locked);
+  if (!list.length || blocked()) return;
+  if (cropping) applyCrop();
+  for (const it of list) {
+    // a mirrored picture turns the other way underneath, so on the board it turns the way you asked
+    const r = ((it.rot || 0) + (it.flip ? -dir : dir) * 90 + 360) % 360, cx = it.x + it.w / 2, cy = it.y + it.h / 2;
+    [it.w, it.h] = [it.h, it.w]; it.x = rd(cx - it.w / 2); it.y = rd(cy - it.h / 2);
+    if (r) it.rot = r; else delete it.rot;
+  }
+  refresh(); commit();
+}
+function keepTurn(next, it, m) {  // a replaced picture keeps its turn: the same width on the board, in the new picture's shape
+  next.rot = it.rot;
+  if (sideways(it) && m.nw > 0 && m.nh > 0) { next.h = rd(next.w * m.nw / m.nh); next.y = rd(it.y + it.h / 2 - next.h / 2); }
+}
+function resetCrop(it) {
+  if (!it || it.type !== 'image') return;
+  if (cropping && cropping.id === it.id) { cropping.r = {...cropping.F}; renderUI(); return; }
+  if (!it.crop || blocked()) return;
+  const F = wholeBox(it); delete it.crop;
+  Object.assign(it, {x: rd(F.x), y: rd(F.y), w: rd(F.w), h: rd(F.h)});
+  refresh(); commit();
+}
+function picEntries(it) {
+  const list = sel.has(it.id) ? selObjs().filter(o => o.type === 'image') : [it];
+  return [{label: 'Crop', icon: 'crop', run: () => startCrop(it)}, ...(it.crop ? [{label: 'Reset crop', run: () => resetCrop(it)}] : []),
+    {label: 'Rotate left', icon: 'rotl', run: () => rotatePics(list, -1)}, {label: 'Rotate right', icon: 'rotr', run: () => rotatePics(list, 1)},
+    {label: 'Pick a colour', icon: 'drop', kb: 'K', run: startPicking}, {label: 'Extract palette', icon: 'palette', run: () => extractPalette(it)}, '-'];
+}
+function picCtx(one) {
+  return vsep + cbtn('rotl', 'Rotate left', 'rotl') + cbtn('rotr', 'Rotate right', 'rotr') + (one ? cbtn('crop', 'Crop', 'crop') : '')
+    + cbtn('pick', 'Pick a colour from any picture (K)', 'drop', false, !!picking) + (one ? cbtn('palette', 'Extract palette', 'palette') : '');
+}
+function refsAct(a, imgs) {
+  switch (a) {
+    case 'rotl': case 'rotr': rotatePics(imgs, a === 'rotr' ? 1 : -1); return true;
+    case 'crop': if (imgs.length === 1) startCrop(imgs[0]); return true;
+    case 'cropApply': applyCrop(); return true;
+    case 'cropCancel': cancelCrop(); return true;
+    case 'cropReset': if (cropping) resetCrop(idx.get(cropping.id)); return true;
+    case 'pick': togglePicking(); return true;
+    case 'palette': if (imgs.length === 1) extractPalette(imgs[0]); return true;
+  }
+  return false;
+}
+
+/* --- crop mode: the whole picture shows, darkened outside a frame you drag --- */
+// cropping (declared with the state): {id, F: the whole picture's box, r: the part kept, sig: how the picture was when cropping began}
+const picSig = it => [it.x, it.y, it.w, it.h, it.rot, it.flip, it.crop && [it.crop.x, it.crop.y, it.crop.w, it.crop.h].join(), it.asset, it.src && it.src.length].join('|');
+const CROP_CURSOR = {n: 'ns-resize', s: 'ns-resize', e: 'ew-resize', w: 'ew-resize', nw: 'nwse-resize', se: 'nwse-resize', ne: 'nesw-resize', sw: 'nesw-resize'};
+function startCrop(it) {
+  if (!it || it.type !== 'image' || blocked()) return;
+  if (it.locked) { toast('Unlock it first to crop it.'); return; }
+  if (editing) finishEdit();
+  stopPicking();
+  if (cropping) applyCrop();
+  if (tool !== 'select') setTool('select');
+  sel.clear(); sel.add(it.id);
+  cropping = {id: it.id, F: wholeBox(it), r: {x: it.x, y: it.y, w: it.w, h: it.h}, sig: picSig(it)};
+  refresh();
+  toast('Drag the edges or corners to crop. Enter applies, Esc cancels.', 4000);
+}
+function cancelCrop() {
+  if (!cropping) return;
+  cropping = null; if (drag && drag.type === 'crop') drag = null;
+  stage.style.cursor = ''; refresh();
+}
+function applyCrop() {
+  const C = cropping; if (!C) return;
+  cropping = null; if (drag && drag.type === 'crop') drag = null;
+  stage.style.cursor = '';
+  const it = idx.get(C.id);
+  if (it && picSig(it) === C.sig) {
+    const F = C.F, r = C.r;
+    setCrop(it, {x: (r.x - F.x) / F.w, y: (r.y - F.y) / F.h, w: r.w / F.w, h: r.h / F.h});
+    Object.assign(it, {x: rd(r.x), y: rd(r.y), w: rd(r.w), h: rd(r.h)});
+  }
+  refresh(); commit();
+}
+function cropCtx() {
+  return `<span class="cl">Crop</span><span class="hint">Drag the edges or corners · Shift keeps the shape</span>${vsep}${chip('cropReset', 'Reset', false)}${cbtn('cropCancel', 'Cancel (Esc)', 'close')}<button class="cb ok" data-act="cropApply" title="Apply crop (Enter)" aria-label="Apply crop (Enter)">${ic('check')}</button>`;
+}
+function cropEntries() {
+  return [{head: 'Crop'}, {label: 'Apply crop', kb: 'Enter', icon: 'check', run: applyCrop}, {label: 'Reset crop', run: () => { if (cropping) resetCrop(idx.get(cropping.id)); }}, {label: 'Cancel', kb: 'Esc', icon: 'close', run: cancelCrop}];
+}
+function cropHit(p) {  // which edge or corner of the crop frame is under the pointer (screen point)
+  const z = cam.z, b = toScreen(cropping.r.x, cropping.r.y), w = cropping.r.w * z, h = cropping.r.h * z, t = 9;
+  if (p.x < b.x - t || p.x > b.x + w + t || p.y < b.y - t || p.y > b.y + h + t) return null;
+  const dl = Math.abs(p.x - b.x), dr = Math.abs(p.x - b.x - w), dt = Math.abs(p.y - b.y), db = Math.abs(p.y - b.y - h);
+  const v = Math.min(dt, db) <= t ? (dt <= db ? 'n' : 's') : '', hz = Math.min(dl, dr) <= t ? (dl <= dr ? 'w' : 'e') : '';
+  return v + hz || null;
+}
+function cropDown(e, p, w) {
+  const C = cropping, it = idx.get(C.id);
+  if (!it || picSig(it) !== C.sig) { cancelCrop(); return false; }
+  const m = cropHit(p);
+  if (m || inRect(w, C.F)) { drag = {type: 'crop', mode: m || (inRect(w, C.r) ? 'move' : 'new'), start: w, r0: {...C.r}}; return true; }
+  applyCrop(); return false;  // a click anywhere else applies the crop and carries on as a normal click
+}
+function cropMove(w, keep) {
+  const C = cropping, d = drag; if (!C) return;
+  const F = C.F, r0 = d.r0, dx = w.x - d.start.x, dy = w.y - d.start.y, mw = F.w * 0.02, mh = F.h * 0.02, m = d.mode;
+  if (m === 'move') C.r = {x: clamp(r0.x + dx, F.x, F.x + F.w - r0.w), y: clamp(r0.y + dy, F.y, F.y + F.h - r0.h), w: r0.w, h: r0.h};
+  else if (m === 'new') {  // drag out a new frame
+    const r = normRect({x: clamp(d.start.x, F.x, F.x + F.w), y: clamp(d.start.y, F.y, F.y + F.h)}, {x: clamp(w.x, F.x, F.x + F.w), y: clamp(w.y, F.y, F.y + F.h)});
+    if (r.w >= mw && r.h >= mh) C.r = r;
+  } else {
+    let x0 = r0.x, y0 = r0.y, x1 = r0.x + r0.w, y1 = r0.y + r0.h;
+    if (m.includes('w')) x0 = clamp(x0 + dx, F.x, x1 - mw);
+    if (m.includes('e')) x1 = clamp(x1 + dx, x0 + mw, F.x + F.w);
+    if (m.includes('n')) y0 = clamp(y0 + dy, F.y, y1 - mh);
+    if (m.includes('s')) y1 = clamp(y1 + dy, y0 + mh, F.y + F.h);
+    if (keep && m.length === 2) {  // Shift on a corner keeps the frame's shape
+      const k = r0.w / r0.h, ax = m.includes('w') ? x1 : x0, ay = m.includes('n') ? y1 : y0;
+      let cw = x1 - x0, ch = y1 - y0;
+      if (cw / ch > k) cw = ch * k; else ch = cw / k;
+      const s = Math.min(1, (m.includes('w') ? ax - F.x : F.x + F.w - ax) / cw, (m.includes('n') ? ay - F.y : F.y + F.h - ay) / ch);
+      cw *= s; ch *= s;
+      if (cw >= mw && ch >= mh) { x0 = m.includes('w') ? ax - cw : ax; x1 = x0 + cw; y0 = m.includes('n') ? ay - ch : ay; y1 = y0 + ch; }
+    }
+    C.r = {x: x0, y: y0, w: x1 - x0, h: y1 - y0};
+  }
+  renderUI();
+}
+function cropUI() {
+  const C = cropping, it = idx.get(C.id);
+  if (!it || picSig(it) !== C.sig) {  // the picture changed meanwhile (undo, or a teammate): stop cropping
+    cropping = null; setTimeout(() => { refresh(); toast('Crop stopped: the picture changed.'); });
+    return '';
+  }
+  const z = cam.z, a = toScreen(C.F.x, C.F.y), W = C.F.w * z, H = C.F.h * z, b = toScreen(C.r.x, C.r.y), w = C.r.w * z, h = C.r.h * z;
+  const R = (x, y, ww, hh) => `M${rd(x)} ${rd(y)}h${rd(ww)}v${rd(hh)}h${rd(-ww)}z`;
+  let s = `<path class="u-crop-dim" fill-rule="evenodd" d="${R(a.x, a.y, W, H)}${R(b.x, b.y, w, h)}"/>`;
+  s += `<path class="u-crop-grid" d="M${rd(b.x + w / 3)} ${rd(b.y)}v${rd(h)}M${rd(b.x + w * 2 / 3)} ${rd(b.y)}v${rd(h)}M${rd(b.x)} ${rd(b.y + h / 3)}h${rd(w)}M${rd(b.x)} ${rd(b.y + h * 2 / 3)}h${rd(w)}"/>`;
+  s += `<rect class="u-crop" x="${rd(b.x)}" y="${rd(b.y)}" width="${rd(w)}" height="${rd(h)}"/>`;
+  const L = Math.max(4, Math.min(18, w / 3, h / 3));
+  let d = '';
+  for (const [x, y, sx, sy] of [[b.x, b.y, 1, 1], [b.x + w, b.y, -1, 1], [b.x, b.y + h, 1, -1], [b.x + w, b.y + h, -1, -1]]) d += `M${rd(x)} ${rd(y + sy * L)}V${rd(y)}H${rd(x + sx * L)}`;
+  for (const [x, y, across] of [[b.x + w / 2, b.y, 1], [b.x + w / 2, b.y + h, 1], [b.x, b.y + h / 2, 0], [b.x + w, b.y + h / 2, 0]]) d += across ? `M${rd(x - L / 2)} ${rd(y)}h${rd(L)}` : `M${rd(x)} ${rd(y - L / 2)}v${rd(L)}`;
+  return s + `<path class="u-crop-h" d="${d}"/>`;
+}
+
+/* ---------- colour picker and palettes ---------- */
+// K (or Pick a colour) samples any pixel of any picture as it shows on the board: the hex is copied and becomes the
+// marker, text and card colour. Extract palette finds a picture's main colours and lays them out beside it.
+// picking (declared with the state): {hover: {p, hex}} while the colour picker is on
+const pickG = Object.assign(document.createElement('canvas'), {width: 1, height: 1}).getContext('2d', {willReadFrequently: true});
+const rgbHex = d => '#' + [0, 1, 2].map(i => clamp(Math.round(d[i]), 0, 255).toString(16).padStart(2, '0')).join('');
+const greyOf = d => { const l = 0.2126 * d[0] + 0.7152 * d[1] + 0.0722 * d[2]; return [l, l, l]; };  // as CSS greyscale shows it
+function startPicking() {
+  if (cropping) applyCrop();
+  picking = {hover: null}; stage.classList.add('picking');
+  updateCtx(); renderUI();
+  toast('Click any picture to pick a colour. Esc cancels.', 3000);
+}
+function stopPicking() { if (!picking) return; picking = null; stage.classList.remove('picking'); updateCtx(); renderUI(); }
+function togglePicking() { if (picking) stopPicking(); else startPicking(); }
+function picUnder(w) { const h = itemAt(w, false, true); return h && h.type === 'image' ? h : null; }
+function pixelAt(it, w) {  // the colour of the picture at a board point, or why there isn't one
+  const el = els.get(it.id), img = el && el.firstChild;
+  if (!img || !img.complete || !img.naturalWidth) return {err: 'loading'};
+  const c = it.crop || FULL, [u, v] = viewToPic(it, clamp((w.x - it.x) / it.w, 0, 0.99999), clamp((w.y - it.y) / it.h, 0, 0.99999));
+  const px = Math.floor((c.x + u * c.w) * img.naturalWidth), py = Math.floor((c.y + v * c.h) * img.naturalHeight);
+  try {
+    pickG.clearRect(0, 0, 1, 1); pickG.drawImage(img, px, py, 1, 1, 0, 0, 1, 1);
+    const d = pickG.getImageData(0, 0, 1, 1).data;
+    return d[3] < 10 ? {err: 'clear'} : {hex: rgbHex(it.gray ? greyOf(d) : d)};
+  } catch (e) { return {err: 'blocked'}; }  // a linked picture from a site that doesn't allow reading it
+}
+const PICK_BLOCKED = "That picture's site doesn't let its colours be read. Save it and drop the file in.";
+function pickHover(p, w) {
+  const it = picUnder(w), s = it && pixelAt(it, w);
+  picking.hover = s && s.hex ? {p, hex: s.hex} : null;
+  renderUI();
+}
+function pickUI() {
+  const {p, hex} = picking.hover, x = p.x + 18, y = p.y + 18;
+  return `<g class="u-pick"><circle cx="${rd(x + 14)}" cy="${rd(y + 14)}" r="14" fill="${hex}"/><rect x="${rd(x + 32)}" y="${rd(y + 4)}" width="74" height="21" rx="7"/><text x="${rd(x + 69)}" y="${rd(y + 18.5)}" text-anchor="middle">${hex}</text></g>`;
+}
+function pickDown(w) {
+  const it = picUnder(w), s = it && pixelAt(it, w);
+  stopPicking();
+  if (!it) return;
+  if (!s.hex) { toast(s.err === 'blocked' ? PICK_BLOCKED : s.err === 'clear' ? 'That spot is see-through.' : 'That picture is still loading.', 4000); return; }
+  useColour(s.hex);
+}
+function useColour(hex) {
+  opts.pen.color = opts.text.color = opts.node.color = hex;
+  updateCtx();
+  const say = ok => toast(`${ok ? 'Copied ' : ''}${hex} · now your marker, text and card colour`, 3500);
+  try { navigator.clipboard.writeText(hex).then(() => say(true), () => say(false)); } catch (e) { say(false); }
+}
+function refsUI() { return cropping ? cropUI() : picking && picking.hover ? pickUI() : ''; }
+function refsHover(p, w) {
+  if (picking) { pickHover(p, w); return true; }
+  if (!cropping || tool !== 'select' || spaceDown) return false;
+  const m = cropHit(p);
+  stage.style.cursor = m ? CROP_CURSOR[m] : inRect(w, cropping.r) ? 'move' : inRect(w, cropping.F) ? 'crosshair' : '';
+  return true;
+}
+function refsKey(e) {
+  const k = e.key, ctrl = e.ctrlKey || e.metaKey;
+  if (picking && k === 'Escape') { e.preventDefault(); stopPicking(); return true; }
+  if (cropping) {
+    if (k === 'Escape' || (ctrl && /^[zy]$/i.test(k))) { e.preventDefault(); cancelCrop(); return true; }
+    if (k === 'Enter') { e.preventDefault(); applyCrop(); return true; }
+    if (!/^( |Shift|Control|Alt|Meta)$/.test(k)) applyCrop();  // anything else finishes the crop first
+    return false;
+  }
+  if (k.toLowerCase() === 'k' && !ctrl && !e.altKey && !e.shiftKey) { e.preventDefault(); togglePicking(); return true; }
+  return false;
+}
+function refsContext(e) {
+  if (picking) stopPicking();
+  if (!cropping) return false;
+  showMenu(e.clientX, e.clientY, cropEntries());
+  return true;
+}
+
+// the main colours: k-means on a small copy of the visible part, in Lab so near-duplicates are easy to spot
+function toLab(c) {
+  const f = v => { v /= 255; return v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }, R = f(c[0]), G = f(c[1]), B = f(c[2]);
+  const h = t => t > 0.008856 ? Math.cbrt(t) : 7.787 * t + 16 / 116;
+  const X = h((0.4124 * R + 0.3576 * G + 0.1805 * B) / 0.95047), Y = h(0.2126 * R + 0.7152 * G + 0.0722 * B), Z = h((0.0193 * R + 0.1192 * G + 0.9505 * B) / 1.08883);
+  return [116 * Y - 16, 500 * (X - Y), 200 * (Y - Z)];
+}
+function paletteOf(px, most = 8) {
+  const n = px.length; if (!n) return [];
+  const lab = px.map(toLab), d2 = (a, b) => (a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2 + (a[2] - b[2]) ** 2;
+  let seed = 12345; const rnd = () => (seed = seed * 16807 % 2147483647) / 2147483647;  // the same picture always gives the same palette
+  const C = [lab[Math.floor(rnd() * n)].slice()], D = new Float64Array(n).fill(Infinity);
+  while (C.length < Math.min(12, n)) {  // k-means++: each new centre far from the others
+    let sum = 0;
+    for (let i = 0; i < n; i++) { D[i] = Math.min(D[i], d2(lab[i], C[C.length - 1])); sum += D[i]; }
+    if (!sum) break;
+    let t = rnd() * sum, i = 0;
+    while (i < n - 1 && (t -= D[i]) > 0) i++;
+    C.push(lab[i].slice());
+  }
+  const who = new Int32Array(n);
+  for (let round = 0; round < 20; round++) {
+    let moved = 0;
+    for (let i = 0; i < n; i++) {
+      let best = 0, bd = Infinity;
+      for (let k = 0; k < C.length; k++) { const dd = d2(lab[i], C[k]); if (dd < bd) { bd = dd; best = k; } }
+      if (who[i] !== best || !round) { moved += who[i] !== best; who[i] = best; }
+    }
+    const S = C.map(() => [0, 0, 0, 0]);
+    for (let i = 0; i < n; i++) { const s = S[who[i]]; s[0] += lab[i][0]; s[1] += lab[i][1]; s[2] += lab[i][2]; s[3]++; }
+    S.forEach((s, k) => { if (s[3]) C[k] = [s[0] / s[3], s[1] / s[3], s[2] / s[3]]; });
+    if (round && !moved) break;
+  }
+  // each colour is the average of its own pixels, so it's one the picture really has
+  const G = C.map(() => [0, 0, 0, 0]);
+  for (let i = 0; i < n; i++) { const g = G[who[i]]; g[0] += px[i][0]; g[1] += px[i][1]; g[2] += px[i][2]; g[3]++; }
+  const out = [];
+  for (const g of G.filter(g => g[3]).sort((a, b) => b[3] - a[3])) {
+    const rgb = [g[0] / g[3], g[1] / g[3], g[2] / g[3]], l = toLab(rgb), twin = out.find(o => d2(o.lab, l) < 12 * 12);
+    if (twin) twin.n += g[3]; else out.push({rgb, lab: l, n: g[3]});
+  }
+  // the most used first, leaving out specks
+  return out.sort((a, b) => b.n - a.n).filter(c => c.n >= n * 0.005).slice(0, most).map(c => rgbHex(c.rgb));
+}
+function picPixels(it, img, max) {  // the visible part's pixels, small, as they show (greyscale too)
+  const c = it.crop || FULL, sw = c.w * img.naturalWidth, sh = c.h * img.naturalHeight, k = Math.min(1, max / Math.max(sw, sh));
+  const cv = document.createElement('canvas'); cv.width = Math.max(1, Math.round(sw * k)); cv.height = Math.max(1, Math.round(sh * k));
+  const g = cv.getContext('2d', {willReadFrequently: true});
+  g.imageSmoothingEnabled = false;  // real pixels, not blends of neighbours that the picture doesn't have
+  g.drawImage(img, c.x * img.naturalWidth, c.y * img.naturalHeight, sw, sh, 0, 0, cv.width, cv.height);
+  const d = g.getImageData(0, 0, cv.width, cv.height).data, out = [];
+  for (let i = 0; i < d.length; i += 4) if (d[i + 3] >= 128) out.push(it.gray ? greyOf(d.subarray(i, i + 3)) : [d[i], d[i + 1], d[i + 2]]);
+  return out;
+}
+async function extractPalette(it) {
+  if (!it || it.type !== 'image' || blocked()) return;
+  const el = els.get(it.id), img = el && el.firstChild;
+  if (!img || !img.complete || !img.naturalWidth) { toast('That picture is still loading.'); return; }
+  let cols;
+  try { cols = paletteOf(picPixels(it, img, 96)); } catch (e) { toast(PICK_BLOCKED, 4500); return; }
+  if (!cols.length) { toast('That picture is see-through, so it has no colours to take.'); return; }
+  // a strip of swatches under the picture (a small picture itself, so the colour picker works on it), each hex under its swatch
+  const n = cols.length, side = rd(clamp(it.w / n, 64, 180)), gap = rd(side * 0.3);
+  let size = clamp(Math.round(side * 0.2), 10, 24);
+  mctx.font = `700 ${size}px Manrope, "Segoe UI", system-ui, sans-serif`;
+  while (size > 9 && mctx.measureText('#d0d0d0').width + 12 > side) mctx.font = `700 ${--size}px Manrope, "Segoe UI", system-ui, sans-serif`;
+  const box = {x: it.x, y: it.y + it.h + gap, w: side * n, h: side + size * 1.5 + 8};
+  for (let i = 0; i < 40 && doc.items.some(o => o.type !== 'frame' && o.id !== it.id && intersects(box, bboxOf(o))); i++) box.y += gap + 8;
+  const cv = document.createElement('canvas'); cv.width = 64 * n; cv.height = 64;
+  const g = cv.getContext('2d'); cols.forEach((c, i) => { g.fillStyle = c; g.fillRect(i * 64, 0, 64, 64); });
+  let ref;
+  try {
+    if (board.team) ref = {src: await uploadImage(await new Promise(r => cv.toBlob(r, 'image/png')))};
+    else { const aid = uid(); assets[aid] = cv.toDataURL('image/png'); ref = {asset: aid}; }
+  } catch (e) { toast(e && e.message ? e.message : "Couldn't add the palette.", 4000); return; }
+  if (!idx.has(it.id)) return;
+  const strip = {id: uid(), type: 'image', x: rd(box.x), y: rd(box.y), w: rd(side * n), h: side, ...ref, name: txt('Palette · ' + (it.name || 'picture'), 200), flip: false, gray: false};
+  const labels = cols.map((c, i) => ({id: uid(), type: 'text', x: rd(box.x + i * side), y: rd(box.y + side + 4), w: 10, h: 10, text: c, size, color: BONE}));
+  doc.items.push(strip, ...labels);
+  if (tool !== 'select') setTool('select');
+  sel.clear(); [strip, ...labels].forEach(o => sel.add(o.id));
+  refresh(); commit();
+  toast(`Palette: ${n} colour${n === 1 ? '' : 's'} from the picture. Ctrl+Z takes it away.`, 3500);
 }
 
 /* ---------- editing text ---------- */
@@ -2534,6 +2932,7 @@ stage.addEventListener('pointerdown', e => {
   }
   if (e.button !== 0) return;
   e.preventDefault();
+  if (picking) { pickDown(w); return; }  // the colour picker takes the click
   const chk = tool === 'select' && e.target.closest && e.target.closest('.chk');
   if (chk) { const host = chk.closest('.item'); toggleCheck(host.dataset.id, +chk.dataset.line); return; }
   stage.setPointerCapture(e.pointerId);
@@ -2548,6 +2947,7 @@ stage.addEventListener('pointerdown', e => {
   }
 });
 function downSelect(e, p, w) {
+  if (cropping && cropDown(e, p, w)) return;
   const h = viewOnly() ? null : hitHandle(p);
   if (h) {
     const it = selObjs()[0]; if (!it) return;
@@ -2608,6 +3008,7 @@ stage.addEventListener('pointermove', e => {
       renderMove(); break;
     }
     case 'resize': doResize(w, e.shiftKey); render(); teamPreview([drag.id]); break;
+    case 'crop': cropMove(w, e.shiftKey); break;
     case 'marquee': {
       drag.b = w; const r = normRect(drag.a, drag.b);
       sel.clear(); drag.base.forEach(id => sel.add(id));
@@ -2656,6 +3057,7 @@ stage.addEventListener('pointermove', e => {
   }
 });
 function hoverUpdate(p, w) {
+  if (refsHover(p, w)) return;
   if (tool === 'eraser') { hover = {eraser: p}; renderUI(); return; }
   if (tool === 'link') {
     const h = itemAt(w, true), id = h ? h.id : null;
@@ -2765,6 +3167,7 @@ stage.addEventListener('dblclick', e => {
 });
 stage.addEventListener('contextmenu', e => {
   e.preventDefault();
+  if (refsContext(e)) return;
   if (editing) finishEdit();
   stageRect = stage.getBoundingClientRect();
   const w = toWorld(screenPt(e)); lastPtr = w;
@@ -3036,7 +3439,7 @@ function originalSize(it) {
   const img = els.get(it.id) && els.get(it.id).firstChild;
   if (!img || !img.naturalWidth) return;
   const cx = it.x + it.w / 2, cy = it.y + it.h / 2;
-  it.w = img.naturalWidth; it.h = img.naturalHeight; it.x = rd(cx - it.w / 2); it.y = rd(cy - it.h / 2);
+  const s = pixelSize(it, img); it.w = s.w; it.h = s.h; it.x = rd(cx - it.w / 2); it.y = rd(cy - it.h / 2);  // the visible part, pixel for pixel
   refresh(); commit();
 }
 function editLinkLabel(l) {
@@ -3152,6 +3555,7 @@ function nodeCtx(list, one) {
   return h;
 }
 function selCtx(list) {
+  if (cropping) return cropCtx();
   const types = new Set(list.map(o => o.type)), one = list.length === 1 ? list[0] : null, only = t => types.size === 1 && types.has(t);
   const NAMES = {node: 'Card', image: 'Image', video: 'Video', text: 'Text', frame: 'Phase', link: 'Connector', stroke: 'Ink', jam: 'Jam clock'};
   let h;
@@ -3168,6 +3572,7 @@ function selCtx(list) {
     if (only('link')) h += vsep + seg('lstyle', STYLE_OPTS, common(list.map(o => o.style)), 'Line style') + seg('head', HEAD_OPTS, common(list.map(o => o.head)), 'Arrowheads') + chip('dash', 'Dashed', list.every(o => o.dash)) + chip('flow', 'Flow', list.every(o => o.flow)) + (one ? cbtn('label', 'Edit label', 'label') + cbtn('reverse', 'Reverse direction', 'swap') + cbtn('knot', 'Add a reroute point', 'plus') : '') + (list.some(o => o.via) ? chip('unknot', 'Straighten', false) : '');
     if (one && one.type === 'jam') h += vsep + cbtn('jamedit', 'Edit the jam', 'clock') + cbtn('jamcut', 'Cut scope', 'trash');
     if (only('image')) h += vsep + chip('flip', 'Flip', list.every(o => o.flip)) + chip('gray', 'Greyscale', list.every(o => o.gray)) + (one ? cbtn('orig', 'Original size', 'orig') + cbtn('replace', 'Replace with another picture or video', 'swap') : '');
+    if (only('image')) h += picCtx(one);
     if (one && one.type === 'video') {
       const el = els.get(one.id), v = el && el.querySelector('video'), playing = one.embed ? !!(el && el.classList.contains('live')) : !!(v && !v.paused);
       h += vsep + chip('vplay', playing ? (one.embed ? 'Stop' : 'Pause') : 'Play', playing);
@@ -3225,6 +3630,7 @@ function arrangeEntries() {
 function act(a, v, btn) {
   const list = tool === 'select' ? selObjs() : [], has = list.length > 0;
   const links = list.filter(o => o.type === 'link'), imgs = list.filter(o => o.type === 'image'), nodes = list.filter(o => o.type === 'node');
+  if (refsAct(a, imgs)) return;  // crop, turn, colour picker, palette
   switch (a) {
     case 'color': applyProp('color', v); break;
     case 'status': setStatus(nodes, v); break;
@@ -3348,6 +3754,7 @@ function contextEntries(hit, w) {
       E.push('-');
     } else if (hit.type === 'image') {
       E.push({label: hit.flip ? 'Unflip' : 'Flip horizontal', run: () => act('flip')}, {label: hit.gray ? 'Show in colour' : 'Show in greyscale', run: () => act('gray')}, {label: 'Original size', run: () => originalSize(hit)}, {label: 'Zoom to image', run: () => fitTo([hit])}, ...replaceEntries(hit), '-');
+      E.splice(E.findIndex(en => en.head), 0, ...picEntries(hit));  // crop, turn and colours, before Replace
     } else if (hit.type === 'video') {
       E.push({label: 'Zoom to video', run: () => fitTo([hit])}, ...replaceEntries(hit), '-');
     } else if (hit.type === 'link') {
@@ -3400,6 +3807,7 @@ function exportMenu() {
     {label: 'Copy as Markdown', icon: 'notes', run: copyMarkdown},
     {label: 'Save Markdown file', icon: 'notes', run: saveMarkdown},
     {label: 'Save CSV for Sheets, Jira, Trello', icon: 'arrange', run: saveCSV},
+    {label: sel.size ? 'PureRef board of the selection (.pur)' : 'PureRef board (.pur)', icon: 'image', run: exportPureRef},
     '-', {label: 'Save board file', kb: 'Ctrl S', run: () => saveBoardFile(false)},
     {label: 'Save board as…', kb: 'Ctrl Shift S', run: () => saveBoardFile(true)}]);
 }
@@ -3805,7 +4213,7 @@ function paintBoard(g, d, info, ids, imgs, tok, F, area) {
     if (it.type === 'image') {
       const img = imgs.get(it.id); if (!img) continue;
       g.save(); if (it.gray) g.filter = 'grayscale(1)';
-      if (it.flip) { g.translate(it.x + it.w, it.y); g.scale(-1, 1); g.drawImage(img, 0, 0, it.w, it.h); } else g.drawImage(img, it.x, it.y, it.w, it.h);
+      drawPicture(g, it, img);
       g.restore();
     } else if (it.type === 'video') {
       // the frame on screen (for the open board), or a dark panel with the play mark
@@ -4255,6 +4663,7 @@ window.addEventListener('keydown', e => {
   if (desk && accelFromEvent(e) === deskState.clickKey) { e.preventDefault(); toggleClickThrough(true); return; }
   if (ctrl && e.shiftKey && e.code === 'KeyB') { e.preventDefault(); toggleTopbar(); return; }
   if (isField(e.target)) { if (e.key === 'Escape' || (e.key === 'Enter' && e.target.id === 'boardName')) e.target.blur(); return; }
+  if (refsKey(e)) return;  // cropping, the colour picker
   const k = e.key;
   if (k === ' ') { e.preventDefault(); if (!spaceDown) { spaceDown = true; stage.classList.add('space'); } return; }
   if (ctrl) {
@@ -6899,7 +7308,8 @@ function pureRefLayout(scene) {
       crop.w = Math.min(img.w, Math.max(a.x, b.x)) - crop.x; crop.h = Math.min(img.h, Math.max(a.y, b.y)) - crop.y;
       const rotated = Math.abs(T.m12) > 1e-6 || Math.abs(T.m21) > 1e-6, flipY = T.m22 < 0, flipX = T.m11 < 0;
       const cropped = img.w && img.h && (crop.x > 0.5 || crop.y > 0.5 || crop.w < img.w - 0.5 || crop.h < img.h - 0.5);
-      out.push({k: 'image', it, img, T, box, crop, rotated, flipX, flipY, cropped, z: it.z,
+      const turn = img.w && img.h && img.mime !== 'image/bmp' ? pureRefTurn(tMul(it.imgT, T)) : null;  // quarter turns keep the picture as it is
+      out.push({k: 'image', it, img, T, box, crop, rotated, flipX, flipY, cropped, turn, z: it.z,
         rect: {x: Math.min(...xs), y: Math.min(...ys), w: Math.max(...xs) - Math.min(...xs), h: Math.max(...ys) - Math.min(...ys)}});
     } else if (it.k === 'note' && it.text.trim()) {
       const p = tMap(T, 0, 0), s = Math.sqrt(Math.abs(T.m11 * T.m22 - T.m12 * T.m21)) || 1;
@@ -6922,6 +7332,7 @@ function pureRefLayout(scene) {
 // a cropped, rotated or upside-down picture is redrawn as it looks in PureRef
 async function pureRefPixels(o) {
   const blob = new Blob([o.img.data], {type: o.img.mime});
+  if (o.turn) return blob;  // crop, turn and mirror go with the item instead (pureRefLook)
   if (!o.cropped && !o.rotated && !o.flipY && o.img.mime !== 'image/bmp') return blob;
   const bmp = await createImageBitmap(blob);
   const P = tMul(o.it.imgT, o.T), s = Math.sqrt(Math.abs(P.m11 * P.m22 - P.m12 * P.m21)) || 1;
@@ -6969,13 +7380,13 @@ async function importPureRef(f) {
     made.push(fr);
   }
   for (const o of placed.sort((p, q) => p.z - q.z)) {
-    if (o.k === 'note') { made.push({id: uid(), type: 'text', x: rd(ox + (o.x - bx) * k), y: rd(oy + (o.y - by) * k), w: 10, h: 10, text: txt(o.text, 4000), size: Math.max(8, Math.min(400, Math.round(18 * o.s * k))), color: okColor(o.color) ? o.color : BONE}); continue; }
+    if (o.k === 'note') { made.push(pureRefText(o, (x, y) => ({x: ox + (x - bx) * k, y: oy + (y - by) * k}), k)); continue; }
     try {
       const blob = await pureRefPixels(o);
       const ref = {};
       if (board.team) ref.src = await uploadImage(blob);
       else { const aid = uid(); assets[aid] = await readFile(blob); ref.asset = aid; }
-      made.push({id: uid(), type: 'image', ...at(o.rect), ...ref, name: txt(o.it.name, 200) || 'PureRef image', ...(o.flipX && !o.rotated && !o.flipY ? {flip: true} : {})});
+      made.push({id: uid(), type: 'image', ...at(o.rect), ...ref, name: txt(o.it.name, 200) || 'PureRef image', ...pureRefLook(o)});
     } catch (e) {
       failed++;
       if (board.team && e && e.message && /storage|space|full|quota/i.test(e.message)) { toast(e.message, 6000); break; }
@@ -6990,6 +7401,181 @@ async function importPureRef(f) {
   const imgs = made.filter(i => i.type === 'image').length, notes = made.filter(i => i.type === 'text').length, groups = made.filter(i => i.type === 'frame').length;
   const extra = [missing && `${missing} linked picture${missing === 1 ? '' : 's'} stayed behind`, drawings && `${drawings} drawing${drawings === 1 ? '' : 's'} skipped`, failed && `${failed} couldn't be read`].filter(Boolean);
   toast(`Imported ${imgs} picture${imgs === 1 ? '' : 's'}${notes ? `, ${notes} note${notes === 1 ? '' : 's'}` : ''}${groups ? ` and ${groups} group${groups === 1 ? '' : 's'}` : ''} from PureRef${extra.length ? ' (' + extra.join(', ') + ')' : ''}. Undo with Ctrl+Z.`, 6500);
+}
+// A picture PureRef shows turned by quarter turns (or not at all), maybe mirrored, comes in as it is, with its crop,
+// turn and mirror kept as the picture's own settings; other angles are redrawn (pureRefPixels).
+function pureRefTurn(P) {  // P: the picture's pixels to the scene
+  const s = Math.hypot(P.m11, P.m12) || 1, t = Math.hypot(P.m21, P.m22) || 1, a = [P.m11 / s, P.m12 / s, P.m21 / t, P.m22 / t];
+  for (const rot of [0, 90, 180, 270]) for (const flip of [false, true]) {
+    const c = [1, 0, -1, 0][rot / 90], n = [0, 1, 0, -1][rot / 90], f = flip ? -1 : 1;
+    if ([f * c, n, -f * n, c].every((v, i) => Math.abs(v - a[i]) < 1e-6)) return {rot, flip};  // turned, then mirrored, as the board draws it
+  }
+  return null;
+}
+// PureRef draws a note centred on its place. PureRef 1.x text at scale 1 reads like 12px text here, a PureRef 2 note like 18px.
+function pureRefText(o, place, k) {
+  const size = Math.max(8, Math.min(400, Math.round((o.it.legacyId !== undefined ? PUR_TEXT : 18) * o.s * k))), text = txt(o.text, 4000);
+  const {w, h} = textSize(text, size), c = place(o.x, o.y);
+  return {id: uid(), type: 'text', x: rd(c.x - w / 2), y: rd(c.y - h / 2), w: 10, h: 10, text, size, color: okColor(o.color) ? o.color : BONE};
+}
+function textSize(text, size) {  // about how big a text item will be on the board, before it's drawn
+  mctx.font = size >= 40 ? `800 ${size}px Unbounded, "Arial Black", system-ui, sans-serif` : `700 ${size}px Manrope, "Segoe UI", system-ui, sans-serif`;
+  const lines = String(text).split('\n');
+  return {w: Math.max(...lines.map(l => mctx.measureText(l).width)) + 8, h: lines.length * size * 1.15 + 4};
+}
+function pureRefLook(o) {
+  if (!o.turn) return o.flipX && !o.rotated && !o.flipY ? {flip: true} : {};
+  const out = {}, x = clamp(o.crop.x / o.img.w, 0, 1), y = clamp(o.crop.y / o.img.h, 0, 1);
+  const crop = o.cropped && cleanCrop({x, y, w: Math.min(o.crop.w / o.img.w, 1 - x), h: Math.min(o.crop.h / o.img.h, 1 - y)});
+  if (crop) out.crop = crop;
+  if (o.turn.rot) out.rot = o.turn.rot;
+  if (o.turn.flip) out.flip = true;
+  return out;
+}
+
+/* ---------- PureRef export ---------- */
+// The board's pictures and text as a PureRef 1.x scene, which PureRef 2 still opens: the pictures as PNG files, then
+// an item for each picture or text with its place, size, turn, mirror and crop, then which PNG each item shows. A
+// picture used more than once is stored once. Format notes: github.com/FyorDev/PureRef-format (MIT).
+const PUR_TEXT = 12;  // PureRef 2 draws 1.x text at scale 1 about as big as 12px text on the board (checked against its own renders)
+const utf16be = s => { const b = new Uint8Array(s.length * 2); for (let i = 0; i < s.length; i++) { const c = s.charCodeAt(i); b[i * 2] = c >> 8; b[i * 2 + 1] = c & 255; } return b; };
+function md5Hex(bytes) {  // PureRef checks the file with an MD5 of everything after its header
+  const K = Array.from({length: 64}, (_, i) => Math.floor(Math.abs(Math.sin(i + 1)) * 4294967296) | 0);
+  const S = [7, 12, 17, 22, 5, 9, 14, 20, 4, 11, 16, 23, 6, 10, 15, 21], M = new Int32Array(16);
+  let a0 = 0x67452301, b0 = 0xefcdab89 | 0, c0 = 0x98badcfe | 0, d0 = 0x10325476;
+  const block = (buf, o) => {
+    for (let i = 0; i < 16; i++) M[i] = buf[o + i * 4] | buf[o + i * 4 + 1] << 8 | buf[o + i * 4 + 2] << 16 | buf[o + i * 4 + 3] << 24;
+    let A = a0, B = b0, C = c0, D = d0;
+    for (let i = 0; i < 64; i++) {
+      let F, g;
+      if (i < 16) { F = (B & C) | (~B & D); g = i; }
+      else if (i < 32) { F = (D & B) | (~D & C); g = (5 * i + 1) & 15; }
+      else if (i < 48) { F = B ^ C ^ D; g = (3 * i + 5) & 15; }
+      else { F = C ^ (B | ~D); g = (7 * i) & 15; }
+      F = (F + A + K[i] + M[g]) | 0; A = D; D = C; C = B;
+      const s = S[(i >> 4) * 4 + (i & 3)];
+      B = (B + (F << s | F >>> (32 - s))) | 0;
+    }
+    a0 = (a0 + A) | 0; b0 = (b0 + B) | 0; c0 = (c0 + C) | 0; d0 = (d0 + D) | 0;
+  };
+  const n = bytes.length, whole = n - n % 64;
+  for (let o = 0; o < whole; o += 64) block(bytes, o);
+  const tail = new Uint8Array(n % 64 < 56 ? 64 : 128), td = new DataView(tail.buffer), bits = n * 8;
+  tail.set(bytes.subarray(whole)); tail[n - whole] = 0x80;
+  td.setUint32(tail.length - 8, bits % 4294967296, true); td.setUint32(tail.length - 4, Math.floor(bits / 4294967296), true);
+  for (let o = 0; o < tail.length; o += 64) block(tail, o);
+  return [a0, b0, c0, d0].map(v => [0, 8, 16, 24].map(s => ((v >>> s) & 255).toString(16).padStart(2, '0')).join('')).join('');
+}
+function purWriter() {  // a growing buffer of big-endian values
+  let buf = new Uint8Array(1 << 20), dv = new DataView(buf.buffer), n = 0;
+  const room = k => { if (n + k > buf.length) { const b = new Uint8Array(Math.max(buf.length * 2, n + k)); b.set(buf.subarray(0, n)); buf = b; dv = new DataView(buf.buffer); } };
+  const W = {
+    get at() { return n; },
+    raw(b) { room(b.length); buf.set(b, n); n += b.length; },
+    u8(v) { room(1); dv.setUint8(n, v); n += 1; },
+    u16(v) { room(2); dv.setUint16(n, v); n += 2; },
+    u32(v) { room(4); dv.setUint32(n, v >>> 0); n += 4; },
+    u64(v) { room(8); dv.setBigUint64(n, BigInt(v)); n += 8; },
+    i64(v) { room(8); dv.setBigInt64(n, BigInt(v)); n += 8; },
+    f64(v) { room(8); dv.setFloat64(n, v); n += 8; },
+    str(s) { const b = utf16be(s); W.u32(b.length); W.raw(b); },
+    setU64(at, v) { dv.setBigUint64(at, BigInt(v)); },
+    done: () => buf.subarray(0, n),
+  };
+  return W;
+}
+const isPng = b => !!b && b.length > 33 && b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4e && b[3] === 0x47 && b[12] === 0x49 && b[13] === 0x48 && b[14] === 0x44 && b[15] === 0x52;
+async function purPng(src) {  // a PNG stays as it is; anything else is drawn once and saved as PNG; null if it can't be read
+  let blob = null, png = null;
+  try { blob = src.startsWith('data:') ? dataUrlBlob(src) : await fetch(src, {mode: 'cors'}).then(r => (r.ok ? r.blob() : null)); } catch (e) { blob = null; }
+  if (blob && /png/i.test(blob.type)) png = new Uint8Array(await blob.arrayBuffer());
+  if (!isPng(png)) {
+    const url = blob ? URL.createObjectURL(blob) : src;
+    try {
+      const img = await loadImg(url, true), c = document.createElement('canvas');
+      c.width = img.naturalWidth; c.height = img.naturalHeight;
+      if (!c.width || !c.height) return null;
+      c.getContext('2d').drawImage(img, 0, 0);
+      const b = await new Promise(r => c.toBlob(r, 'image/png'));
+      png = b ? new Uint8Array(await b.arrayBuffer()) : null;
+    } catch (e) { png = null; } finally { if (blob) URL.revokeObjectURL(url); }
+  }
+  if (!isPng(png)) return null;
+  const d = new DataView(png.buffer, png.byteOffset, png.length);
+  return {png, w: d.getUint32(16), h: d.getUint32(20)};
+}
+const textBox = t => (t.w > 10 || t.h > 10 ? bboxOf(t) : {x: t.x, y: t.y, ...textSize(t.text, t.size)});  // measured, or estimated if never drawn
+const hexRgb = c => { let h = (okColor(c) ? c : BONE).slice(1); if (h.length <= 4) h = [...h].map(x => x + x).join(''); return [0, 2, 4].map(i => parseInt(h.slice(i, i + 2), 16)); };
+async function exportPureRef() {
+  if (editing) finishEdit();
+  if (cropping) applyCrop();
+  const take = o => !sel.size || sel.has(o.id);
+  const pics = doc.items.filter(o => o.type === 'image' && take(o) && o.w >= 1 && o.h >= 1 && (o.asset ? assets[o.asset] : o.src));
+  const notes = doc.items.filter(o => o.type === 'text' && take(o) && o.text.trim());
+  if (!pics.length && !notes.length) { toast(sel.size ? 'Select pictures or text to send them to PureRef.' : 'PureRef boards hold pictures and text, and this board has neither yet.', 4000); return; }
+  if (pics.length + notes.length > 65000) { toast('That is more than a PureRef board can hold. Select part of the board and export that.', 5000); return; }
+  toast('Making the PureRef board…', 60000);
+  const bySrc = new Map(), groups = [];
+  for (const it of pics) { const src = it.asset ? assets[it.asset] : it.src; if (!bySrc.has(src)) bySrc.set(src, []); bySrc.get(src).push(it); }
+  let failed = 0;
+  for (const [src, items] of bySrc) { const p = await purPng(src); if (p) groups.push({...p, items}); else failed += items.length; }
+  const placed = [...groups.flatMap(g => g.items), ...notes];
+  if (!placed.length) { toast("Couldn't read any of those pictures, so there was nothing to export.", 5000); return; }
+  const zOf = new Map(doc.items.map((o, i) => [o.id, i + 1])), ids = new Map(), b = unionBox(placed.map(o => (o.type === 'text' ? textBox(o) : bboxOf(o))));
+  const ox = b.x + b.w / 2, oy = b.y + b.h / 2;  // the scene is centred on PureRef's origin, where its view starts
+  placed.forEach((o, i) => ids.set(o.id, i));  // pictures first, grouped by PNG, then text
+  const W = purWriter(), COS = [1, 0, -1, 0], SIN = [0, 1, 0, -1];
+  W.raw(new Uint8Array(224));  // the header, filled in at the end
+  for (const g of groups) {
+    g.start = W.at; W.raw(g.png); g.end = W.at;
+    for (let i = 1; i < g.items.length; i++) W.u32(ids.get(g.items[0].id));  // more uses of the same picture point at the first
+  }
+  for (const g of groups) for (const it of g.items) {
+    // the picture's pixels with the visible part centred on the item's origin, then turned, mirrored, scaled and placed
+    const c = it.crop || FULL, cw = c.w * g.w, ch = c.h * g.h, q = (it.rot || 0) / 90, f = it.flip ? -1 : 1;
+    const sx = it.w / (sideways(it) ? ch : cw), sy = it.h / (sideways(it) ? cw : ch), name = txt(it.name, 200).trim() || 'Picture';
+    const end = W.at; W.u64(0);
+    W.u32(34); W.raw(utf16be('GraphicsImageItem'));
+    W.str(name); W.str(name);  // where it came from, and its name
+    W.f64(1);
+    for (const v of [sx * f * COS[q], sy * SIN[q], 0, -sx * f * SIN[q], sy * COS[q], 0]) W.f64(v);
+    W.f64(it.x + it.w / 2 - ox); W.f64(it.y + it.h / 2 - oy); W.f64(1);
+    W.u32(ids.get(it.id)); W.f64(zOf.get(it.id));
+    for (const v of [1, 0, 0, 0, 1, 0]) W.f64(v);
+    W.f64(-(c.x * g.w + cw / 2)); W.f64(-(c.y * g.h + ch / 2)); W.f64(1);
+    const pts = [[-cw / 2, -ch / 2], [cw / 2, -ch / 2], [cw / 2, ch / 2], [-cw / 2, ch / 2], [-cw / 2, -ch / 2]];  // the crop outline
+    W.u32(pts.length); pts.forEach(([x, y], i) => { W.u32(i ? 1 : 0); W.f64(x); W.f64(y); });
+    W.f64(0); W.u32(1); W.u8(0); W.i64(-1);
+    W.u32(0);  // notes attached to it
+    W.setU64(end, W.at);
+  }
+  for (const t of notes) {
+    const end = W.at, s = t.size / PUR_TEXT, [r, g, bl] = hexRgb(t.color), tb = textBox(t);
+    W.u64(0);
+    W.u32(32); W.raw(utf16be('GraphicsTextItem'));
+    W.str(t.text);
+    for (const v of [s, 0, 0, 0, s, 0]) W.f64(v);
+    W.f64(tb.x + tb.w / 2 - ox); W.f64(tb.y + tb.h / 2 - oy); W.f64(1);  // PureRef places text by its middle
+    W.u32(ids.get(t.id)); W.f64(zOf.get(t.id));
+    W.u8(1); W.u16(65535); W.u16(r * 257); W.u16(g * 257); W.u16(bl * 257);  // text colour
+    W.u16(0); W.u8(1); W.u16(5000); W.u16(0); W.u16(0); W.u16(0);  // a faint dark background
+    W.u16(0); W.u32(0);
+    W.setU64(end, W.at);
+  }
+  W.str(board.name || 'Venom Board');  // the folder PureRef would say it was saved in
+  const refsAt = W.at;
+  for (const g of groups) g.items.forEach((it, i) => { W.u32(ids.get(it.id)); W.u64(i ? g.end + (i - 1) * 4 : g.start); W.u64(i ? g.end + i * 4 : g.end); });
+  const out = W.done(), d = new DataView(out.buffer, out.byteOffset, out.length), m = Math.max(100, Math.max(b.w, b.h) * 0.06);
+  d.setUint32(0, 8); out.set(utf16be('1.10'), 4);  // the format version PureRef 1.10 and later write
+  d.setUint16(12, placed.length); d.setUint16(14, placed.length - notes.length);
+  d.setBigUint64(16, BigInt(refsAt)); d.setUint32(24, 12); d.setUint32(40, 64); d.setUint32(108, placed.length);
+  [-b.w / 2 - m, -b.h / 2 - m, b.w + m * 2, b.h + m * 2].forEach((v, i) => d.setFloat64(112 + i * 8, v));  // the canvas: x, y, width, height
+  const zoom = clamp(Math.min(1500 / Math.max(b.w, 1), 900 / Math.max(b.h, 1)), 0.02, 1);
+  d.setFloat64(144, zoom); d.setFloat64(176, zoom); d.setFloat64(208, 1);
+  out.set(utf16be(md5Hex(out.subarray(108))), 44);
+  const blob = new Blob([out], {type: 'application/octet-stream'});
+  await saveFile(`${slug(board.name)}${sel.size ? '-selection' : ''}.pur`, blob, [{description: 'PureRef board', accept: {'application/octet-stream': ['.pur']}}]);
+  if (failed) toast(`${failed} picture${failed === 1 ? '' : 's'} couldn't be read, so ${failed === 1 ? 'it was' : 'they were'} left out of the PureRef board.`, 5000);
 }
 
 /* ---------- videos ---------- */
