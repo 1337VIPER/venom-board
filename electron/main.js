@@ -398,6 +398,11 @@ if (!app.requestSingleInstanceLock()) {
     win.focus();
   });
   app.whenReady().then(() => {
+    // the page only ever copies text (and a video player may go full screen): cameras, microphones, location,
+    // notifications and every other permission are refused without asking
+    const OK_PERMS = new Set(['clipboard-sanitized-write', 'fullscreen', 'mediaKeySystem']);
+    session.defaultSession.setPermissionRequestHandler((wc, perm, cb) => cb(OK_PERMS.has(perm)));
+    session.defaultSession.setPermissionCheckHandler((wc, perm) => OK_PERMS.has(perm));
     // YouTube and Vimeo players only start inside a page that says which site it's on, and an app loaded from
     // disk has no address to send; they're told it's Venom Board
     session.defaultSession.webRequest.onBeforeSendHeaders({ urls: ['https://www.youtube-nocookie.com/*', 'https://player.vimeo.com/*'] }, (d, done) => {
