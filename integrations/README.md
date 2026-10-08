@@ -41,7 +41,7 @@ If your team runs its own Venom Board server, put its address in the **Server** 
 
 ## Godot 4
 
-Godot 4.2 or later.
+Godot 4.2 or later. **Preview:** this panel is new and hasn't been tried in many Godot setups yet, so please report anything that doesn't work.
 
 1. Copy the `godot/addons/venom_board` folder into your project's `addons` folder, so you have
    `res://addons/venom_board/plugin.cfg`.
@@ -54,7 +54,7 @@ computer and are shared by all your Godot projects.
 
 ## Unity
 
-Unity 2021.3 LTS or later, including Unity 6.
+Unity 2021.3 LTS or later, including Unity 6. **Preview:** this panel is new and hasn't been tried in many Unity setups yet, so please report anything that doesn't work.
 
 1. Open **Window > Package Manager**, choose **+ > Add package from git URL...** and enter
    `https://github.com/1337VIPER/venom-board.git?path=/integrations/unity`.

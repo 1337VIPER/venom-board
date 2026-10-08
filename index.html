@@ -280,6 +280,10 @@ html.board-locked .tool:not([data-tool=select]):not([data-tool=hand]){opacity:.2
 /* ---------- context strip ---------- */
 #ctx{position:absolute;left:calc(50% + 36px);bottom:16px;transform:translateX(-50%);display:flex;align-items:center;gap:7px;flex-wrap:wrap;justify-content:center;width:max-content;max-width:calc(100% - 104px);padding:7px 10px;background:color-mix(in srgb,var(--hide) 94%,transparent);backdrop-filter:blur(10px);border:1px solid var(--line);border-radius:16px 16px 16px 4px;box-shadow:inset 0 1px 0 var(--gloss),0 18px 40px -14px var(--shadow);z-index:10}
 #wrap.pl-open #ctx{left:calc(50% - 144px);max-width:calc(100% - 464px)}
+/* beside an open side panel the strip is narrower, so it packs a little tighter to stay on one row */
+#wrap.pl-open #ctx{gap:4px;padding:6px 8px}
+#wrap.pl-open #ctx .cb{width:27px}
+#wrap.pl-open #ctx .dd{padding:0 5px 0 8px;gap:4px}
 .cl{font:800 10px var(--font-display);letter-spacing:.14em;text-transform:uppercase;color:var(--bone-dim);padding:0 4px;white-space:nowrap}
 .sws{display:flex;gap:5px;align-items:center;flex-wrap:wrap}
 .sw{position:relative;width:22px;height:22px;border-radius:50%;border:2px solid var(--hide);background:var(--c);box-shadow:0 0 0 1px var(--line-2);cursor:pointer;padding:0;flex:none}
@@ -4233,7 +4237,7 @@ function tidyPhase(f) {
 }
 function tidyBoard() {
   if (blocked()) return;
-  const cards = doc.items.filter(o => o.type === 'node' && !o.locked);
+  const cards = doc.items.filter(o => o.type === 'node' && !o.locked && !tucked.by.has(o.id));  // cards folded into a collapsed phase stay put
   if (cards.length < 2) { toast('Add two or more cards to tidy'); return; }
   const n = tidyLayout(cards, true); refresh(); commit();
   toast(n ? `Tidied ${n} card${n === 1 ? '' : 's'}` : 'Already tidy');
@@ -4512,6 +4516,7 @@ function moreEntries() {
     {label: 'Send to back', kb: 'Ctrl [', icon: 'back', run: () => zorder(false)},
     ...(lockable ? [{label: list.every(o => o.locked) ? 'Unlock' : 'Lock in place', kb: 'Ctrl Shift L', icon: 'lock', run: toggleLock}] : []),
     {label: 'Zoom to selection', kb: 'Shift 2', icon: 'orig', run: () => fitTo(selObjs())},
+    ...(list.some(o => o.type === 'node') && !viewOnly() ? [{label: 'Tags…', icon: 'tag', run: () => tagMenu(list.filter(o => o.type === 'node').map(n => n.id), $('#ctx [data-act="more"]'))}] : []),
     {label: 'Export selection as PNG', icon: 'image', run: exportPNG},
   ];
 }
@@ -5060,7 +5065,8 @@ function trackCtx(list, one) {
     h += cbtn('timer', on ? 'Stop the timer and add the time' : 'Start timer', 'timer', false, on);
     if (one.spent) h += `<button class="chip tk-spent${overEst(one) ? ' over' : ''}" data-act="spent" title="Tracked time${one.est ? ' against the estimate' : ''}. Click to change it.">${esc(fmtSpent(one.spent) + (one.est ? ' / ' + one.est : ''))}</button>`;
   }
-  return h + cbtn('tags', 'Tags', 'tag');
+  // with a side panel open the strip is narrow, so Tags moves into the More menu
+  return h + ($('#wrap').classList.contains('pl-open') ? '' : cbtn('tags', 'Tags', 'tag'));
 }
 function trackEntries(hit) {
   if (viewOnly()) return [];
@@ -6024,7 +6030,11 @@ window.addEventListener('keydown', e => {
   if (!$('#jamModal').hidden) { if (e.key === 'Escape') $('#jamModal').hidden = true; return; }
   if (!$('#sprintModal').hidden) { if (e.key === 'Escape') $('#sprintModal').hidden = true; return; }
   if (!$('#timeline').hidden && timelineKeys(e)) return;
-  if (!$('#timeline').hidden) { if (e.key === 'Escape' || (e.shiftKey && e.code === 'KeyG')) { e.preventDefault(); closeTimeline(); } return; }
+  if (!$('#timeline').hidden) {
+    if (e.key === 'Escape' || (e.shiftKey && e.code === 'KeyG')) { e.preventDefault(); closeTimeline(); }
+    else if (e.shiftKey && !e.ctrlKey && !e.metaKey && (e.code === 'KeyK' || e.code === 'KeyC')) { e.preventDefault(); closeTimeline(); openViews(e.code === 'KeyK' ? 'kanban' : 'calendar'); }  // straight to the other views
+    return;
+  }
   if (!$('#views').hidden) { viewsKeys(e); return; }
   if (!$('#searchAll').hidden) return;
   if (ctrl && e.shiftKey && e.code === 'KeyF') { e.preventDefault(); openSearchAll(); return; }
@@ -7495,11 +7505,16 @@ function renderFeedbackPins() {
     for (const [it, list] of byPic) {
       // too small on screen to point at anything: hidden until you zoom in
       if (it.w * cam.z < 64 || it.h * cam.z < 44) continue;
+      if (tucked.by.has(it.id) || (cropping && cropping.id === it.id)) continue;  // folded into a collapsed phase, or being cropped
       const tl = toScreen(it.x, it.y);
       if (tl.x > W + 40 || tl.y > H + 40 || tl.x + it.w * cam.z < -40 || tl.y + it.h * cam.z < -40) continue;
-      const at = p => toScreen(it.x + (it.flip ? 1 - p.x : p.x) * it.w, it.y + p.y * it.h), dim = !!dimSet && !dimSet.has(it.id);
+      // a pin is a point on the whole picture: shown where that point is after cropping, turning and flipping
+      const cr = it.crop || FULL, shows = q => q.x >= cr.x && q.x <= cr.x + cr.w && q.y >= cr.y && q.y <= cr.y + cr.h;
+      const at = q => { const [x, y] = picToView(it, (q.x - cr.x) / cr.w, (q.y - cr.y) / cr.h); return toScreen(it.x + x * it.w, it.y + y * it.h); };
+      const dim = !!dimSet && !dimSet.has(it.id);
       const pinned = list.filter(c => c.pin).sort((a, b) => (a.at || 0) - (b.at || 0));
       pinned.forEach((c, i) => {
+        if (!shows(c.pin)) return;  // its spot is cropped away (the pin keeps its number)
         const s = at(c.pin), on = cp.open && cp.card === it.id && (cp.focus === c.id || fbPins.hover === c.id);
         const first = c.text.length > 80 ? c.text.slice(0, 79) + '…' : c.text;
         want.set(c.id, {x: s.x, y: s.y, n: String(i + 1), card: it.id, pin: c.id, cls: 'fbp' + (c.resolved ? ' resolved' : '') + (on ? ' on' : '') + (dim ? ' dim' : ''),
@@ -7553,9 +7568,10 @@ function stopFeedbackPin() { fbPins.mode = null; stage.classList.remove('pinning
 function dropFeedbackPin(img, w) {
   if (!board.team || !team.user || team.watch) return;
   if (team.status !== 'live') { toast('Reconnecting… try again in a moment.'); return; }
-  let x = (w.x - img.x) / Math.max(img.w, 1), y = (w.y - img.y) / Math.max(img.h, 1);
-  if (img.flip) x = 1 - x;
-  const f = v => Math.round(clamp(v, 0, 1) * 10000) / 10000;
+  // the spot on the whole picture, whatever crop, turn or flip it shows with now
+  const cr = img.crop || FULL, [u, v] = viewToPic(img, clamp((w.x - img.x) / Math.max(img.w, 1), 0, 1), clamp((w.y - img.y) / Math.max(img.h, 1), 0, 1));
+  const x = cr.x + u * cr.w, y = cr.y + v * cr.h;
+  const f = q => Math.round(clamp(q, 0, 1) * 10000) / 10000;
   if (sel.size !== 1 || !sel.has(img.id)) { sel.clear(); sel.add(img.id); refresh(); }
   openComments(img.id);
   cp.draftPin = {card: img.id, x: f(x), y: f(y)}; cp.replyTo = null; cp.focus = null;

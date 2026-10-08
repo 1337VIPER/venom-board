@@ -59,19 +59,24 @@ Solo boards need no account, no subscription and no telemetry. They work offline
 - **Videos and GIFs** as references: GIFs animate on the board, video files play on hover or double-click (loop, autoplay, sound), and YouTube or Vimeo links become players that only load when you click them
 - **Import PureRef boards**: drop a `.pur` file (PureRef 1.x or 2.x) on the board or use Import. Pictures keep their places, sizes, rotation, flips and crops, notes become text and groups become frames, placed next to what's already there
 - **Replace** a picture or video with another file or link (right-click → Replace, or ⇄ in its toolbar). It keeps its place, width, connectors and settings, takes the new shape, and a picture can become a YouTube, Vimeo or video file and back
-- Export the whole board or just the selection as a 2× PNG
+- **Crop and rotate** pictures without re-encoding them, pick any colour off a picture with the **colour picker** (`K`), and **extract a palette** of its main colours as swatches with hex codes
+- Export the whole board or just the selection as a 2× PNG, or as a **PureRef board** (`.pur`) with crops, turns and flips intact
 - **Timelapse**: turn a board's history into a video of it coming together (landscape, square or vertical, saved as MP4 or WebM), ready for #screenshotsaturday, TikTok or Shorts. Team projects use their version history; boards on your computer keep a snapshot every 20 minutes of work
 
 ### Production planning
 - Four card types: **Task**, **Milestone**, **Bug** (crash / major / minor / polish) and **Idea note**
 - Status, **discipline** (Code, Art, Design, Level, Audio, UI/UX, VFX, Narrative, QA, Tech/build, Marketing), **MoSCoW priority** for scope cuts, **estimates** (`4h`, `2d`, `1w`) and **due dates** that turn red when overdue
 - Checklists inside notes: any line starting with `[ ]` becomes a clickable checkbox, with progress on the card
-- **Tendril connectors**: curved, straight, elbow or **circuit** (straight runs with 45° bends, like Electric Nodes in Unreal), with arrowheads, dashes, labels and an animated flow. Right-click a wire to add **reroute points** and drag them to route your noodles tidily (they snap into line with their neighbours); double-click one to remove it. Right-click the board → *Style every connector* switches every wire at once
+- **Tendril connectors**: curved, straight, elbow or **circuit** (straight runs with 45° bends, like Electric Nodes in Unreal), with arrowheads, dashes, labels and an animated flow. Right-click a wire to add **reroute points** and drag them to route your noodles tidily (they snap into line with their neighbours); double-click one to remove it. Right-click the board → *Style every connector* switches every wire at once. Wires that share a side or a corridor **spread apart** so none hides another, and **card pins** let you drag a connection from either edge of a card, Blueprint-style
+- **Tidy layout**: lay cards out left to right by what they wait on, with fewer crossings, for the selection, one phase or the whole board
 - **Place next**: drag a connector out of a card into empty space and choose what comes next, Blueprint-style. `Tab` adds the next connected task instantly
 - **Dependency awareness**: cards show *waits on N* while anything feeding into them is unfinished, the *Ready to start* filter lists what you can pick up today, and **Trace** highlights a card's whole chain of dependencies
-- **Phase frames** carry everything inside them when moved and show finished tasks, progress and remaining estimate in their header
+- **Phase frames** carry everything inside them when moved and show finished tasks, progress and remaining estimate in their header. **Collapse** a phase to its title bar to hide what's inside, or make it a **sprint** with dates and capacity per teammate, with progress, capacity and velocity in the Planner
 - **Planner panel** (`Ctrl+F`): percent done, ready count, days of work left, open bugs, overdue items, milestone countdowns, a **burndown chart** to the next milestone, search and filters (including *Mine*) that dim the rest of the board
-- **Timeline** (`Shift+G`): every task scheduled in working days from its estimate and what it waits on, with the **critical path** that decides your finish date, due dates you'll miss, and finished work
+- **Timeline** (`Shift+G`): every task scheduled in working days from its estimate and what it waits on, with the **critical path** that decides your finish date, due dates you'll miss, and finished work. Drag a bar's end to change its estimate, or a milestone to move its date
+- **Kanban** (`Shift+K`) and **Calendar** (`Shift+C`) views of the same cards: drag between status columns to change status, or between days to change due dates
+- **Time tracking**: start a timer on a card and see tracked time against the estimate on the card and in the Planner
+- **Tags and saved filters**: tag cards, filter the Planner by tag, and save sets of filters to pick again
 - **Import** from **Trello** (JSON export), **Jira** (CSV export) or any spreadsheet saved as CSV: lists, sprints or statuses become phases, with statuses, priorities, estimates, due dates and checklists carried over
 - **Search everything** (`Ctrl+Shift+F`): every board on this computer and every team project you're in, at once
 - **12 game-dev templates**: game roadmap, feature, level and character pipelines, vertical slice, weekly sprint board, bug triage, playtest loop, 48-hour game jam, Steam launch, a design-doc outline and an art moodboard. Browse them at [venomboard.com/templates](https://venomboard.com/templates) and open one in a click
@@ -81,20 +86,24 @@ Solo boards need no account, no subscription and no telemetry. They work offline
 
 ### Teams and live collaboration
 - **Free accounts** at [venomboard.com](https://venomboard.com). Sign in from the **Team** panel in the desktop app or the web app
-- **Teams** with a leader, team admins, editors and viewers. Invite people by username or email; they accept from the app or the website
+- **Teams** with a leader, team admins, editors and viewers. Invite people by username or email; they accept from the app or the website. Admins can give someone a different role in one project
 - **Shared projects**: each team has a project list. **Share this board** turns any board into a team project
 - **Live editing**: every card, connector, frame, image, ink stroke and text appears for everyone as it happens, including drags, resizes and typing in progress
 - **Always up to date**: the Team panel shows new, renamed and deleted projects, answered invites and people joining, leaving or changing role the moment it happens, and notifications arrive straight away, even between projects. An invite that arrives while you work says so
 - **Presence**: teammates' avatars in the top bar, their cursors and selections on the canvas, and *is typing…* labels
 - **Assign cards** to teammates: their avatars on the card, *Mine* in the Planner, and a notification for whoever you assign
-- **Comments and @mentions** on every card, live, with suggestions as you type. Viewers can comment too, so reviewers and playtesters can leave feedback
+- **Comments and @mentions** on every card, live, with suggestions as you type, **replies**, **reactions** and threads you can **resolve**. Drop numbered **feedback pins** on a spot of a picture for art reviews. Viewers can comment too, so reviewers and playtesters can leave feedback
 - **Notifications**: the bell shows mentions and assignments and opens the card for you; mentions and a morning list of your tasks due soon can come by email (each can be turned off)
 - **Activity feed**: who added, finished, deleted or commented on what, gathered into readable lines
 - **Follow** a teammate's view by clicking their avatar, or **present** (editors and up) so everyone in the project follows you
 - **Version history**: the board is kept before each burst of editing, plus versions you name; restore any of them for everyone, or open one as a copy
 - **View-only links**: anyone with the link can watch a board live without an account, without seeing who's there or changing anything. Posted on Discord, Reddit or X, a link shows a picture of the board
 - **Public roadmaps**: a page your players can follow, with your phases, what's planned, in progress and done, milestone dates, votes on what they want most, an RSS feed and an embed for your own site. Pictures, comments, people and estimates are never shown, and any card can be kept off it
-- **Discord**: post finished tasks, reached milestones, comments, restores and new members to a channel
+- **Discord** and **Slack**: post finished tasks, reached milestones, comments, restores and new members to a channel
+- **GitHub and GitLab**: mention a card's reference (`VB-…`) in a commit, pull request or merge request and it comments on the card; "fixes VB-…" finishes it
+- **Playtest feedback form** and **in-game bug reporter**: playtesters and your game send bugs and ideas straight onto the board as cards, screenshots included. Code for Godot, Unity, Unreal and curl is in [`integrations/bug-reporter`](integrations/bug-reporter)
+- **Calendar feed**: your due dates and milestones in Google Calendar, Outlook or Apple Calendar
+- **Engine panels**: your tasks inside Unreal Engine, Unity and Godot. See [`integrations`](integrations)
 - **Connect tools (MCP)**: assistants and planning tools that support the Model Context Protocol can work on your team boards the way you do. They plan (projects from templates, phases, cards with estimates, priorities, disciplines and assignees, dependencies, the schedule and critical path, comments) and lay out the board (text, frames, pictures and GIFs from the web or your computer, YouTube and Vimeo videos, replacing pictures and videos, marker and highlighter ink, connectors, a game jam clock, moving, aligning, duplicating and stacking), and they can save and restore versions. They act as you, with your role in each team, and what they change shows up live for everyone and stays in version history. Make an access token at [venomboard.com/account](https://venomboard.com/account#mcp) (Settings → Account → Connect tools has a link); changing your password or signing out everywhere revokes every token
 - **Viewers** watch live without being able to change anything
 - **Account settings** (`Ctrl+,`): change your display name, your cursor colour and your password, turn on **two-step sign-in** with an authenticator app (with recovery codes), see where you're signed in and sign out everywhere else, or delete your account
@@ -138,6 +147,7 @@ Solo boards need no account, no subscription and no telemetry. They work offline
 | `F` | Phase frame | `Ctrl+Shift+L` | Lock selected items |
 | `I` | Insert image or video | `Ctrl+,` | Settings |
 | `Shift+G` | Timeline | `Ctrl+Shift+F` | Search every board and project |
+| `Shift+K` / `Shift+C` | Kanban / Calendar | `K` | Colour picker |
 
 | Editing | | Window (desktop) | |
 |---|---|---|---|

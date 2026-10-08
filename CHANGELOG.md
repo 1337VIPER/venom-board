@@ -2,6 +2,40 @@
 
 All notable changes to Venom Board are listed here. The project follows [Semantic Versioning](https://semver.org).
 
+## [Unreleased]
+
+### Planning
+- **Kanban view** (`Shift+K`): the same cards in To do, In progress, Blocked and Done columns, with filters for type, phase, discipline and people (including *Mine*). Drag a card to another column to change its status; click one to jump to it on the board
+- **Calendar view** (`Shift+C`): due dates and milestones on a month grid, overdue work in red. Drag a card to another day to change its due date, or from the *No due date* list to give it one
+- **Timeline you can drag**: drag the end of a task's bar to change its estimate, or a milestone to move its date, and watch the schedule and critical path update as you go
+- **Time tracking**: *Start timer* on a card, and a chip in the top bar counts until you stop it. Cards show tracked time against the estimate (amber when over), and the Planner adds it all up. The running timer stays on your computer; only the total is shared
+- **Sprints**: right-click a phase → *Make this a sprint…* with dates and capacity per teammate. The phase shows the days left, and the Planner shows progress, capacity against what's assigned to each person, and your velocity over past sprints
+- **Tags and saved filters**: up to 8 tags per card, shown on the card and filterable in the Planner (click a tag to filter by it). Save a set of filters under a name and pick it again later
+- **Spread wires**: connectors that leave the same side of a card fan out, wires sharing a corridor get their own lanes, and straight wires between the same two cards sit side by side, so nothing hides behind anything else
+- **Collapse a phase**: fold a phase down to its title bar with a summary like "5 cards · 2 done". What's inside is hidden, wires attach to the bar, and moving it carries everything
+- **Tidy layout**: lay cards out left to right by what they wait on, with fewer crossings and even spacing: for the selection, one phase or the whole board, in one undo step
+- **Card pins**: drag the dot on a card's right edge to connect what comes next, or the one on its left to connect what it waits on, Blueprint-style
+
+### Reference board
+- **Crop and rotate pictures**: *Crop* shows the whole picture with a frame to drag (Enter applies, Esc cancels, *Reset crop* undoes it), and *Rotate left/right* turns it in quarter turns. Nothing is re-encoded, and exports, timelapses, *Original size* and *Replace* all follow along
+- **Colour picker** (`K`): click any pixel of any picture to copy its colour and use it for ink, text and cards
+- **Extract palette**: the main colours of a picture as a swatch strip with hex codes, placed right under it
+- **Export to PureRef**: *Export → PureRef board (.pur)* saves pictures (with their crops, turns and flips) and text for PureRef. PureRef imports now keep crops and quarter turns as they are, and notes land where PureRef draws them
+
+### Teams
+- **Comment threads**: reply to a comment (the thread's author is notified), react with 👍 ❤️ 🎉 😂 👀 ✅ (your own reactions only, and they never notify anyone), and resolve a thread when it's handled; resolved threads fold away. The thread's author or a team admin can resolve or reopen it
+- **Feedback pins on pictures**: drop a numbered pin on a spot of a picture to start a thread there. Pins follow the picture as it moves, resizes, flips, crops or turns, and fade once resolved
+- **GitHub and GitLab**: every card has a reference like `VB-7K2QX9MD` (right-click → *Copy reference*). Connect a repository from the Team panel, and commits, pull requests and merge requests that mention a card comment on it with a link; "fixes VB-…" on the default branch, or a merged request, finishes the card. Cards can list linked pull requests and issues too
+- **Slack**: post finished tasks, reached milestones, comments and more to a Slack channel, the same way as Discord
+- **Roles in one project**: team admins can make someone view-only in one project, or let a viewer edit one, from that project's *People* control. It takes effect straight away
+- **Playtest feedback form**: a public link for a project where playtesters send bugs and ideas, with a screenshot if they like. Each one lands on the board as a card in a *Playtest inbox* phase, live. Admins can pause it, change the link or turn it off
+- **In-game bug reporter**: a report key per project lets your game send bug reports straight to the board, with severity, version, platform, the end of the log and a screenshot. A repeat of the same bug adds a comment instead of a new card. Ready-made code for Godot, Unity, Unreal and curl is in [`integrations/bug-reporter`](integrations/bug-reporter)
+- **Calendar feed**: a private address for Google Calendar, Outlook or Apple Calendar with your assigned cards' due dates and your projects' milestones. Turn it on at venomboard.com/account (Settings → Account links there); changing your password or signing out everywhere turns it off
+
+### Tools and engines
+- **Venom Board in your game engine**: editor panels for Unreal Engine 5, Unity and Godot 4 list the cards assigned to you across your team projects, with status, due dates and disciplines, and let you start, finish or open them. The Unity and Godot panels are previews. Install steps are in [`integrations`](integrations)
+- **MCP**: new `my_tasks` and `set_card_status` tools, and tools now see and set tags, tracked time, linked pull requests and card references, sprints and collapsed phases, crops and turns, comment replies and feedback pins, and can resolve threads
+
 ## [1.4.2] - 2026-10-08
 
 ### Planning
