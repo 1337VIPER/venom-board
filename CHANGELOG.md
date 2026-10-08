@@ -2,7 +2,7 @@
 
 All notable changes to Venom Board are listed here. The project follows [Semantic Versioning](https://semver.org).
 
-## [Unreleased]
+## [1.5.0] - 2026-10-08
 
 ### Planning
 - **Kanban view** (`Shift+K`): the same cards in To do, In progress, Blocked and Done columns, with filters for type, phase, discipline and people (including *Mine*). Drag a card to another column to change its status; click one to jump to it on the board
