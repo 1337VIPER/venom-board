@@ -2,6 +2,21 @@
 
 All notable changes to Venom Board are listed here. The project follows [Semantic Versioning](https://semver.org).
 
+## [1.5.1] - 2026-10-08
+
+### Teams
+- **One session per account on a board**: a team board can be open in one session of an account at a time, so one account signed in on two computers (or shared) can't work on the same board from both. Opening it somewhere else says where it's open and offers *Use it here*, which moves the board to this window and sends the other one back to its own boards. Tabs of one signed-in browser count as one session, and other teammates are never affected
+
+### Security
+- On venomboard.com the web app signs in with the website's secure cookie, and copies of the app on other sites keep your sign-in only while they're open
+- A strict content security policy for the app, and the desktop app refuses permissions it never uses (camera, microphone, location and the rest)
+- Pasted pictures only come from web or data addresses
+- CSV export marks cells that start with `=`, `+`, `-` or `@` so spreadsheets don't read them as formulas
+- Making new recovery codes for two-step sign-in asks for a current code from your authenticator app
+
+### Fixed
+- The toolbar under a selected card fits on one row on laptop-sized windows
+
 ## [1.5.0] - 2026-10-08
 
 ### Planning
