@@ -121,6 +121,10 @@ Solo boards need no account, no subscription and no telemetry. They work offline
 
 | | |
 |---|---|
+| ![A roadmap with circuit wires, a sprint, a collapsed phase, tags and tracked time](docs/screenshots/new-board.png) | ![The Kanban view](docs/screenshots/kanban.png) |
+| **Sprints and tidy wiring** · a phase as a sprint, a finished phase folded away, circuit wires, tags and tracked time | **Kanban** · the same cards by status; drag them along. Calendar shows them by due date |
+| ![Feedback pins on a picture with a comment thread](docs/screenshots/feedback-pins.png) | ![The Planner with a sprint's capacity and tags](docs/screenshots/sprint-planner.png) |
+| **Feedback pins** · comments pinned to a spot on a picture, with replies and resolving | **Sprint planning** · work left, capacity per person, velocity and tag filters |
 | ![Comments and mentions on a card](docs/screenshots/comments.png) | ![Planner panel with a burndown](docs/screenshots/planner.png) |
 | **Comments and @mentions** · talk right on the card; teammates' cursors and selections show live | **Planner** · progress, a burndown to the next milestone, and filters that dim the rest of the board |
 | ![Timeline with the critical path](docs/screenshots/timeline.png) | ![A public roadmap page](docs/screenshots/roadmap.png) |
