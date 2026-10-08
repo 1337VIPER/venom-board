@@ -284,6 +284,8 @@ html.board-locked .tool:not([data-tool=select]):not([data-tool=hand]){opacity:.2
 #wrap.pl-open #ctx{gap:4px;padding:6px 8px}
 #wrap.pl-open #ctx .cb{width:27px}
 #wrap.pl-open #ctx .dd{padding:0 5px 0 8px;gap:4px}
+/* and on laptop-sized windows, where a card's toolbar would otherwise wrap */
+@media (max-width:1440px){#ctx{gap:4px;padding:6px 8px}#ctx .cb{width:27px}#ctx .dd{padding:0 5px 0 8px;gap:4px}}
 .cl{font:800 10px var(--font-display);letter-spacing:.14em;text-transform:uppercase;color:var(--bone-dim);padding:0 4px;white-space:nowrap}
 .sws{display:flex;gap:5px;align-items:center;flex-wrap:wrap}
 .sw{position:relative;width:22px;height:22px;border-radius:50%;border:2px solid var(--hide);background:var(--c);box-shadow:0 0 0 1px var(--line-2);cursor:pointer;padding:0;flex:none}
