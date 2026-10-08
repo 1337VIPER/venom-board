@@ -1,0 +1,29 @@
+{
+	"FileVersion": 3,
+	"Version": 1,
+	"VersionName": "1.0.0",
+	"FriendlyName": "Venom Board",
+	"Description": "Your Venom Board tasks in a dock: the unfinished cards assigned to you across your team projects, with status, due dates and disciplines. Start or finish a card without leaving the editor. Open it from Tools > Venom Board.",
+	"Category": "Editor",
+	"CreatedBy": "1337VIPER",
+	"CreatedByURL": "https://venomboard.com",
+	"DocsURL": "https://github.com/1337VIPER/venom-board/tree/main/integrations#unreal-engine",
+	"MarketplaceURL": "",
+	"SupportURL": "https://github.com/1337VIPER/venom-board/issues",
+	"CanContainContent": false,
+	"IsBetaVersion": false,
+	"IsExperimentalVersion": false,
+	"Installed": false,
+	"Modules": [
+		{
+			"Name": "VenomBoard",
+			"Type": "Editor",
+			"LoadingPhase": "Default",
+			"PlatformAllowList": [
+				"Win64",
+				"Mac",
+				"Linux"
+			]
+		}
+	]
+}

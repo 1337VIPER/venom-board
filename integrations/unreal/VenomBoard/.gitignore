@@ -1,0 +1,3 @@
+# build output when the plugin is built in place
+Binaries/
+Intermediate/

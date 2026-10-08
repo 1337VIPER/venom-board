@@ -1,0 +1,23 @@
+{
+  "name": "com.venomboard.tasks",
+  "version": "1.0.0",
+  "displayName": "Venom Board",
+  "description": "Your Venom Board tasks inside the Unity Editor: the unfinished cards assigned to you across your team projects, grouped by project with status, due dates and disciplines. Start or finish a card without leaving the editor. Open it from Window > Venom Board.",
+  "unity": "2021.3",
+  "documentationUrl": "https://github.com/1337VIPER/venom-board/tree/main/integrations#unity",
+  "licensesUrl": "https://github.com/1337VIPER/venom-board/blob/main/LICENSE",
+  "keywords": [
+    "venom board",
+    "tasks",
+    "planning",
+    "production",
+    "editor"
+  ],
+  "author": {
+    "name": "1337VIPER",
+    "url": "https://venomboard.com"
+  },
+  "dependencies": {
+    "com.unity.modules.unitywebrequest": "1.0.0"
+  }
+}

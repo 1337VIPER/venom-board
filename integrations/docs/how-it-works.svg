@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 300" width="880" height="300" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+  <title>How the editor panels work: Godot, Unity and Unreal ask Venom Board for your tasks with your access token, and status changes show up live on your team's board.</title>
+  <rect width="880" height="300" rx="16" fill="#0e0e15"/>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10z" fill="#f1eef2"/>
+    </marker>
+  </defs>
+
+  <!-- editors -->
+  <g font-size="15" fill="#f1eef2">
+    <rect x="32" y="40" width="210" height="58" rx="10" fill="#17171f" stroke="#2fd6ff" stroke-width="2"/>
+    <text x="52" y="66" font-weight="700">Godot 4</text>
+    <text x="52" y="86" font-size="12" fill="#9d99aa">Venom Board dock</text>
+
+    <rect x="32" y="121" width="210" height="58" rx="10" fill="#17171f" stroke="#a66bff" stroke-width="2"/>
+    <text x="52" y="147" font-weight="700">Unity</text>
+    <text x="52" y="167" font-size="12" fill="#9d99aa">Window › Venom Board</text>
+
+    <rect x="32" y="202" width="210" height="58" rx="10" fill="#17171f" stroke="#3dff8b" stroke-width="2"/>
+    <text x="52" y="228" font-weight="700">Unreal Engine 5</text>
+    <text x="52" y="248" font-size="12" fill="#9d99aa">Tools › Venom Board</text>
+  </g>
+
+  <!-- requests -->
+  <g stroke="#f1eef2" stroke-width="2" fill="none">
+    <path d="M242 69 C 300 69, 310 150, 368 150" marker-end="url(#arrow)"/>
+    <path d="M242 150 L 368 150" marker-end="url(#arrow)"/>
+    <path d="M242 231 C 300 231, 310 150, 368 150" marker-end="url(#arrow)"/>
+  </g>
+  <g font-size="12" fill="#9d99aa" text-anchor="middle">
+    <text x="305" y="128">HTTPS + your</text>
+    <text x="305" y="143">access token</text>
+  </g>
+
+  <!-- server -->
+  <rect x="372" y="104" width="220" height="92" rx="12" fill="#1c0a10" stroke="#ff2a4f" stroke-width="2.5"/>
+  <text x="482" y="138" font-size="17" font-weight="700" fill="#f1eef2" text-anchor="middle">venomboard.com</text>
+  <text x="482" y="160" font-size="12" fill="#ffa3b5" text-anchor="middle">my_tasks · set_card_status</text>
+  <text x="482" y="178" font-size="12" fill="#9d99aa" text-anchor="middle">(Model Context Protocol endpoint)</text>
+
+  <!-- team board -->
+  <path d="M592 150 L 690 150" stroke="#f1eef2" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+  <text x="641" y="138" font-size="12" fill="#9d99aa" text-anchor="middle">live</text>
+  <rect x="694" y="96" width="160" height="108" rx="12" fill="#17171f" stroke="#ffd23d" stroke-width="2"/>
+  <text x="774" y="124" font-size="15" font-weight="700" fill="#f1eef2" text-anchor="middle">Your team's board</text>
+  <rect x="712" y="138" width="56" height="26" rx="5" fill="#2fd6ff" opacity="0.85"/>
+  <rect x="780" y="138" width="56" height="26" rx="5" fill="#a66bff" opacity="0.85"/>
+  <rect x="712" y="170" width="56" height="20" rx="5" fill="#3dff8b" opacity="0.85"/>
+  <rect x="780" y="170" width="56" height="20" rx="5" fill="#ff7a1a" opacity="0.85"/>
+</svg>
