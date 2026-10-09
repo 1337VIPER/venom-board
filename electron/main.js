@@ -124,8 +124,9 @@ function setClickThrough(on) {
 }
 
 /* ---------- screenshots ---------- */
-// The screenshot key works from any app. The board steps aside, every screen is captured as it is, and a frozen
-// copy of each screen lets you drag the area you want. It lands on the board, and on the clipboard too.
+// The screenshot key works from any app. Every screen is captured as it is (Venom Board included, so the board
+// itself can be screenshotted), and a frozen copy of each screen lets you drag the area you want. It lands on the
+// board, and on the clipboard too.
 function registerSnipKey() {
   if (snipKeyOn) { try { globalShortcut.unregister(snipKeyOn); } catch (e) { /* already gone */ } snipKeyOn = null; }
   try { if (state.snipKey && globalShortcut.register(state.snipKey, startSnip)) snipKeyOn = state.snipKey; } catch (e) { snipKeyOn = null; }
@@ -136,7 +137,6 @@ async function startSnip() {
   // macOS asks once for screen recording; after a no, capturing only ever shows the wallpaper
   if (MAC && ['denied', 'restricted'].includes(systemPreferences.getMediaAccessStatus('screen'))) { snipResult({ error: 'permission' }); return; }
   snip = { overlays: [], wasShowing: win.isVisible() && !win.isMinimized() };
-  if (snip.wasShowing) { win.hide(); await new Promise(r => setTimeout(r, 250)); }  // let the screen redraw without the board
   let shots = [];
   try {
     const displays = screen.getAllDisplays();

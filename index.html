@@ -2913,8 +2913,11 @@ let snipAt = null;
 function takeScreenshot(at) {
   if (blocked()) return;
   snipAt = at || null;
-  if (desk && desk.snip) { desk.snip(); return; }
-  browserSnip();
+  hideMenus();
+  // the board can be in the screenshot, so the desktop app waits for a menu that started it to close first;
+  // the browser asks which screen to share straight from the click (it won't ask later)
+  if (desk && desk.snip) requestAnimationFrame(() => requestAnimationFrame(() => desk.snip()));
+  else browserSnip();
 }
 async function gotSnip(r) {
   if (!r) return;
@@ -2935,7 +2938,7 @@ async function addSnip(blob) {
 async function browserSnip() {
   if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) { toast('Screenshots need the desktop app, or Chrome, Edge or Firefox.', 4500); return; }
   let stream;
-  try { stream = await navigator.mediaDevices.getDisplayMedia({video: {displaySurface: 'monitor', frameRate: 5}, audio: false, selfBrowserSurface: 'exclude', surfaceSwitching: 'exclude'}); }
+  try { stream = await navigator.mediaDevices.getDisplayMedia({video: {displaySurface: 'monitor', frameRate: 5}, audio: false, selfBrowserSurface: 'include', surfaceSwitching: 'exclude'}); }
   catch (e) { if (e && e.name !== 'NotAllowedError' && e.name !== 'AbortError') toast("This page can't capture the screen. The desktop app can, from any app.", 5000); return; }
   const c = document.createElement('canvas');
   try {

@@ -2,6 +2,11 @@
 
 All notable changes to Venom Board are listed here. The project follows [Semantic Versioning](https://semver.org).
 
+## [Unreleased]
+
+### Changed
+- **Screenshots include Venom Board**: the app no longer hides itself when you take a screenshot, so you can screenshot the board too. A menu that started the screenshot closes first, and in the browser your Venom Board tab can be picked as well
+
 ## [1.5.3] - 2026-10-09
 
 ### Added
