@@ -2,6 +2,14 @@
 
 All notable changes to Venom Board are listed here. The project follows [Semantic Versioning](https://semver.org).
 
+## [1.5.3] - 2026-10-09
+
+### Added
+- **Screenshot an area**: press `Alt+Shift+S` (or right-click the board → *Screenshot an area…*) and drag over the part of the screen you want; it lands on the board as a picture
+  - In the desktop app it works from any app, even when Venom Board is in the background: the board steps aside, every screen freezes, you drag a box (Esc or right-click cancels), and the picture goes on the board at full resolution and on the clipboard too. Change the key in Settings → Desktop app or the window menu
+  - In the browser you pick which screen or window to share, then drag on a frozen copy of it
+  - On macOS, allow Venom Board under System Settings → Privacy & Security → Screen Recording the first time
+
 ## [1.5.2] - 2026-10-08
 
 ### Fixed

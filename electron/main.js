@@ -1,6 +1,6 @@
 // Venom Board desktop shell: frameless window, pin on top, opacity, window lock,
-// click-through with a global "turn it off" shortcut, native file dialogs and automatic updates.
-const { app, BrowserWindow, ipcMain, dialog, shell, globalShortcut, Tray, Menu, net, session, nativeImage } = require('electron');
+// click-through with a global "turn it off" shortcut, screenshots from any app, native file dialogs and automatic updates.
+const { app, BrowserWindow, ipcMain, dialog, shell, globalShortcut, Tray, Menu, net, session, nativeImage, desktopCapturer, screen, clipboard, systemPreferences } = require('electron');
 const path = require('path');
 const crypto = require('crypto');
 const fs = require('fs');
@@ -17,6 +17,7 @@ if (DEV) app.setPath('userData', path.join(DEV[1], 'userdata'));
 const statePath = () => path.join(app.getPath('userData'), 'window-state.json');
 const ICON = path.join(ROOT, 'assets', WIN ? 'icon.ico' : 'icon-1024.png');
 const DEFAULT_KEY = 'CommandOrControl+Shift+X';
+const DEFAULT_SNIP_KEY = 'Alt+Shift+S';
 const OVERLAY = {
   venom: { color: '#111119', symbolColor: '#f1eef2' },
   anti: { color: '#fdfcfd', symbolColor: '#0d0c12' },
@@ -28,6 +29,8 @@ let state = {};
 let clickThrough = false;     // never persisted: the app always starts clickable
 let pinBeforeClickThrough = null;
 let registeredKey = null;
+let snipKeyOn = null;         // the screenshot key, while the system lets us have it
+let snip = null;              // a screenshot in progress: its overlay windows and whether the board was showing
 
 const keyLabel = k => String(k || '').replace(/CommandOrControl/g, 'Ctrl').replace(/Super/g, 'Win');
 // Interface size: the whole page zooms, and the title bar overlay grows or shrinks to match the top bar.
@@ -52,6 +55,9 @@ function publicState() {
     clickKey: state.clickKey,
     keyLabel: keyLabel(state.clickKey),
     keyOk: !!registeredKey,
+    snipKey: state.snipKey,
+    snipLabel: keyLabel(state.snipKey),
+    snipOk: !!snipKeyOn,
     uiScale: uiScale(),
   };
 }
@@ -117,10 +123,88 @@ function setClickThrough(on) {
   return publicState();
 }
 
+/* ---------- screenshots ---------- */
+// The screenshot key works from any app. The board steps aside, every screen is captured as it is, and a frozen
+// copy of each screen lets you drag the area you want. It lands on the board, and on the clipboard too.
+function registerSnipKey() {
+  if (snipKeyOn) { try { globalShortcut.unregister(snipKeyOn); } catch (e) { /* already gone */ } snipKeyOn = null; }
+  try { if (state.snipKey && globalShortcut.register(state.snipKey, startSnip)) snipKeyOn = state.snipKey; } catch (e) { snipKeyOn = null; }
+  return !!snipKeyOn;
+}
+async function startSnip() {
+  if (snip || !win || win.isDestroyed()) return;
+  // macOS asks once for screen recording; after a no, capturing only ever shows the wallpaper
+  if (MAC && ['denied', 'restricted'].includes(systemPreferences.getMediaAccessStatus('screen'))) { snipResult({ error: 'permission' }); return; }
+  snip = { overlays: [], wasShowing: win.isVisible() && !win.isMinimized() };
+  if (snip.wasShowing) { win.hide(); await new Promise(r => setTimeout(r, 250)); }  // let the screen redraw without the board
+  let shots = [];
+  try {
+    const displays = screen.getAllDisplays();
+    const size = displays.reduce((m, d) => ({ width: Math.max(m.width, Math.round(d.size.width * d.scaleFactor)), height: Math.max(m.height, Math.round(d.size.height * d.scaleFactor)) }), { width: 0, height: 0 });
+    const sources = await desktopCapturer.getSources({ types: ['screen'], thumbnailSize: size });
+    shots = displays.map((d, i) => ({ display: d, image: (sources.find(s => s.display_id === String(d.id)) || (sources.length === displays.length ? sources[i] : null) || {}).thumbnail }))
+      .filter(s => s.image && !s.image.isEmpty());
+  } catch (e) { shots = []; }
+  if (!shots.length) { endSnip(null, 'capture'); return; }
+  for (const s of shots) {
+    const b = s.display.bounds;
+    const o = new BrowserWindow({
+      x: b.x, y: b.y, width: b.width, height: b.height, show: false, frame: false, resizable: false, movable: false,
+      minimizable: false, maximizable: false, fullscreenable: false, skipTaskbar: true, hasShadow: false, enableLargerThanScreen: true,
+      backgroundColor: '#000000', title: 'Venom Board screenshot',
+      webPreferences: { preload: path.join(__dirname, 'snip-preload.js'), contextIsolation: true, nodeIntegration: false, sandbox: true, spellcheck: false },
+    });
+    o.setAlwaysOnTop(true, 'screen-saver');
+    o.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
+    o.webContents.on('will-navigate', e => e.preventDefault());
+    o.on('closed', () => { if (snip && snip.overlays.some(x => x.win === o)) endSnip(null); });
+    snip.overlays.push({ win: o, ...s });
+    o.loadFile(path.join(__dirname, 'snip.html')).then(() => {
+      if (o.isDestroyed()) return;
+      o.webContents.send('snip:image', 'data:image/jpeg;base64,' + s.image.toJPEG(90).toString('base64'));
+      o.setBounds(b);  // a frameless window can be nudged when it's made
+      o.show(); o.focus();
+    }).catch(() => endSnip(null, 'capture'));
+  }
+}
+// box: the area dragged on one overlay, in that screen's points; the crop comes from the full-resolution capture
+function endSnip(box, error) {
+  const cur = snip;
+  if (!cur) return;
+  snip = null;
+  let out = null;
+  if (box) {
+    const { image, display } = box.overlay, b = display.bounds, sz = image.getSize(), sx = sz.width / b.width, sy = sz.height / b.height;
+    const x = Math.max(0, Math.min(sz.width - 1, Math.round(box.x * sx))), y = Math.max(0, Math.min(sz.height - 1, Math.round(box.y * sy)));
+    const w = Math.min(sz.width - x, Math.round(box.w * sx)), h = Math.min(sz.height - y, Math.round(box.h * sy));
+    if (w >= 2 && h >= 2) {
+      const img = image.crop({ x, y, width: w, height: h });
+      try { clipboard.writeImage(img); } catch (e) { /* the board still gets it */ }
+      out = { image: 'data:image/png;base64,' + img.toPNG().toString('base64'), width: w, height: h };
+    }
+  }
+  for (const o of cur.overlays) if (!o.win.isDestroyed()) o.win.destroy();
+  if (!win || win.isDestroyed()) return;
+  // the board comes back to show where the screenshot went; a cancelled one leaves things as they were
+  if (cur.wasShowing || out || error) { win.show(); win.focus(); }
+  if (out) snipResult(out);
+  else if (error) snipResult({ error });
+}
+function snipResult(r) { if (win && !win.isDestroyed()) win.webContents.send('vb:snip', r); }
+const fromOverlay = e => snip && snip.overlays.find(o => !o.win.isDestroyed() && o.win.webContents === e.sender);
+ipcMain.on('snip:done', (e, box) => {
+  const o = fromOverlay(e);
+  if (!o) return;
+  const n = v => (Number.isFinite(v) ? v : 0);
+  endSnip({ overlay: o, x: n(box && box.x), y: n(box && box.y), w: n(box && box.w), h: n(box && box.h) });
+});
+ipcMain.on('snip:cancel', e => { if (fromOverlay(e)) endSnip(null); });
+
 /* ---------- window ---------- */
 function createWindow() {
   state = loadState();
   if (!state.clickKey) state.clickKey = DEFAULT_KEY;
+  if (!state.snipKey) state.snipKey = DEFAULT_SNIP_KEY;
   win = new BrowserWindow({
     width: state.width || 1520,
     height: state.height || 940,
@@ -198,6 +282,7 @@ ipcMain.handle('vb:set-lock', (e, on) => {
 ipcMain.handle('vb:set-click-through', (e, on) => setClickThrough(on));
 ipcMain.handle('vb:set-click-key', (e, accel) => {
   if (typeof accel !== 'string' || !accel || accel.length > 60) return { ok: false, ...publicState() };
+  if (accel === state.snipKey) return { ok: false, ...publicState() };  // one key, one job
   const prev = state.clickKey;
   let ok = false;
   if (clickThrough) {
@@ -210,6 +295,18 @@ ipcMain.handle('vb:set-click-key', (e, accel) => {
     if (ok) state.clickKey = accel;
   }
   if (tray) tray.setToolTip(`Venom Board: click-through is on. Click here or press ${keyLabel(state.clickKey)} to turn it off.`);
+  saveState();
+  pushState();
+  return { ok, ...publicState() };
+});
+ipcMain.handle('vb:snip', () => { startSnip(); return true; });
+ipcMain.handle('vb:set-snip-key', (e, accel) => {
+  if (typeof accel !== 'string' || !accel || accel.length > 60) return { ok: false, ...publicState() };
+  if (accel === state.clickKey) return { ok: false, ...publicState() };  // one key, one job
+  const prev = state.snipKey;
+  state.snipKey = accel;
+  const ok = registerSnipKey();
+  if (!ok) { state.snipKey = prev; registerSnipKey(); }
   saveState();
   pushState();
   return { ok, ...publicState() };
@@ -409,7 +506,7 @@ if (!app.requestSingleInstanceLock()) {
       if (!d.requestHeaders.Referer) d.requestHeaders.Referer = 'https://venomboard.com/';
       done({ requestHeaders: d.requestHeaders });
     });
-    createWindow(); startUpdates();
+    createWindow(); registerSnipKey(); startUpdates();
   });
   app.on('will-quit', () => { globalShortcut.unregisterAll(); hideTray(); });
   app.on('window-all-closed', () => app.quit());

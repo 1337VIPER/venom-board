@@ -1,7 +1,7 @@
 {
   "name": "venom-board",
   "productName": "Venom Board",
-  "version": "1.5.2",
+  "version": "1.5.3",
   "description": "The reference board and roadmap planner for game developers: infinite canvas, dependency-aware task cards, milestones, live team projects and an always-on-top overlay mode.",
   "author": "1337VIPER",
   "license": "MIT",

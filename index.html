@@ -1060,6 +1060,14 @@ body:has(#views:not([hidden])) #toast,body:has(#timeline:not([hidden])) #toast{p
 #tools::-webkit-scrollbar{display:block;width:3px}
 #tools::-webkit-scrollbar-thumb{background:var(--line-2);border-radius:3px}
 @media (prefers-reduced-motion:reduce){.l-flow,.l-path.grow{animation:none}.l-path.grow{stroke-dasharray:none}.tool,.item{transition:none}}
+/* screenshot area picker (web app) */
+.snipov{position:fixed;inset:0;z-index:9000;background:#000;cursor:crosshair;user-select:none}
+.snipov canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
+.snipov .sv-dim{position:absolute;inset:0;background:rgba(6,6,9,.45)}
+.snipov .sv-sel{position:absolute;display:none;border:1.5px solid var(--fang);box-shadow:0 0 0 99999px rgba(6,6,9,.45)}
+.snipov .sv-hint{position:absolute;top:18px;left:50%;transform:translateX(-50%);padding:8px 14px;border-radius:10px 10px 10px 4px;background:rgba(14,14,21,.92);border:1px solid var(--line-2);color:var(--bone);font:600 13px var(--font-ui);white-space:nowrap}
+.snipov .sv-hint b{color:var(--fang)}
+.snipov.dragging .sv-dim,.snipov.dragging .sv-hint{display:none}
 </style>
 
 <div id="app">
@@ -1192,7 +1200,7 @@ body:has(#views:not([hidden])) #toast,body:has(#timeline:not([hidden])) #toast{p
 
 <div id="help" class="modal" hidden>
   <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
-    <h2 id="helpTitle">Venom<em>/</em>Board shortcuts <span class="ver" data-ver>v1.5.2</span></h2>
+    <h2 id="helpTitle">Venom<em>/</em>Board shortcuts <span class="ver" data-ver>v1.5.3</span></h2>
     <p>Boards autosave on this computer. Save writes a .json file you can back up, put in your repo or open on another PC.</p>
     <div class="keys">
       <section><h3>Tools</h3><dl>
@@ -1241,6 +1249,7 @@ body:has(#views:not([hidden])) #toast,body:has(#timeline:not([hidden])) #toast{p
         <dt><kbd>Right-click</kbd></dt><dd>Anywhere: pin, lock, click-through, top bar, opacity</dd>
         <dt><kbd>Ctrl Shift A</kbd></dt><dd>Pin on top</dd>
         <dt><kbd id="helpCtKey">Ctrl+Shift+X</kbd></dt><dd>Click-through on, and off again from any app</dd>
+        <dt><kbd id="helpSnipKey">Alt+Shift+S</kbd></dt><dd>Screenshot an area of the screen onto the board, from any app</dd>
         <dt><kbd>Tray icon</kbd></dt><dd>Also turns click-through off</dd>
       </dl></section>
       <section><h3>Edit</h3><dl>
@@ -1362,7 +1371,7 @@ body:has(#views:not([hidden])) #toast,body:has(#timeline:not([hidden])) #toast{p
 <div id="keyModal" class="modal" hidden>
   <div class="sheet small" role="dialog" aria-modal="true" aria-labelledby="kmT">
     <h2 id="kmT">Click-through key</h2>
-    <p>Press the shortcut that should turn click-through off from any app. Include Ctrl, Alt or Win, or use an F key. Esc cancels.</p>
+    <p id="kmP">Press the shortcut that should turn click-through off from any app. Include Ctrl, Alt or Win, or use an F key. Esc cancels.</p>
     <div id="kmKey" class="kmkey">Ctrl+Shift+X</div>
     <div class="row"><button id="kmReset" class="tb">Reset to Ctrl+Shift+X</button><button id="kmCancel" class="tb">Cancel</button></div>
   </div>
@@ -1479,7 +1488,7 @@ let trace = null, dimSet = null, openDeps = new Map(), frameStats = new Map();
 let pending = null, imageLinkFrom = null, TOK = {};
 let cropping = null, picking = null;  // crop mode and the colour picker (see "cropping and turning pictures")
 let topbarOn = pref('topbar', true);
-let deskState = {pinned: false, opacity: 1, locked: false, clickThrough: false, clickKey: 'CommandOrControl+Shift+X', keyLabel: 'Ctrl+Shift+X', keyOk: true};
+let deskState = {pinned: false, opacity: 1, locked: false, clickThrough: false, clickKey: 'CommandOrControl+Shift+X', keyLabel: 'Ctrl+Shift+X', keyOk: true, snipKey: 'Alt+Shift+S', snipLabel: 'Alt+Shift+S', snipOk: true};
 
 
 /* ---------- geometry helpers ---------- */
@@ -2894,6 +2903,85 @@ async function addImageFiles(files, at) {
     } catch (e) { toast(board.team && e.message ? e.message : `Couldn't read ${f.name || 'that image'}`, 4000); }
   }
   placeImages(placed, at);
+}
+/* --- screenshots ---
+   A key (Alt+Shift+S by default) or the board's right-click menu: drag over part of the screen and it lands on the
+   board as a picture. The desktop app works from any app (its main process captures every screen and shows a
+   frozen copy to drag on, and puts the picture on the clipboard too). In the browser, you pick which screen or
+   window to share, then drag on a frozen copy of it here. */
+let snipAt = null;
+function takeScreenshot(at) {
+  if (blocked()) return;
+  snipAt = at || null;
+  if (desk && desk.snip) { desk.snip(); return; }
+  browserSnip();
+}
+async function gotSnip(r) {
+  if (!r) return;
+  if (r.error === 'permission') { toast('Venom Board needs permission to see the screen: System Settings → Privacy & Security → Screen Recording, then restart the app.', 8000); return; }
+  if (r.error) { toast("Couldn't capture the screen. Try again.", 4000); return; }
+  // the desktop app sends a data: address; it's turned into a file here without fetch (the page's rules don't allow that)
+  try {
+    const bin = atob(String(r.image).split(',')[1] || ''), u = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+    await addSnip(new Blob([u], {type: 'image/png'}));
+  } catch (e) { toast("Couldn't add the screenshot.", 4000); }
+}
+async function addSnip(blob) {
+  await addImageFiles([new File([blob], 'Screenshot.png', {type: 'image/png'})], snipAt || viewCenter());
+  snipAt = null;
+  toast(desk ? 'Screenshot added to the board, and copied' : 'Screenshot added to the board');
+}
+async function browserSnip() {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) { toast('Screenshots need the desktop app, or Chrome, Edge or Firefox.', 4500); return; }
+  let stream;
+  try { stream = await navigator.mediaDevices.getDisplayMedia({video: {displaySurface: 'monitor', frameRate: 5}, audio: false, selfBrowserSurface: 'exclude', surfaceSwitching: 'exclude'}); }
+  catch (e) { if (e && e.name !== 'NotAllowedError' && e.name !== 'AbortError') toast("This page can't capture the screen. The desktop app can, from any app.", 5000); return; }
+  const c = document.createElement('canvas');
+  try {
+    const v = document.createElement('video');
+    v.muted = true; v.playsInline = true; v.srcObject = stream;
+    await v.play();
+    await new Promise(r => setTimeout(r, 200));  // the first frame can be blank
+    c.width = v.videoWidth; c.height = v.videoHeight;
+    c.getContext('2d').drawImage(v, 0, 0);
+  } finally { stream.getTracks().forEach(t => t.stop()); }
+  if (!c.width || !c.height) { toast("Couldn't capture the screen. Try again.", 4000); return; }
+  const box = await pickArea(c);
+  if (!box) return;
+  const out = document.createElement('canvas');
+  out.width = box.w; out.height = box.h;
+  out.getContext('2d').drawImage(c, box.x, box.y, box.w, box.h, 0, 0, box.w, box.h);
+  out.toBlob(b => { if (b) addSnip(b).catch(() => toast("Couldn't add the screenshot.", 4000)); }, 'image/png');
+}
+// a frozen frame, full window: drag a box; the answer is in the frame's own pixels, or null for Esc
+function pickArea(frame) {
+  return new Promise(done => {
+    const sel = mk('div', {class: 'sv-sel'}), ov = mk('div', {class: 'snipov', role: 'dialog', 'aria-label': 'Drag over the area to screenshot'},
+      frame, mk('div', {class: 'sv-dim'}), sel, mk('div', {class: 'sv-hint'}, mk('b', {}, 'Screenshot'), ' · Drag over the area you want · Esc to cancel'));
+    document.body.appendChild(ov);
+    // where the frame sits (letterboxed to fit the window)
+    const fit = () => { const k = Math.min(innerWidth / frame.width, innerHeight / frame.height); return {k, x: (innerWidth - frame.width * k) / 2, y: (innerHeight - frame.height * k) / 2}; };
+    let start = null, box = null;
+    const finish = v => { removeEventListener('keydown', key, true); ov.remove(); done(v); };
+    const key = e => { if (e.key === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); finish(null); } };
+    addEventListener('keydown', key, true);
+    ov.addEventListener('contextmenu', e => { e.preventDefault(); finish(null); });
+    ov.addEventListener('pointerdown', e => { if (e.button !== 0) return; start = {x: e.clientX, y: e.clientY}; ov.setPointerCapture(e.pointerId); ov.classList.add('dragging'); });
+    ov.addEventListener('pointermove', e => {
+      if (!start) return;
+      box = {x: Math.min(start.x, e.clientX), y: Math.min(start.y, e.clientY), w: Math.abs(e.clientX - start.x), h: Math.abs(e.clientY - start.y)};
+      Object.assign(sel.style, {display: 'block', left: box.x + 'px', top: box.y + 'px', width: box.w + 'px', height: box.h + 'px'});
+    });
+    ov.addEventListener('pointerup', () => {
+      if (!start) return;
+      start = null;
+      if (!box || box.w < 4 || box.h < 4) { box = null; sel.style.display = 'none'; ov.classList.remove('dragging'); return; }
+      const f = fit(), x = Math.max(0, Math.round((box.x - f.x) / f.k)), y = Math.max(0, Math.round((box.y - f.y) / f.k));
+      const w = Math.min(frame.width - x, Math.round(box.w / f.k)), h = Math.min(frame.height - y, Math.round(box.h / f.k));
+      finish(w >= 2 && h >= 2 ? {x, y, w, h} : null);
+    });
+  });
 }
 async function addImageURL(url, at) {
   if (blocked()) return;
@@ -4772,6 +4860,7 @@ function contextEntries(hit, w) {
     E.push({label: 'Text', icon: 'text', run: () => newText(w)},
       {label: 'Phase frame', icon: 'frame', run: () => { const f = newFrame({x: w.x - 300, y: w.y - 40}); Object.assign(f, {w: 600, h: 400}); sel.clear(); sel.add(f.id); refresh(); startEdit(f.id, null, true); }},
       {label: 'Image…', icon: 'image', kb: 'I', run: () => { lastPtr = w; ptrInStage = true; $('#fileImg').click(); }},
+      {label: 'Screenshot an area…', icon: 'image', kb: desk ? deskState.snipLabel.replace(/\+/g, ' ') : 'Alt Shift S', run: () => takeScreenshot(w)},
       {label: 'Game jam clock', icon: 'clock', run: () => addJam(w)},
       {label: 'Template…', icon: 'arrange', run: openTemplates},
       ...(doc.links.length ? [{label: 'Style every connector…', icon: 'link', run: () => showMenu(lastMenuPt.x, lastMenuPt.y, [{head: 'Every connector'}, ...STYLE_OPTS.map(([v, t]) => ({label: t, cur: doc.links.every(l => l.style === v), run: () => styleAllLinks(v)}))])}] : []),
@@ -4852,11 +4941,13 @@ function windowEntries() {
   if (desk) E.push(
     {label: 'Pin on top', kb: 'Ctrl Shift A', icon: 'pin', cur: pinned, run: togglePin},
     {label: 'Lock window in place', icon: 'lock', cur: deskState.locked, run: toggleWinLock},
-    {label: 'Click-through', kb: deskState.keyLabel, icon: 'ghost', run: () => toggleClickThrough(true)});
+    {label: 'Click-through', kb: deskState.keyLabel, icon: 'ghost', run: () => toggleClickThrough(true)},
+    {label: 'Screenshot an area', kb: deskState.snipLabel, icon: 'image', run: () => takeScreenshot()});
   E.push({label: topbarOn ? 'Hide top bar' : 'Show top bar', kb: 'Ctrl Shift B', icon: 'topbar', run: toggleTopbar});
   if (desk) E.push(
     {label: 'Opacity', icon: 'eye', slider: {min: 20, max: 100, value: Math.round(deskState.opacity * 100), onInput: v => queueOpacity(v)}},
-    {label: 'Change click-through key…', icon: 'key', run: recordShortcut});
+    {label: 'Change click-through key…', icon: 'key', run: () => recordShortcut('click')},
+    {label: 'Change screenshot key…', icon: 'key', run: () => recordShortcut('snip')});
   if (desk && desk.checkUpdate && updateInfo.enabled) E.push('-',
     updateInfo.state === 'ready' ? {label: `Restart to update to ${updateInfo.version}`, icon: 'update', run: installUpdate}
       : {label: 'Check for updates', kb: 'v' + (updateInfo.current || ''), icon: 'update', run: checkForUpdates});
@@ -5960,6 +6051,7 @@ function applyDeskState(s) {
   $('#ctBadge').hidden = !s.clickThrough;
   $('#ctKey').textContent = deskState.keyLabel;
   $('#helpCtKey').textContent = deskState.keyLabel;
+  $('#helpSnipKey').textContent = deskState.snipLabel || 'Alt+Shift+S';
   $('#winLockBtn').hidden = !s.locked;
   root.style.setProperty('--ui-scale', s.uiScale || 1);
   syncOpacityUI();
@@ -6021,19 +6113,26 @@ function accelFromEvent(e) {
 }
 const accelLabel = a => String(a || '').replace(/CommandOrControl/g, 'Ctrl').replace(/Super/g, 'Win');
 let recordingKey = false;
-function recordShortcut() {
+const KEY_KINDS = {
+  click: {title: 'Click-through key', text: 'Press the shortcut that should turn click-through off from any app. Include Ctrl, Alt or Win, or use an F key. Esc cancels.', def: 'CommandOrControl+Shift+X', label: () => deskState.keyLabel, set: a => desk.setClickKey(a), done: r => `Click-through key is now ${r.keyLabel}`},
+  snip: {title: 'Screenshot key', text: 'Press the shortcut that should start a screenshot from any app. Include Ctrl, Alt or Win, or use an F key. Esc cancels.', def: 'Alt+Shift+S', label: () => deskState.snipLabel, set: a => desk.setSnipKey(a), done: r => `Screenshot key is now ${r.snipLabel}`},
+};
+function recordShortcut(kind = 'click') {
   if (!desk) return;
   hideMenus();
-  const k = $('#kmKey'); k.textContent = deskState.keyLabel; k.classList.remove('bad');
-  $('#keyModal').hidden = false; recordingKey = true;
+  const K = KEY_KINDS[kind] || KEY_KINDS.click;
+  recordingKey = kind in KEY_KINDS ? kind : 'click';
+  $('#kmT').textContent = K.title; $('#kmP').textContent = K.text; $('#kmReset').textContent = `Reset to ${accelLabel(K.def)}`;
+  const k = $('#kmKey'); k.textContent = K.label(); k.classList.remove('bad');
+  $('#keyModal').hidden = false;
 }
 function endRecording() { recordingKey = false; $('#keyModal').hidden = true; }
 async function saveShortcut(accel) {
-  const k = $('#kmKey');
-  const r = await desk.setClickKey(accel);
+  const k = $('#kmKey'), K = KEY_KINDS[recordingKey] || KEY_KINDS.click;
+  const r = await K.set(accel);
   applyDeskState(r);
-  if (r.ok) { endRecording(); toast(`Click-through key is now ${r.keyLabel}`); }
-  else { k.textContent = `${accelLabel(accel)} is taken by another app or not allowed. Try another.`; k.classList.add('bad'); }
+  if (r.ok) { endRecording(); toast(K.done(r)); }
+  else { k.textContent = `${accelLabel(accel)} is taken by another app, used for something else, or not allowed. Try another.`; k.classList.add('bad'); }
 }
 window.addEventListener('keydown', e => {
   if (!recordingKey) return;
@@ -6045,12 +6144,13 @@ window.addEventListener('keydown', e => {
   else saveShortcut(a);
 }, true);
 $('#kmCancel').onclick = endRecording;
-$('#kmReset').onclick = () => saveShortcut('CommandOrControl+Shift+X');
+$('#kmReset').onclick = () => saveShortcut((KEY_KINDS[recordingKey] || KEY_KINDS.click).def);
 $('#keyModal').addEventListener('click', e => { if (e.target.id === 'keyModal') endRecording(); });
 $('#pinBtn').onclick = togglePin;
 $('#winLockBtn').onclick = toggleWinLock;
 $('#opRange').addEventListener('input', e => queueOpacity(+e.target.value));
 if (desk && desk.onState) desk.onState(applyDeskState);
+if (desk && desk.onSnip) desk.onSnip(gotSnip);
 
 /* ---------- updates (desktop app) ---------- */
 // The desktop shell downloads new versions in the background; this shows progress and offers the restart.
@@ -6126,6 +6226,8 @@ window.addEventListener('keydown', e => {
   if (ctrl && e.key === ',') { e.preventDefault(); openSettings(); return; }
   if (ctrl && e.key.toLowerCase() === 'f') { e.preventDefault(); setPlanner(true, true); return; }
   if (desk && accelFromEvent(e) === deskState.clickKey) { e.preventDefault(); toggleClickThrough(true); return; }
+  if (e.altKey && e.shiftKey && !ctrl && e.code === 'KeyS' && !desk && !isField(e.target)) { e.preventDefault(); takeScreenshot(); return; }
+  if (desk && accelFromEvent(e) === deskState.snipKey) { e.preventDefault(); takeScreenshot(); return; }
   if (ctrl && e.shiftKey && e.code === 'KeyB') { e.preventDefault(); toggleTopbar(); return; }
   if (isField(e.target)) { if (e.key === 'Escape' || (e.key === 'Enter' && e.target.id === 'boardName')) e.target.blur(); return; }
   if (refsKey(e)) return;  // cropping, the colour picker
@@ -7058,7 +7160,7 @@ function drawPeers() {
 /* ---------- settings ----------
    One place for your account and every preference. Each control calls the same function as its shortcut or
    menu entry, so the two can never disagree. */
-const APP_VERSION = '1.5.2';
+const APP_VERSION = '1.5.3';
 const REPO_URL = 'https://github.com/1337VIPER/venom-board';
 document.querySelectorAll('[data-ver]').forEach(e => { e.textContent = 'v' + APP_VERSION; });
 const settingsEl = $('#settings'), stNav = $('#stNav'), stBody = $('#stBody');
@@ -7253,7 +7355,8 @@ function deskPane() {
       stRow('Pin on top', 'Keep Venom Board above other windows, like a reference board. Ctrl+Shift+A.', stSwitch(pinned, 'Pin on top', togglePin)),
       stRow('Lock window in place', 'Stops the window from being moved or resized by accident.', stSwitch(deskState.locked, 'Lock window in place', toggleWinLock)),
       stRow('Opacity', "See through the window to what's behind it.", mk('div', {class: 'st-inline st-op'}, op, opVal)),
-      stRow('Click-through key', `Click-through lets clicks pass to the window behind. ${deskState.keyLabel} turns it off again from any app.`, mk('button', {class: 'tm-btn', type: 'button', onclick: recordShortcut}, 'Change…'))),
+      stRow('Click-through key', `Click-through lets clicks pass to the window behind. ${deskState.keyLabel} turns it off again from any app.`, mk('button', {class: 'tm-btn', type: 'button', onclick: () => recordShortcut('click')}, 'Change…')),
+      stRow('Screenshot key', deskState.snipOk ? `${deskState.snipLabel} lets you drag over any part of the screen, from any app, and puts it on the board (and on the clipboard).` : `${deskState.snipLabel} belongs to another app, so pick another key. The screenshot is also in the board's right-click menu.`, mk('button', {class: 'tm-btn', type: 'button', onclick: () => recordShortcut('snip')}, 'Change…'))),
     stGroup('Updates', upd),
   ];
 }

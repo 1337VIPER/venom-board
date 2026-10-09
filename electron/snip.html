@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; style-src 'unsafe-inline'; script-src 'unsafe-inline'">
+<title>Venom Board screenshot</title>
+<style>
+  /* The screenshot overlay: a frozen copy of one screen, dimmed; drag a box to keep that part. */
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #000; cursor: crosshair; user-select: none; font: 600 13px/1.3 system-ui, "Segoe UI", sans-serif; }
+  #shot { position: fixed; inset: 0; width: 100%; height: 100%; display: block; pointer-events: none; }
+  #dim { position: fixed; inset: 0; background: rgba(6, 6, 9, .45); }
+  #sel { position: fixed; display: none; border: 1.5px solid #ff2a4f; box-shadow: 0 0 0 99999px rgba(6, 6, 9, .45); }
+  #size { position: fixed; display: none; padding: 3px 7px; border-radius: 6px; background: #ff2a4f; color: #fff; font: 700 12px/1.2 ui-monospace, Consolas, monospace; }
+  #hint { position: fixed; top: 18px; left: 50%; transform: translateX(-50%); padding: 8px 14px; border-radius: 10px 10px 10px 4px; background: rgba(14, 14, 21, .92); border: 1px solid rgba(241, 238, 242, .16); color: #f1eef2; white-space: nowrap; box-shadow: 0 10px 30px -10px #000; }
+  #hint b { color: #ff2a4f; }
+  body.dragging #dim, body.dragging #hint { display: none; }
+</style>
+</head>
+<body>
+<img id="shot" alt="">
+<div id="dim"></div>
+<div id="sel"></div>
+<div id="size"></div>
+<div id="hint"><b>Venom Board</b> · Drag over the area to screenshot · Esc to cancel</div>
+<script>
+(() => {
+  const $ = id => document.getElementById(id), sel = $('sel'), size = $('size');
+  let start = null, box = null;
+  window.venomSnip.onImage(url => { $('shot').src = url; });
+  const norm = (a, b) => ({ x: Math.min(a.x, b.x), y: Math.min(a.y, b.y), w: Math.abs(a.x - b.x), h: Math.abs(a.y - b.y) });
+  function draw() {
+    Object.assign(sel.style, { display: 'block', left: box.x + 'px', top: box.y + 'px', width: box.w + 'px', height: box.h + 'px' });
+    const dpr = window.devicePixelRatio || 1;
+    size.textContent = `${Math.round(box.w * dpr)} × ${Math.round(box.h * dpr)}`;
+    const below = box.y + box.h + 30 < innerHeight;
+    Object.assign(size.style, { display: 'block', left: Math.min(box.x, innerWidth - 120) + 'px', top: (below ? box.y + box.h + 8 : Math.max(4, box.y - 28)) + 'px' });
+  }
+  addEventListener('mousedown', e => {
+    if (e.button !== 0) return;
+    start = { x: e.clientX, y: e.clientY }; box = { ...start, w: 0, h: 0 };
+    document.body.classList.add('dragging');
+  });
+  addEventListener('mousemove', e => { if (start) { box = norm(start, { x: e.clientX, y: e.clientY }); draw(); } });
+  addEventListener('mouseup', e => {
+    if (!start || e.button !== 0) return;
+    start = null;
+    if (box && box.w >= 4 && box.h >= 4) { window.venomSnip.done(box); return; }
+    box = null; sel.style.display = size.style.display = 'none'; document.body.classList.remove('dragging');
+  });
+  addEventListener('keydown', e => { if (e.key === 'Escape') window.venomSnip.cancel(); });
+  addEventListener('contextmenu', e => { e.preventDefault(); window.venomSnip.cancel(); });
+})();
+</script>
+</body>
+</html>
