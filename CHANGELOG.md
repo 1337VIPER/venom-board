@@ -4,6 +4,9 @@ All notable changes to Venom Board are listed here. The project follows [Semanti
 
 ## [Unreleased]
 
+### Added
+- **Copy a picture to any app**: select a picture and press `Ctrl+C` (or right-click → *Copy image*) to put it on the system clipboard exactly as it shows on the board (cropped, turned, flipped or in greyscale) at its full resolution, ready to paste into Paint, Photoshop, Discord or any other app. Pasted back into Venom Board, it comes back as the board item with its crop and comments
+
 ### Changed
 - **Screenshots include Venom Board**: the app no longer hides itself when you take a screenshot, so you can screenshot the board too. A menu that started the screenshot closes first, and in the browser your Venom Board tab can be picked as well
 

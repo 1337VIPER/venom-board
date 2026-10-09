@@ -19,6 +19,7 @@ contextBridge.exposeInMainWorld('venomDesktop', {
     ipcRenderer.on('vb:snip', (e, r) => cb(r));
   },
   setSnipKey: accel => ipcRenderer.invoke('vb:set-snip-key', accel),
+  copyImage: dataUrl => ipcRenderer.invoke('vb:copy-image', dataUrl),
   setTopbar: on => ipcRenderer.invoke('vb:set-topbar', on),
   setSkin: skin => ipcRenderer.invoke('vb:set-skin', skin),
   setUiScale: f => ipcRenderer.invoke('vb:set-ui-scale', f),

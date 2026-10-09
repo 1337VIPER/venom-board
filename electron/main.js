@@ -300,6 +300,15 @@ ipcMain.handle('vb:set-click-key', (e, accel) => {
   return { ok, ...publicState() };
 });
 ipcMain.handle('vb:snip', () => { startSnip(); return true; });
+// a picture from the board onto the system clipboard, as a real bitmap, so every other app can paste it
+ipcMain.handle('vb:copy-image', (e, url) => {
+  if (!win || e.sender !== win.webContents) return false;
+  if (typeof url !== 'string' || !url.startsWith('data:image/png;base64,') || url.length > 256 * 1048576) return false;
+  const img = nativeImage.createFromDataURL(url);
+  if (img.isEmpty()) return false;
+  clipboard.writeImage(img);
+  return true;
+});
 ipcMain.handle('vb:set-snip-key', (e, accel) => {
   if (typeof accel !== 'string' || !accel || accel.length > 60) return { ok: false, ...publicState() };
   if (accel === state.clickKey) return { ok: false, ...publicState() };  // one key, one job

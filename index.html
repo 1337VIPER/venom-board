@@ -3148,7 +3148,59 @@ function picEntries(it) {
   const list = sel.has(it.id) ? selObjs().filter(o => o.type === 'image') : [it];
   return [{label: 'Crop', icon: 'crop', run: () => startCrop(it)}, ...(it.crop ? [{label: 'Reset crop', run: () => resetCrop(it)}] : []),
     {label: 'Rotate left', icon: 'rotl', run: () => rotatePics(list, -1)}, {label: 'Rotate right', icon: 'rotr', run: () => rotatePics(list, 1)},
-    {label: 'Pick a colour', icon: 'drop', kb: 'K', run: startPicking}, {label: 'Extract palette', icon: 'palette', run: () => extractPalette(it)}, '-'];
+    {label: 'Pick a colour', icon: 'drop', kb: 'K', run: startPicking}, {label: 'Extract palette', icon: 'palette', run: () => extractPalette(it)},
+    {label: 'Copy image', icon: 'dup', kb: 'Ctrl C', run: () => copyPicture(it)}, '-'];
+}
+/* --- copying a picture to the system clipboard ---
+   A picture copies the way it shows on the board (cropped, turned, flipped, greyscale) at its own resolution, so it
+   pastes into any other app. Ctrl+C with one picture selected does this along with the usual board copy; pasted back
+   here, a picture of exactly that size is taken to be the same one and the board item comes back (crop, pins and all). */
+let picCopied = null;  // {clipId, w, h, at}: the last picture put on the clipboard by a board copy
+function picCanvas(it) {
+  const el = els.get(it.id), img = el && el.firstChild;
+  if (!img || img.tagName !== 'IMG' || !img.complete || !img.naturalWidth) throw new Error('That picture is still loading.');
+  const src = img.currentSrc || img.src || '';
+  if (/^https?:/i.test(src) && !teamAsset(src)) throw new Error("That picture is linked from another site, which doesn't let it be copied. Save it and drop the file in.");
+  const c = it.crop || FULL, nw = img.naturalWidth, nh = img.naturalHeight, sw = Math.max(1, Math.round(c.w * nw)), sh = Math.max(1, Math.round(c.h * nh));
+  const r = it.rot || 0, side = r % 180 === 90, cv = document.createElement('canvas');
+  cv.width = side ? sh : sw; cv.height = side ? sw : sh;
+  const g = cv.getContext('2d', {willReadFrequently: !!it.gray});
+  // the crop is in the picture's own space; the turn comes after it and the flip after that, as on the board
+  g.translate(cv.width / 2, cv.height / 2);
+  if (it.flip) g.scale(-1, 1);
+  g.rotate(r * Math.PI / 180);
+  g.drawImage(img, c.x * nw, c.y * nh, c.w * nw, c.h * nh, -sw / 2, -sh / 2, sw, sh);
+  if (it.gray) {
+    const d = g.getImageData(0, 0, cv.width, cv.height), p = d.data;
+    for (let i = 0; i < p.length; i += 4) p[i] = p[i + 1] = p[i + 2] = 0.2126 * p[i] + 0.7152 * p[i + 1] + 0.0722 * p[i + 2];
+    g.putImageData(d, 0, 0);
+  }
+  return cv;
+}
+const canvasBlob = cv => new Promise((res, rej) => cv.toBlob(b => (b ? res(b) : rej(new Error("Couldn't copy that picture."))), 'image/png'));
+async function copyPicture(it, clipId) {
+  if (!it || it.type !== 'image') return;
+  let cv;
+  try { cv = picCanvas(it); } catch (e) { toast(e.message, 4500); return; }
+  try {
+    if (desk && desk.copyImage) {
+      if (!(await desk.copyImage(cv.toDataURL('image/png')))) throw new Error("Couldn't copy that picture.");
+    } else {
+      if (!navigator.clipboard || !navigator.clipboard.write || !window.ClipboardItem) throw new Error("This browser can't put pictures on the clipboard. The desktop app can.");
+      // the browser only lets a click or key write the clipboard while it's still being handled, so the picture
+      // goes in as a promise and is made while the clipboard waits
+      await navigator.clipboard.write([new ClipboardItem({'image/png': canvasBlob(cv)})]);
+    }
+    picCopied = clipId ? {clipId, w: cv.width, h: cv.height, at: Date.now()} : null;
+    toast('Picture copied. Paste it into any app.');
+  } catch (e) {
+    toast(e && e.message && !/^(NotAllowed|Security|Abort)/.test(e.name || '') ? e.message : "Couldn't copy that picture here. Use Export → PNG, or the desktop app.", 4500);
+  }
+}
+// is this pasted file the picture copied from the board a moment ago?
+async function isOwnPicture(f) {
+  if (!picCopied || !clip || picCopied.clipId !== clip.id || Date.now() - picCopied.at > 3600000 || !window.createImageBitmap) return false;
+  try { const b = await createImageBitmap(f), same = b.width === picCopied.w && b.height === picCopied.h; b.close(); return same; } catch (e) { return false; }
 }
 function picCtx(one) {
   return vsep + cbtn('rotl', 'Rotate left', 'rotl') + cbtn('rotr', 'Rotate right', 'rotr') + (one ? cbtn('crop', 'Crop', 'crop') : '')
@@ -4134,6 +4186,8 @@ document.addEventListener('copy', e => {
   if (editing || isField(e.target) || !sel.size) return;
   e.preventDefault(); clip = snapshotSel();
   e.clipboardData.setData('text/plain', CLIP + clip.id);
+  const only = sel.size === 1 && idx.get([...sel][0]);
+  if (only && only.type === 'image') { copyPicture(only, clip.id); return; }  // other apps can paste it too
   toast(`Copied ${sel.size} item${sel.size > 1 ? 's' : ''}`);
 });
 document.addEventListener('cut', e => {
@@ -4153,6 +4207,7 @@ document.addEventListener('paste', e => {
   const dt = e.clipboardData; if (!dt) return;
   const at = pasteAnchor();
   const files = [...dt.files].filter(isImageFile), videos = [...dt.files].filter(isVideoFile);
+  if (files.length === 1 && picCopied) { e.preventDefault(); isOwnPicture(files[0]).then(own => (own ? pasteClip(clip, at) : addImageFiles(files, at))); return; }
   if (files.length) { e.preventDefault(); addImageFiles(files, at); return; }
   if (videos.length) { e.preventDefault(); addVideoFiles(videos, at); return; }
   const text = (dt.getData('text/plain') || '').trim();
@@ -4915,7 +4970,7 @@ function viewMenu() {
 }
 function lockedEntries(hit) {
   const E = [{head: 'Board locked · view only'}];
-  if (hit) E.push({label: 'Zoom to selection', kb: 'Shift 2', icon: 'orig', run: () => fitTo(selObjs())}, {label: 'Copy', kb: 'Ctrl C', icon: 'dup', run: () => { clip = snapshotSel(); toast('Copied. Paste it into another board.'); }}, {label: 'Export selection as PNG', icon: 'image', run: exportPNG});
+  if (hit) E.push({label: 'Zoom to selection', kb: 'Shift 2', icon: 'orig', run: () => fitTo(selObjs())}, {label: 'Copy', kb: 'Ctrl C', icon: 'dup', run: () => { clip = snapshotSel(); const only = sel.size === 1 && idx.get([...sel][0]); if (only && only.type === 'image') copyPicture(only, clip.id); else toast('Copied. Paste it into another board.'); }}, {label: 'Export selection as PNG', icon: 'image', run: exportPNG});
   if (hit && hit.type === 'node') E.push(...gitEntries(hit, true));
   else E.push({label: 'Zoom to fit', kb: 'Shift 1', icon: 'orig', run: () => fitTo(allObjs())}, {label: 'Export board as PNG', icon: 'image', run: exportPNG});
   return E;
