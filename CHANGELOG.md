@@ -2,7 +2,7 @@
 
 All notable changes to Venom Board are listed here. The project follows [Semantic Versioning](https://semver.org).
 
-## [Unreleased]
+## [1.5.4] - 2026-10-09
 
 ### Added
 - **Copy a picture to any app**: select a picture and press `Ctrl+C` (or right-click → *Copy image*) to put it on the system clipboard exactly as it shows on the board (cropped, turned, flipped or in greyscale) at its full resolution, ready to paste into Paint, Photoshop, Discord or any other app. Pasted back into Venom Board, it comes back as the board item with its crop and comments

@@ -38,10 +38,10 @@ Solo boards need no account, no subscription and no telemetry. They work offline
 
 | | |
 |---|---|
-| **Windows** | Download `VenomBoard-Setup-1.5.3.exe` from the [latest release](https://github.com/1337VIPER/venom-board/releases/latest) and run it. It installs for your Windows account in a few seconds (no admin rights needed) and adds Start menu and desktop shortcuts. **It keeps itself up to date**: new versions download in the background and install when you restart. |
-| **macOS** | Download `VenomBoard-1.5.3-mac.zip` (Apple silicon and Intel), open it (Safari unzips it for you) and drag Venom Board into Applications. When a new version is out, *Get 1.x.x* appears in the top bar. |
-| **Linux** | Download `VenomBoard-1.5.3.AppImage`, make it executable (`chmod +x VenomBoard-1.5.3.AppImage`, or Properties → Allow executing) and run it. It keeps itself up to date like the Windows app. |
-| **Browser** | Use the web app at [venomboard.com/app](https://venomboard.com/app), try it on [itch.io](https://1337viper.itch.io/venom-board), or download `VenomBoard-1.5.3-web.zip`, unzip it and open `index.html` in Chrome, Edge or Firefox. Pin on top, click-through and window opacity need a desktop app. |
+| **Windows** | Download `VenomBoard-Setup-1.5.4.exe` from the [latest release](https://github.com/1337VIPER/venom-board/releases/latest) and run it. It installs for your Windows account in a few seconds (no admin rights needed) and adds Start menu and desktop shortcuts. **It keeps itself up to date**: new versions download in the background and install when you restart. |
+| **macOS** | Download `VenomBoard-1.5.4-mac.zip` (Apple silicon and Intel), open it (Safari unzips it for you) and drag Venom Board into Applications. When a new version is out, *Get 1.x.x* appears in the top bar. |
+| **Linux** | Download `VenomBoard-1.5.4.AppImage`, make it executable (`chmod +x VenomBoard-1.5.4.AppImage`, or Properties → Allow executing) and run it. It keeps itself up to date like the Windows app. |
+| **Browser** | Use the web app at [venomboard.com/app](https://venomboard.com/app), try it on [itch.io](https://1337viper.itch.io/venom-board), or download `VenomBoard-1.5.4-web.zip`, unzip it and open `index.html` in Chrome, Edge or Firefox. Pin on top, click-through and window opacity need a desktop app. |
 
 > **Windows SmartScreen:** the installer isn't code-signed yet, so Windows may show *"Windows protected your PC"* the first time. Click **More info → Run anyway**. Updates after that install without the warning.
 >
@@ -55,6 +55,7 @@ Solo boards need no account, no subscription and no telemetry. They work offline
 - Infinite canvas: the mouse wheel zooms at the cursor, Space or middle-drag pans, and there's a minimap for big boards
 - Paste screenshots with `Ctrl+V`, drag images in from Explorer or a browser, flip, greyscale or reset to original size
 - **Screenshot an area** with `Alt+Shift+S`: drag over any part of the screen and it lands on the board. In the desktop app it works from any app and copies the picture too
+- **Copy a picture** with `Ctrl+C` (or right-click → *Copy image*) to paste it into any other app, as it shows on the board
 - **Marker** (8 colours + custom), **highlighter** and **eraser**. Ink drawn on a card or image moves with it
 - Snap guides, align, distribute, pack into a grid, lock items, bring to front or send to back
 - **Videos and GIFs** as references: GIFs animate on the board, video files play on hover or double-click (loop, autoplay, sound), and YouTube or Vimeo links become players that only load when you click them
