@@ -89,7 +89,7 @@
   const selEl = $('sel'), sizeEl = $('size'), txt = $('txt');
   const COLORS = [['#ff2a4f', 'Red'], ['#ffd23d', 'Yellow'], ['#3dff8b', 'Green'], ['#2fd6ff', 'Cyan'], ['#a66bff', 'Purple'], ['#ffffff', 'White'], ['#111119', 'Black']];
   const SIZES = { 1: { w: 2, font: 16, r: 11 }, 2: { w: 4, font: 22, r: 14 }, 3: { w: 7, font: 32, r: 19 } };
-  const KEYS = { v: 'move', p: 'pen', h: 'hl', l: 'line', a: 'arrow', r: 'rect', e: 'ellipse', t: 'text', n: 'step', b: 'pix' };
+  const KEYS = { v: 'move', p: 'pen', h: 'hl', l: 'line', a: 'arrow', r: 'rect', e: 'ellipse', t: 'text', n: 'step', b: 'pix', x: 'hide' };
   const LZ = 8, LR = 7, LS = (2 * LR + 1) * LZ;  // the magnifier: 15 × 15 pixels, 8 times bigger
   let S = 1;            // screen pixels per CSS pixel of this overlay
   let sel = null;       // the area, in CSS pixels: {x, y, w, h}
@@ -112,6 +112,7 @@
     ellipse: '<ellipse cx="10" cy="10" rx="7" ry="5.3"/>',
     text: '<path d="M4.5 5.5V4h11v1.5M10 4v12.5M7.5 16.5h5"/>',
     step: '<circle cx="10" cy="10" r="7"/><path d="M8.6 7.6 10.4 6.5v7"/>',
+    hide: '<rect x="3.5" y="6" width="13" height="8" rx="1.5" fill="currentColor"/>',
     pix: '<rect x="3.5" y="3.5" width="13" height="13" rx="1.5"/><path d="M3.5 7.8h13M3.5 12.2h13M7.8 3.5v13M12.2 3.5v13"/><path d="M3.5 3.5h4.3v4.3H3.5zM12.2 7.8h4.3v4.4h-4.3zM7.8 12.2h4.4v4.3H7.8z" fill="currentColor" stroke="none" opacity=".55"/>',
     undo: '<path d="M7 5 3.5 8.5 7 12"/><path d="M4 8.5h7.5a4.5 4.5 0 0 1 0 9H9"/>',
     redo: '<path d="M13 5l3.5 3.5L13 12"/><path d="M16 8.5H8.5a4.5 4.5 0 0 0 0 9H11"/>',
@@ -138,7 +139,7 @@
   const toolBtn = {}, colorBtn = {}, sizeBtn = {};
   const TOOLS = [['move', 'Move or resize the area (V)'], ['pen', 'Pen (P)'], ['hl', 'Highlighter (H)'], ['line', 'Line (L) · Shift keeps it straight'],
     ['arrow', 'Arrow (A) · Shift keeps it straight'], ['rect', 'Rectangle (R) · Shift for a square'], ['ellipse', 'Ellipse (E) · Shift for a circle'], ['text', 'Text (T)'],
-    ['step', 'Numbered step (N)'], ['pix', 'Pixelate (B): hide something private']];
+    ['step', 'Numbered step (N)'], ['pix', 'Pixelate (B): blurs the look, but text under it can sometimes be read back'], ['hide', 'Hide (X): a solid box, so nothing under it can be read']];
   for (const [k, title] of TOOLS) toolBtn[k] = button($('tools'), { icon: k, title, run: () => setTool(k) });
   sep($('tools'));
   const undoBtn = button($('tools'), { icon: 'undo', title: 'Undo (Ctrl+Z)', run: undo }), redoBtn = button($('tools'), { icon: 'redo', title: 'Redo (Ctrl+Y)', run: redo });
@@ -352,6 +353,7 @@
     } else if (s.t === 'arrow') arrowHead(g, s.a, s.b, z.w);
     else if (s.t === 'rect') { const r = box(s); g.strokeRect(r.x, r.y, r.w, r.h); }
     else if (s.t === 'ellipse') { const r = box(s); g.beginPath(); g.ellipse(r.x + r.w / 2, r.y + r.h / 2, r.w / 2, r.h / 2, 0, 0, Math.PI * 2); g.stroke(); }
+    else if (s.t === 'hide') { const r = box(s); g.fillRect(r.x, r.y, r.w, r.h); }
     else if (s.t === 'pix') { const r = box(s); if (r.w >= 1 && r.h >= 1) { g.imageSmoothingEnabled = false; g.drawImage(blocks(s, r), r.x, r.y, r.w, r.h); } }
     else if (s.t === 'text') {
       g.font = `700 ${z.font}px "Segoe UI", system-ui, sans-serif`; g.textBaseline = 'top';
@@ -588,7 +590,7 @@
     if (ctrl && k === 'y') { e.preventDefault(); redo(); return; }
     if (ctrl && k === 'c') { e.preventDefault(); finish('copy'); return; }
     if (ctrl && k === 's') { e.preventDefault(); finish('save'); return; }
-    if (ctrl && (k === 'l' || k === 'u')) { e.preventDefault(); finish('link'); return; }
+    if (ctrl && k === 'l') { e.preventDefault(); finish('link'); return; }
     if (ctrl && k === 'p') { e.preventDefault(); finish('pin'); return; }
     if (e.key === 'Enter') { e.preventDefault(); finish('board'); return; }
     if (e.key.startsWith('Arrow')) { e.preventDefault(); nudge(e); return; }

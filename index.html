@@ -2897,8 +2897,8 @@ async function imageFromURL(url) {
   if (data) { const aid = uid(); assets[aid] = data; return {ref: {asset: aid}, nw: img.naturalWidth, nh: img.naturalHeight}; }
   return {ref: {src: url}, nw: img.naturalWidth, nh: img.naturalHeight, linked: true};
 }
-async function addImageFiles(files, at) {
-  if (blocked()) return;
+async function addImageFiles(files, at) {  // how many pictures went on the board
+  if (blocked()) return 0;
   const placed = [];
   for (const f of files) {
     try {
@@ -2907,6 +2907,7 @@ async function addImageFiles(files, at) {
     } catch (e) { toast(board.team && e.message ? e.message : `Couldn't read ${f.name || 'that image'}`, 4000); }
   }
   placeImages(placed, at);
+  return placed.length;
 }
 /* --- screenshots ---
    A key (Alt+Shift+S by default) or the board's right-click menu: drag over part of the screen and it lands on the
@@ -2936,9 +2937,10 @@ async function gotSnip(r) {
   try { await addSnip(blob); } catch (e) { toast("Couldn't add the screenshot.", 4000); }
 }
 async function addSnip(blob) {
-  await addImageFiles([new File([blob], 'Screenshot.png', {type: 'image/png'})], snipAt || viewCenter());
+  const n = await addImageFiles([new File([blob], 'Screenshot.png', {type: 'image/png'})], snipAt || viewCenter());
   snipAt = null;
-  toast(desk ? 'Screenshot added to the board, and copied' : 'Screenshot added to the board');
+  if (n) toast(desk ? 'Screenshot added to the board, and copied' : 'Screenshot added to the board');
+  else if (desk) toast("The screenshot didn't go on this board, but it's on your clipboard.", 5000);
 }
 /* --- screenshot links ---
    A screenshot (from the screenshot tool, or any picture on a board) uploaded to your account on the team server
@@ -2956,6 +2958,16 @@ function showLink(url) {
   if (i) { i.value = url; i.readOnly = true; i.select(); }
   return done;
 }
+// links take pictures up to 15 MB: a bigger one (a big screen, lots of photos) goes up as a WebP instead
+async function smallerPicture(blob) {
+  const bmp = await createImageBitmap(blob), cv = Object.assign(document.createElement('canvas'), {width: bmp.width, height: bmp.height});
+  cv.getContext('2d').drawImage(bmp, 0, 0); bmp.close();
+  for (const qual of [0.92, 0.82, 0.7]) {
+    const b = await new Promise(r => cv.toBlob(r, 'image/webp', qual));
+    if (b && b.size <= 15 * 1048576) return b;
+  }
+  return blob;  // still too big: the server says so
+}
 // fromSnip: it came from the screenshot tool, so Venom Board may be behind the app it was taken in; a note says how it went
 async function linkShot(blob, name, fromSnip) {
   const note = n => { if (fromSnip && desk && desk.notify) desk.notify(n); };
@@ -2967,6 +2979,7 @@ async function linkShot(blob, name, fromSnip) {
   }
   toast('Uploading the screenshot…', 30000);
   try {
+    if (blob.size > 15 * 1048576) blob = await smallerPicture(blob);
     const r = await api('/api/shots?name=' + encodeURIComponent(name || shotName()), 'POST', blob);
     const copied = await copyText(r.url), short = r.url.replace(/^https?:\/\//, '');
     shotList = null;

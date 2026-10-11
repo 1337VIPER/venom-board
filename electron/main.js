@@ -176,6 +176,9 @@ async function startSnip(opts = {}) {
     o.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
     o.webContents.on('will-navigate', e => e.preventDefault());
     o.on('closed', () => { if (snip && snip.overlays.some(x => x.win === o)) endSnip(null); });
+    // an overlay whose page crashed or hung would otherwise stay over the screen, black, with the key stuck
+    o.webContents.on('render-process-gone', () => endSnip(null, 'capture'));
+    o.on('unresponsive', () => endSnip(null, 'capture'));
     const entry = { win: o, ...s, here: s.display.id === here };
     snip.overlays.push(entry);
     // shown once the frozen screen is drawn (or after a moment regardless), so it never flashes black
@@ -268,18 +271,24 @@ async function endSnip(res, error) {
   if (action === 'pin') { pinShot(img, res.overlay.display.bounds, res.box); return; }
   if (action === 'save') { saveShot(img); return; }
   // on the clipboard every other time: for a link, that's what's left if the upload doesn't work out
-  try { await clipImage(img); } catch (e) { /* the other steps still happen */ }
-  if (action === 'copy') { notify('Screenshot copied', `${size.width} × ${size.height}. Paste it into any app.`); return; }
+  let copied = true;
+  try { await clipImage(img); } catch (e) { copied = false; }  // the other steps still happen
+  if (action === 'copy') { notify(copied ? 'Screenshot copied' : "Couldn't copy the screenshot", copied ? `${size.width} × ${size.height}. Paste it into any app.` : 'Try again, or save it as a file.'); return; }
   // the board comes back to show where a screenshot went; a link is made behind the scenes, where you are
   if (action === 'board') { win.show(); win.focus(); }
   snipResult({ image: 'data:image/png;base64,' + res.png.toString('base64'), width: size.width, height: size.height, action });
 }
 function snipResult(r) { if (win && !win.isDestroyed()) win.webContents.send('vb:snip', r); }
+const shownNotes = new Set();  // kept until closed or clicked, or a click on one can be lost to garbage collection
 function notify(title, body, url) {
   try {
     if (!Notification.isSupported()) return;
     const n = new Notification({ title, body, silent: true, icon: ICON });
-    if (url) n.on('click', () => shell.openExternal(url));
+    shownNotes.add(n);
+    if (shownNotes.size > 20) shownNotes.delete(shownNotes.values().next().value);  // ones left in the action centre
+    const done = () => shownNotes.delete(n);
+    n.on('close', done);
+    n.on('click', () => { done(); if (url) shell.openExternal(url); });
     n.show();
   } catch (e) { /* not fatal */ }
 }
