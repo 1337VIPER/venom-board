@@ -54,7 +54,11 @@ Solo boards need no account, no subscription and no telemetry. They work offline
 ### Reference board
 - Infinite canvas: the mouse wheel zooms at the cursor, Space or middle-drag pans, and there's a minimap for big boards
 - Paste screenshots with `Ctrl+V`, drag images in from Explorer or a browser, flip, greyscale or reset to original size
-- **Screenshot an area** with `Alt+Shift+S`: drag over any part of the screen and it lands on the board. In the desktop app it works from any app and copies the picture too
+- **Screenshot tool** with `Alt+Shift+S`: drag over any part of the screen and it lands on the board. In the desktop app it works from any app, like a dedicated screenshot tool:
+  - an area, the whole screen (`F`), one window (`W`) or the last area (`L`), with a pixel magnifier and colour picker (`C`)
+  - draw on it: pen, highlighter, arrows, lines, boxes, ellipses, text, numbered steps and pixelate, with undo
+  - then put it on the board (`Enter`), copy it (`Ctrl+C`), save it (`Ctrl+S`), pin it on top of every window (`Ctrl+P`) or get a **short link** (`Ctrl+L`)
+- **Screenshot links**: any screenshot or picture on a board becomes a short `venomboard.com/s/…` link anyone can open, with location and camera details taken out first. Manage yours in Settings → Account
 - **Copy a picture** with `Ctrl+C` (or right-click → *Copy image*) to paste it into any other app, as it shows on the board
 - **Marker** (8 colours + custom), **highlighter** and **eraser**. Ink drawn on a card or image moves with it
 - Snap guides, align, distribute, pack into a grid, lock items, bring to front or send to back

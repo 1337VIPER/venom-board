@@ -1,18 +1,21 @@
 // Venom Board desktop shell: frameless window, pin on top, opacity, window lock,
 // click-through with a global "turn it off" shortcut, screenshots from any app, native file dialogs and automatic updates.
-const { app, BrowserWindow, ipcMain, dialog, shell, globalShortcut, Tray, Menu, net, session, nativeImage, desktopCapturer, screen, clipboard, systemPreferences } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, shell, globalShortcut, Tray, Menu, net, session, nativeImage, desktopCapturer, screen, clipboard, systemPreferences, Notification, ClipboardItem } = require('electron');
 const path = require('path');
 const crypto = require('crypto');
 const fs = require('fs');
 
-app.setAppUserModelId('com.venomboard.app');
+// Windows shows a taskbar button with the icon of the app id, so a copy run from source (electron.exe, with the Electron
+// atom) has an id of its own: running it can never hand that icon to the installed app's button.
+app.setAppUserModelId(app.isPackaged ? 'com.venomboard.app' : 'com.venomboard.app.dev');
 const MAC = process.platform === 'darwin', WIN = process.platform === 'win32';
 const RELEASES = 'https://github.com/1337VIPER/venom-board/releases/latest';
 
 const ROOT = path.join(__dirname, '..');
 // Developer modes (electron/dev): VB_SMOKE=<dir> runs the self-test, VB_SHOTS=<dir> renders the README screenshots,
-// VB_LAYOUT=<dir> checks the layout across screen and interface sizes.
-const DEV = process.env.VB_SMOKE ? ['smoke', process.env.VB_SMOKE] : process.env.VB_SHOTS ? ['screenshots', process.env.VB_SHOTS] : process.env.VB_LAYOUT ? ['layout', process.env.VB_LAYOUT] : null;
+// VB_LAYOUT=<dir> checks the layout across screen and interface sizes, VB_SNIPTEST=<dir> tests the screenshot tool.
+const DEV = process.env.VB_SMOKE ? ['smoke', process.env.VB_SMOKE] : process.env.VB_SHOTS ? ['screenshots', process.env.VB_SHOTS] : process.env.VB_LAYOUT ? ['layout', process.env.VB_LAYOUT]
+  : process.env.VB_SNIPTEST ? ['sniptest', process.env.VB_SNIPTEST] : null;
 if (DEV) app.setPath('userData', path.join(DEV[1], 'userdata'));
 const statePath = () => path.join(app.getPath('userData'), 'window-state.json');
 const ICON = path.join(ROOT, 'assets', WIN ? 'icon.ico' : 'icon-1024.png');
@@ -31,6 +34,9 @@ let pinBeforeClickThrough = null;
 let registeredKey = null;
 let snipKeyOn = null;         // the screenshot key, while the system lets us have it
 let snip = null;              // a screenshot in progress: its overlay windows and whether the board was showing
+let snipTimer = null;         // a screenshot waiting out its delay
+let pendingWindow = null;     // the window an overlay is about to capture, for the display-media handler
+const pins = new Set();       // screenshots pinned on top of everything
 
 const keyLabel = k => String(k || '').replace(/CommandOrControl/g, 'Ctrl').replace(/Super/g, 'Win');
 // Interface size: the whole page zooms, and the title bar overlay grows or shrinks to match the top bar.
@@ -125,15 +131,26 @@ function setClickThrough(on) {
 
 /* ---------- screenshots ---------- */
 // The screenshot key works from any app. Every screen is captured as it is (Venom Board included, so the board
-// itself can be screenshotted), and a frozen copy of each screen lets you drag the area you want. It lands on the
-// board, and on the clipboard too.
+// itself can be screenshotted), and a frozen copy of each screen, at its full resolution, lets you pick the area:
+// drag it, or F for the whole screen, W for one window, L for the last area. Then the overlay is an editor (arrows,
+// boxes, text, numbered steps, pixelating what's private) and the picture goes where you choose: onto the board (and
+// the clipboard), only the clipboard, a file, a short link on the team server, or pinned on top of every window.
+const SNIP_ACTIONS = ['board', 'copy', 'save', 'link', 'pin'];
+// Electron 44's clipboard is the asynchronous web kind, which takes pictures as ClipboardItems; older ones had writeImage
+async function clipImage(img) {
+  if (typeof clipboard.writeImage === 'function') { clipboard.writeImage(img); return; }
+  await clipboard.write([new ClipboardItem({ 'image/png': new Blob([img.toPNG()], { type: 'image/png' }) })]);
+}
 function registerSnipKey() {
   if (snipKeyOn) { try { globalShortcut.unregister(snipKeyOn); } catch (e) { /* already gone */ } snipKeyOn = null; }
-  try { if (state.snipKey && globalShortcut.register(state.snipKey, startSnip)) snipKeyOn = state.snipKey; } catch (e) { snipKeyOn = null; }
+  try { if (state.snipKey && globalShortcut.register(state.snipKey, () => startSnip())) snipKeyOn = state.snipKey; } catch (e) { snipKeyOn = null; }
   return !!snipKeyOn;
 }
-async function startSnip() {
-  if (snip || !win || win.isDestroyed()) return;
+// opts.delay: seconds to wait first (to open a menu, say); opts.mode 'window' opens the window picker straight away
+async function startSnip(opts = {}) {
+  if (snip || snipTimer || !win || win.isDestroyed()) return;
+  const delay = Math.min(10, Math.max(0, Number(opts.delay) || 0));
+  if (delay) { snipTimer = setTimeout(() => { snipTimer = null; startSnip({ ...opts, delay: 0 }); }, delay * 1000); return; }
   // macOS asks once for screen recording; after a no, capturing only ever shows the wallpaper
   if (MAC && ['denied', 'restricted'].includes(systemPreferences.getMediaAccessStatus('screen'))) { snipResult({ error: 'permission' }); return; }
   snip = { overlays: [], wasShowing: win.isVisible() && !win.isMinimized() };
@@ -146,6 +163,7 @@ async function startSnip() {
       .filter(s => s.image && !s.image.isEmpty());
   } catch (e) { shots = []; }
   if (!shots.length) { endSnip(null, 'capture'); return; }
+  const here = screen.getDisplayNearestPoint(screen.getCursorScreenPoint()).id;
   for (const s of shots) {
     const b = s.display.bounds;
     const o = new BrowserWindow({
@@ -158,47 +176,189 @@ async function startSnip() {
     o.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
     o.webContents.on('will-navigate', e => e.preventDefault());
     o.on('closed', () => { if (snip && snip.overlays.some(x => x.win === o)) endSnip(null); });
-    snip.overlays.push({ win: o, ...s });
+    const entry = { win: o, ...s, here: s.display.id === here };
+    snip.overlays.push(entry);
+    // shown once the frozen screen is drawn (or after a moment regardless), so it never flashes black
+    entry.showTimer = setTimeout(() => showOverlay(entry), 1500);
     o.loadFile(path.join(__dirname, 'snip.html')).then(() => {
       if (o.isDestroyed()) return;
-      o.webContents.send('snip:image', 'data:image/jpeg;base64,' + s.image.toJPEG(90).toString('base64'));
-      o.setBounds(b);  // a frameless window can be nudged when it's made
-      o.show(); o.focus();
+      const sz = s.image.getSize(), last = state.lastSnip && state.lastSnip.display === s.display.id ? state.lastSnip.box : null;
+      // raw pixels (BGRA) travel faster than any picture format, and they're exact for the colour picker
+      o.webContents.send('snip:image', { width: sz.width, height: sz.height, data: s.image.toBitmap(), last, mode: entry.here ? opts.mode || '' : '' });
     }).catch(() => endSnip(null, 'capture'));
   }
 }
-// box: the area dragged on one overlay, in that screen's points; the crop comes from the full-resolution capture
-function endSnip(box, error) {
-  const cur = snip;
-  if (!cur) return;
-  snip = null;
-  let out = null;
-  if (box) {
-    const { image, display } = box.overlay, b = display.bounds, sz = image.getSize(), sx = sz.width / b.width, sy = sz.height / b.height;
-    const x = Math.max(0, Math.min(sz.width - 1, Math.round(box.x * sx))), y = Math.max(0, Math.min(sz.height - 1, Math.round(box.y * sy)));
-    const w = Math.min(sz.width - x, Math.round(box.w * sx)), h = Math.min(sz.height - y, Math.round(box.h * sy));
-    if (w >= 2 && h >= 2) {
-      const img = image.crop({ x, y, width: w, height: h });
-      try { clipboard.writeImage(img); } catch (e) { /* the board still gets it */ }
-      out = { image: 'data:image/png;base64,' + img.toPNG().toString('base64'), width: w, height: h };
-    }
-  }
-  for (const o of cur.overlays) if (!o.win.isDestroyed()) o.win.destroy();
-  if (!win || win.isDestroyed()) return;
-  // the board comes back to show where the screenshot went; a cancelled one leaves things as they were
-  if (cur.wasShowing || out || error) { win.show(); win.focus(); }
-  if (out) snipResult(out);
-  else if (error) snipResult({ error });
+function showOverlay(o) {
+  clearTimeout(o.showTimer);
+  if (!snip || o.win.isDestroyed() || o.win.isVisible()) return;
+  o.win.setBounds(o.display.bounds);  // a frameless window can be nudged when it's made
+  o.win.show();
+  if (o.here || !snip.overlays.some(x => x.here)) o.win.focus();
 }
-function snipResult(r) { if (win && !win.isDestroyed()) win.webContents.send('vb:snip', r); }
 const fromOverlay = e => snip && snip.overlays.find(o => !o.win.isDestroyed() && o.win.webContents === e.sender);
-ipcMain.on('snip:done', (e, box) => {
+const isOverlay = wc => !!snip && snip.overlays.some(o => !o.win.isDestroyed() && o.win.webContents === wc);
+ipcMain.on('snip:ready', e => { const o = fromOverlay(e); if (o) showOverlay(o); });
+// one screen at a time: starting an area on one clears the others
+ipcMain.on('snip:active', e => {
   const o = fromOverlay(e);
-  if (!o) return;
-  const n = v => (Number.isFinite(v) ? v : 0);
-  endSnip({ overlay: o, x: n(box && box.x), y: n(box && box.y), w: n(box && box.w), h: n(box && box.h) });
+  if (o) for (const x of snip.overlays) if (x !== o && !x.win.isDestroyed()) x.win.webContents.send('snip:reset');
 });
 ipcMain.on('snip:cancel', e => { if (fromOverlay(e)) endSnip(null); });
+// the finished picture, as PNG bytes made by the overlay (with whatever was drawn on it), and what to do with it
+ipcMain.on('snip:finish', (e, r) => {
+  const o = fromOverlay(e);
+  if (!o) return;
+  const png = r && r.png;
+  if (!(png instanceof Uint8Array) || png.length < 8 || png.length > 256 * 1048576) { endSnip(null, 'capture'); return; }
+  const img = nativeImage.createFromBuffer(Buffer.from(png));
+  if (img.isEmpty()) { endSnip(null, 'capture'); return; }
+  const n = v => (Number.isFinite(v) ? v : 0), box = r.box || {};
+  endSnip({ overlay: o, action: SNIP_ACTIONS.includes(r.action) ? r.action : 'board', img, png: Buffer.from(png), box: { x: n(box.x), y: n(box.y), w: n(box.w), h: n(box.h) } });
+});
+ipcMain.handle('snip:copy-text', async (e, text) => {
+  if (!fromOverlay(e) || typeof text !== 'string' || text.length > 200) return false;
+  try { await clipboard.writeText(text); return true; } catch (err) { return false; }
+});
+// the windows that can be captured, with small previews (the overlays themselves and pinned screenshots left out)
+ipcMain.handle('snip:windows', async e => {
+  if (!fromOverlay(e)) return [];
+  try {
+    const list = await desktopCapturer.getSources({ types: ['window'], thumbnailSize: { width: 360, height: 220 } });
+    return list.filter(s => s.name && !/^Venom Board (screenshot|pinned screenshot)$/.test(s.name) && !s.thumbnail.isEmpty()).slice(0, 48)
+      .map(s => ({ id: s.id, name: s.name.slice(0, 120), thumb: 'data:image/jpeg;base64,' + s.thumbnail.toJPEG(80).toString('base64') }));
+  } catch (err) { return []; }
+});
+// A window is captured at its own resolution as a one-frame video of just that window (it can be behind others).
+// The overlay asks for it here first; the display-media handler then hands that window over, once.
+ipcMain.handle('snip:prepare-window', async (e, id) => {
+  if (!fromOverlay(e) || typeof id !== 'string') return false;
+  try {
+    const s = (await desktopCapturer.getSources({ types: ['window'], thumbnailSize: { width: 0, height: 0 } })).find(x => x.id === id);
+    pendingWindow = s ? { source: s, sender: e.sender, at: Date.now() } : null;
+    return !!s;
+  } catch (err) { return false; }
+});
+// if that doesn't work, a large preview of the window does (it can be a little soft)
+ipcMain.handle('snip:window', async (e, id) => {
+  const o = fromOverlay(e);
+  if (!o || typeof id !== 'string') return null;
+  try {
+    const sz = o.image.getSize();
+    const s = (await desktopCapturer.getSources({ types: ['window'], thumbnailSize: sz })).find(x => x.id === id);
+    if (!s || s.thumbnail.isEmpty()) return null;
+    const t = s.thumbnail.getSize();
+    return { width: t.width, height: t.height, data: s.thumbnail.toBitmap() };
+  } catch (err) { return null; }
+});
+async function endSnip(res, error) {
+  const cur = snip;
+  if (!cur) return;
+  snip = null; pendingWindow = null;
+  for (const o of cur.overlays) { clearTimeout(o.showTimer); if (!o.win.isDestroyed()) o.win.destroy(); }
+  if (!win || win.isDestroyed()) return;
+  if (!res) {
+    // a cancelled screenshot leaves things as they were; a failed one says so on the board
+    if (cur.wasShowing || error) { win.show(); win.focus(); }
+    if (error) snipResult({ error });
+    return;
+  }
+  state.lastSnip = { display: res.overlay.display.id, box: res.box };
+  saveState();
+  const { img, action } = res, size = img.getSize();
+  if (action === 'pin') { pinShot(img, res.overlay.display.bounds, res.box); return; }
+  if (action === 'save') { saveShot(img); return; }
+  // on the clipboard every other time: for a link, that's what's left if the upload doesn't work out
+  try { await clipImage(img); } catch (e) { /* the other steps still happen */ }
+  if (action === 'copy') { notify('Screenshot copied', `${size.width} × ${size.height}. Paste it into any app.`); return; }
+  // the board comes back to show where a screenshot went; a link is made behind the scenes, where you are
+  if (action === 'board') { win.show(); win.focus(); }
+  snipResult({ image: 'data:image/png;base64,' + res.png.toString('base64'), width: size.width, height: size.height, action });
+}
+function snipResult(r) { if (win && !win.isDestroyed()) win.webContents.send('vb:snip', r); }
+function notify(title, body, url) {
+  try {
+    if (!Notification.isSupported()) return;
+    const n = new Notification({ title, body, silent: true, icon: ICON });
+    if (url) n.on('click', () => shell.openExternal(url));
+    n.show();
+  } catch (e) { /* not fatal */ }
+}
+const stamp = () => { const d = new Date(), p = v => String(v).padStart(2, '0'); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} at ${p(d.getHours())}.${p(d.getMinutes())}.${p(d.getSeconds())}`; };
+async function saveShot(img) {
+  const dir = state.shotDir && fs.existsSync(state.shotDir) ? state.shotDir : app.getPath('pictures');
+  const opts = { defaultPath: path.join(dir, `Screenshot ${stamp()}.png`), filters: [{ name: 'PNG picture', extensions: ['png'] }, { name: 'JPEG picture', extensions: ['jpg', 'jpeg'] }] };
+  const r = await (win && win.isVisible() ? dialog.showSaveDialog(win, opts) : dialog.showSaveDialog(opts));
+  if (r.canceled || !r.filePath) return;
+  try {
+    fs.writeFileSync(r.filePath, /\.jpe?g$/i.test(r.filePath) ? img.toJPEG(92) : img.toPNG());
+    state.shotDir = path.dirname(r.filePath);
+    saveState();
+  } catch (e) { dialog.showErrorBox('Venom Board', `Couldn't save the screenshot: ${e.message}`); }
+}
+
+/* --- pinned screenshots ---
+   A screenshot can stay on top of every window, where it was taken: drag it anywhere, scroll to zoom, Ctrl+scroll
+   for opacity, double-click or Esc to close, right-click for copy, save and the board. */
+function pinShot(img, area, box) {
+  const sz = img.getSize(), k = box.w > 0 ? box.w / sz.width : 1;
+  const w = Math.max(24, Math.round(sz.width * k)), h = Math.max(24, Math.round(sz.height * k));
+  const p = new BrowserWindow({
+    x: Math.round(area.x + box.x), y: Math.round(area.y + box.y), width: w, height: h, frame: false, resizable: false, maximizable: false,
+    minimizable: false, fullscreenable: false, skipTaskbar: true, hasShadow: true, backgroundColor: '#000000', title: 'Venom Board pinned screenshot', show: false,
+    webPreferences: { preload: path.join(__dirname, 'pin-preload.js'), contextIsolation: true, nodeIntegration: false, sandbox: true, spellcheck: false },
+  });
+  p.setAlwaysOnTop(true, 'floating');
+  p.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
+  p.webContents.on('will-navigate', e => e.preventDefault());
+  const pin = { win: p, img, base: { w, h }, zoom: 1 };
+  pins.add(pin);
+  p.on('closed', () => pins.delete(pin));
+  p.loadFile(path.join(__dirname, 'pin.html')).then(() => {
+    if (p.isDestroyed()) return;
+    p.webContents.send('pin:image', img.toDataURL());
+    p.showInactive();
+  });
+}
+const pinOf = e => [...pins].find(x => !x.win.isDestroyed() && x.win.webContents === e.sender);
+ipcMain.on('pin:move', (e, dx, dy) => {
+  const x = pinOf(e);
+  if (!x || !Number.isFinite(dx) || !Number.isFinite(dy)) return;
+  const [px, py] = x.win.getPosition();
+  x.win.setPosition(Math.round(px + dx), Math.round(py + dy));
+});
+// zooms around the point under the pointer (fx, fy: where it is across the picture, 0 to 1)
+ipcMain.on('pin:zoom', (e, steps, fx, fy) => {
+  const x = pinOf(e);
+  if (!x || !Number.isFinite(steps)) return;
+  const zoom = Math.min(4, Math.max(0.2, steps === 0 ? 1 : x.zoom * Math.pow(1.1, steps)));
+  const b = x.win.getBounds(), w = Math.round(x.base.w * zoom), h = Math.round(x.base.h * zoom);
+  const ax = Number.isFinite(fx) ? fx : 0.5, ay = Number.isFinite(fy) ? fy : 0.5;
+  x.zoom = zoom;
+  x.win.setBounds({ x: Math.round(b.x + (b.width - w) * ax), y: Math.round(b.y + (b.height - h) * ay), width: w, height: h });
+});
+ipcMain.on('pin:opacity', (e, steps) => {
+  const x = pinOf(e);
+  if (x && Number.isFinite(steps)) x.win.setOpacity(Math.min(1, Math.max(0.2, x.win.getOpacity() + steps * 0.1)));
+});
+ipcMain.on('pin:close', e => { const x = pinOf(e); if (x) x.win.close(); });
+ipcMain.on('pin:menu', e => {
+  const x = pinOf(e);
+  if (!x) return;
+  const size = x.img.getSize(), toBoard = action => {
+    if (!win || win.isDestroyed()) return;
+    if (action === 'board') { win.show(); win.focus(); }
+    snipResult({ image: x.img.toDataURL(), width: size.width, height: size.height, action });
+  };
+  Menu.buildFromTemplate([
+    { label: 'Copy', click: () => clipImage(x.img).then(() => notify('Screenshot copied', `${size.width} × ${size.height}. Paste it into any app.`), () => {}) },
+    { label: 'Save as…', click: () => saveShot(x.img) },
+    { label: 'Add to the board', click: () => toBoard('board') },
+    { label: 'Get a short link', click: () => toBoard('link') },
+    { type: 'separator' },
+    { label: 'Actual size', click: () => { x.zoom = 1; const b = x.win.getBounds(); x.win.setBounds({ x: b.x, y: b.y, width: x.base.w, height: x.base.h }); } },
+    { label: 'Close', click: () => x.win.close() },
+  ]).popup({ window: x.win });
+});
 
 /* ---------- window ---------- */
 function createWindow() {
@@ -250,7 +410,8 @@ function createWindow() {
   });
 
   win.on('close', saveState);
-  win.on('closed', () => { win = null; });
+  // pinned screenshots go with the board, so closing it still quits the app
+  win.on('closed', () => { win = null; for (const p of pins) if (!p.win.isDestroyed()) p.win.close(); });
 }
 
 ipcMain.handle('vb:get-state', () => publicState());
@@ -299,15 +460,36 @@ ipcMain.handle('vb:set-click-key', (e, accel) => {
   pushState();
   return { ok, ...publicState() };
 });
-ipcMain.handle('vb:snip', () => { startSnip(); return true; });
+ipcMain.handle('vb:snip', (e, opts) => {
+  if (!win || e.sender !== win.webContents) return false;
+  const o = opts && typeof opts === 'object' ? opts : {};
+  startSnip({ delay: Number(o.delay) || 0, mode: o.mode === 'window' ? 'window' : '' });
+  return true;
+});
+// for screenshot links made by the page: the link on the clipboard, and a note (click it to open the link) for
+// when Venom Board is behind the app you took the screenshot in
+ipcMain.handle('vb:copy-text', async (e, text) => {
+  if (!win || e.sender !== win.webContents || typeof text !== 'string' || text.length > 2000) return false;
+  try { await clipboard.writeText(text); return true; } catch (err) { return false; }
+});
+ipcMain.handle('vb:notify', (e, n) => {
+  if (!win || e.sender !== win.webContents || !n || typeof n.title !== 'string') return false;
+  notify(n.title.slice(0, 120), String(n.body || '').slice(0, 300), typeof n.url === 'string' && /^https?:\/\//i.test(n.url) ? n.url : null);
+  return true;
+});
+ipcMain.handle('vb:show', e => {
+  if (!win || e.sender !== win.webContents) return false;
+  if (win.isMinimized()) win.restore();
+  win.show(); win.focus();
+  return true;
+});
 // a picture from the board onto the system clipboard, as a real bitmap, so every other app can paste it
-ipcMain.handle('vb:copy-image', (e, url) => {
+ipcMain.handle('vb:copy-image', async (e, url) => {
   if (!win || e.sender !== win.webContents) return false;
   if (typeof url !== 'string' || !url.startsWith('data:image/png;base64,') || url.length > 256 * 1048576) return false;
   const img = nativeImage.createFromDataURL(url);
   if (img.isEmpty()) return false;
-  clipboard.writeImage(img);
-  return true;
+  try { await clipImage(img); return true; } catch (err) { return false; }
 });
 ipcMain.handle('vb:set-snip-key', (e, accel) => {
   if (typeof accel !== 'string' || !accel || accel.length > 60) return { ok: false, ...publicState() };
@@ -507,8 +689,16 @@ if (!app.requestSingleInstanceLock()) {
     // the page only ever copies text (and a video player may go full screen): cameras, microphones, location,
     // notifications and every other permission are refused without asking
     const OK_PERMS = new Set(['clipboard-sanitized-write', 'fullscreen', 'mediaKeySystem']);
-    session.defaultSession.setPermissionRequestHandler((wc, perm, cb) => cb(OK_PERMS.has(perm)));
-    session.defaultSession.setPermissionCheckHandler((wc, perm) => OK_PERMS.has(perm));
+    // ...except that a screenshot overlay may capture the one window that was picked in it
+    const ok = (wc, perm) => OK_PERMS.has(perm) || (['media', 'display-capture'].includes(perm) && isOverlay(wc));
+    session.defaultSession.setPermissionRequestHandler((wc, perm, cb) => cb(ok(wc, perm)));
+    session.defaultSession.setPermissionCheckHandler((wc, perm) => ok(wc, perm));
+    session.defaultSession.setDisplayMediaRequestHandler((req, cb) => {
+      const p = pendingWindow, f = req.frame;
+      pendingWindow = null;
+      const asked = p && !p.sender.isDestroyed() && f && p.sender.mainFrame && f.processId === p.sender.mainFrame.processId && f.routingId === p.sender.mainFrame.routingId;
+      cb(asked && isOverlay(p.sender) && Date.now() - p.at < 15000 ? { video: p.source } : {});
+    });
     // YouTube and Vimeo players only start inside a page that says which site it's on, and an app loaded from
     // disk has no address to send; they're told it's Venom Board
     session.defaultSession.webRequest.onBeforeSendHeaders({ urls: ['https://www.youtube-nocookie.com/*', 'https://player.vimeo.com/*'] }, (d, done) => {
