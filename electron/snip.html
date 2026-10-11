@@ -96,6 +96,7 @@
   let last = null;      // the last area used on this screen
   let drag = null, ptr = null, loupeOn = true, editingText = null, raf = 0, bgVersion = 0, flashT = 0;
   let tool = 'move', color = COLORS[0][0], size = 2;
+  let hideColor = '#111119';  // the Hide box keeps its own colour, black unless you pick another while it's chosen
   const shapes = [], undone = [];
   const dpr = () => window.devicePixelRatio || 1;
   const setMode = m => { body.dataset.mode = m; hint(); };
@@ -139,7 +140,7 @@
   const toolBtn = {}, colorBtn = {}, sizeBtn = {};
   const TOOLS = [['move', 'Move or resize the area (V)'], ['pen', 'Pen (P)'], ['hl', 'Highlighter (H)'], ['line', 'Line (L) · Shift keeps it straight'],
     ['arrow', 'Arrow (A) · Shift keeps it straight'], ['rect', 'Rectangle (R) · Shift for a square'], ['ellipse', 'Ellipse (E) · Shift for a circle'], ['text', 'Text (T)'],
-    ['step', 'Numbered step (N)'], ['pix', 'Pixelate (B): blurs the look, but text under it can sometimes be read back'], ['hide', 'Hide (X): a solid box, so nothing under it can be read']];
+    ['step', 'Numbered step (N)'], ['pix', 'Pixelate (B): blurs the look, but text under it can sometimes be read back'], ['hide', 'Hide (X): a solid black box, so nothing under it can be read']];
   for (const [k, title] of TOOLS) toolBtn[k] = button($('tools'), { icon: k, title, run: () => setTool(k) });
   sep($('tools'));
   const undoBtn = button($('tools'), { icon: 'undo', title: 'Undo (Ctrl+Z)', run: undo }), redoBtn = button($('tools'), { icon: 'redo', title: 'Redo (Ctrl+Y)', run: redo });
@@ -157,11 +158,14 @@
     commitText();
     tool = k;
     for (const [n, b] of Object.entries(toolBtn)) b.setAttribute('aria-pressed', String(n === k));
+    showColor();
     cursorAt(ptr);
   }
+  const inkColor = () => (tool === 'hide' ? hideColor : color);
+  const showColor = () => { for (const [n, b] of Object.entries(colorBtn)) b.setAttribute('aria-pressed', String(n === inkColor())); };
   function setColor(c) {
-    color = c;
-    for (const [n, b] of Object.entries(colorBtn)) b.setAttribute('aria-pressed', String(n === c));
+    if (tool === 'hide' && !editingText) hideColor = c; else color = c;
+    showColor();
     if (editingText) { editingText.c = c; txt.style.color = c; txt.focus(); }
   }
   function setSize(z) {
@@ -526,7 +530,7 @@
     if (tool === 'move') { drag = { kind: 'move', from: p, start: { ...sel } }; return; }
     if (tool === 'text') { openText(p); return; }
     if (tool === 'step') { push({ t: 'step', x: p.x, y: p.y, c: color, z: size, n: nextStep() }); return; }
-    const s = { t: tool, c: color, z: size };
+    const s = { t: tool, c: inkColor(), z: size };
     if (tool === 'pen' || tool === 'hl') s.pts = [[p.x, p.y]]; else { s.a = [p.x, p.y]; s.b = [p.x, p.y]; }
     drag = { kind: 'draw', shape: s };
   });

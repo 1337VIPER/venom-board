@@ -151,6 +151,8 @@ html.ct-on body::after{content:"";position:fixed;inset:0;border:2px solid color-
 .n-tag{flex:none;width:10px;height:10px;margin-left:2px;background:var(--tag);transform:rotate(45deg);border-radius:1px 6px 1px 6px;box-shadow:0 0 12px color-mix(in srgb,var(--tag) 65%,transparent)}
 .n-kind,.n-disc,.n-prio{flex:none;font:700 9.5px/1 var(--font-mono);letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}
 .n-kind{color:var(--bone)}
+/* a discipline that wouldn't fit in full is left off (see headHTML); if a card is narrower still, the card type shortens. Priority and status always show in full */
+.n-kind,.n-disc{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis}
 .n-prio{padding:3px 5px;border-radius:4px;border:1px solid var(--line-2);color:var(--bone-dim)}
 .node[data-prio=must] .n-prio{background:var(--fang);border-color:var(--fang);color:#fff}
 .node[data-prio=should] .n-prio{color:var(--bone);border-color:var(--bone-dim)}
@@ -1712,16 +1714,42 @@ const ICON = {
   info: '<circle cx="10" cy="10" r="7"/><path d="M10 9.2v4.8M10 6.3v.1"/>',
 };
 const ic = n => `<svg viewBox="0 0 20 20" aria-hidden="true">${ICON[n] || ''}</svg>`;
+// how wide a header label is drawn (its font, letter spacing and padding), to know what fits on a card
+const labelW = (() => {
+  const seen = new Map(); let g = null;
+  if (document.fonts) document.fonts.ready.then(() => seen.clear());
+  return (text, type) => {
+    const key = type + text;
+    if (!seen.has(key)) {
+      g = g || document.createElement('canvas').getContext('2d');
+      const [weight, size, spacing, pad] = type === 'status' ? [600, 10, .07, 18] : type === 'prio' ? [700, 9.5, .08, 12] : [700, 9.5, .08, 0];
+      g.font = `${weight} ${size}px "JetBrains Mono", Consolas, ui-monospace, monospace`;
+      seen.set(key, g.measureText(text.toUpperCase()).width + text.length * size * spacing + pad);
+    }
+    return seen.get(key);
+  };
+})();
 function headHTML(it) {
   const k = it.kind || 'task';
-  let h = '<span class="n-tag"></span>';
-  if (k === 'milestone') h += '<span class="n-kind">Milestone</span>';
-  else if (k === 'bug') h += `<span class="n-kind">Bug · ${esc((SEV_MAP[it.sev] || SEV_MAP.major)[1])}</span>`;
-  else if (k === 'idea') h += '<span class="n-kind">Idea</span>';
+  const kind = k === 'milestone' ? 'Milestone' : k === 'bug' ? `Bug · ${(SEV_MAP[it.sev] || SEV_MAP.major)[1]}` : k === 'idea' ? 'Idea' : '';
+  const d = k !== 'idea' && DISC_MAP[it.disc], status = statusLabel(k, it.status);
+  let prio = k !== 'idea' && it.prio ? PRIO_LABEL[it.prio] || '' : '';
+  // status always shows, and priority too except on a milestone short of room; the discipline only when it fits in
+  // full. What's left off is on the diamond's tooltip
+  let room = (it.w || 240) - 28 - (k === 'milestone' ? 14 : 12) - 7;
+  if (kind) room -= labelW(kind, 'kind') + 7;
+  if (prio) room -= labelW(prio, 'prio') + 7;
+  if (k !== 'idea') room -= labelW(status, 'status');
+  let hidden = [];
+  if (k === 'milestone' && prio && room < 2) { hidden.push(prio); room += labelW(prio, 'prio') + 7; prio = ''; }
+  const showDisc = d && labelW(d[1], 'disc') + 7 <= room - 2;
+  if (d && !showDisc) hidden.unshift(d[1]);
+  let h = `<span class="n-tag"${hidden.length ? ` title="${esc(hidden.join(' · '))}"` : ''}></span>`;
+  if (kind) h += `<span class="n-kind" title="${esc(kind)}">${esc(kind)}</span>`;
   if (k !== 'idea') {
-    const d = DISC_MAP[it.disc]; if (d) h += `<span class="n-disc" style="color:${col(d[2])}">${esc(d[1])}</span>`;
-    if (it.prio) h += `<span class="n-prio">${esc(PRIO_LABEL[it.prio] || '')}</span>`;
-    h += `<span class="n-status">${esc(statusLabel(k, it.status))}</span>`;
+    if (showDisc) h += `<span class="n-disc" style="color:${col(d[2])}">${esc(d[1])}</span>`;
+    if (prio) h += `<span class="n-prio">${esc(prio)}</span>`;
+    h += `<span class="n-status">${esc(status)}</span>`;
   }
   return h;
 }
@@ -1811,7 +1839,7 @@ function syncEl(el, it) {
     el.style.setProperty('--tag', col(it.color));
     if (k === 'bug') el.style.setProperty('--sev', (SEV_MAP[it.sev] || SEV_MAP.major)[2]);
     const deps = openDeps.get(it.id) || 0, cl = checklist(it.body);
-    const sig = [k, it.status, it.prio, it.disc, it.est, it.due, it.sev, deps, cl.done, cl.total, isoDay(new Date()), skin, (it.assignees || []).join(','), board.team ? commentCounts.get(it.id) || 0 : 0, team.membersSig || '',
+    const sig = [k, it.w, it.status, it.prio, it.disc, it.est, it.due, it.sev, deps, cl.done, cl.total, isoDay(new Date()), skin, (it.assignees || []).join(','), board.team ? commentCounts.get(it.id) || 0 : 0, team.membersSig || '',
       board.team && team.roadmap ? `${team.votes.get(it.id) || 0}${it.nopub ? 'h' : ''}` : '', it.spent || 0].join('|');
     if (el._sig !== sig) { el._sig = sig; el.children[0].innerHTML = headHTML(it); el.children[3].innerHTML = footHTML(it, deps); }
     syncTrack(el, it);

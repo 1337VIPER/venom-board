@@ -2,6 +2,14 @@
 
 All notable changes to Venom Board are listed here. The project follows [Semantic Versioning](https://semver.org).
 
+## [Unreleased]
+
+### Changed
+- **The Hide box is black** in the screenshot tool, whatever colour you're drawing with. Pick another colour while Hide is chosen and it keeps that one instead
+
+### Fixed
+- **Card labels always fit**: a card's status and priority always show in full. A discipline that wouldn't fit is left off (hover the diamond to see it) instead of cutting the status short
+
 ## [1.6.0] - 2026-10-11
 
 ### Added
