@@ -481,6 +481,8 @@ select.tm-in{padding-right:6px;cursor:pointer}
 .tm-row-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px;text-align:left;border:0;background:none;color:var(--bone);padding:0;font:inherit}
 .tm-open{cursor:pointer}
 .tm-row-main b{font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.st-shot .st-shot-img{width:72px;height:44px;flex:none;object-fit:cover;border-radius:7px;background:#000;border:1px solid var(--line)}
+.st-shot .tm-actions{flex:none;margin:0;flex-wrap:nowrap}
 .tm-row-main span{font-size:11.5px;color:var(--bone-faint);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .tm-btn{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 11px;border-radius:9px;border:1px solid var(--line);background:var(--hide-2);color:var(--bone);font:700 12px var(--font-ui);cursor:pointer;white-space:nowrap;flex:none}
 .tm-btn:hover{border-color:var(--line-2)}
@@ -1249,7 +1251,9 @@ body:has(#views:not([hidden])) #toast,body:has(#timeline:not([hidden])) #toast{p
         <dt><kbd>Right-click</kbd></dt><dd>Anywhere: pin, lock, click-through, top bar, opacity</dd>
         <dt><kbd>Ctrl Shift A</kbd></dt><dd>Pin on top</dd>
         <dt><kbd id="helpCtKey">Ctrl+Shift+X</kbd></dt><dd>Click-through on, and off again from any app</dd>
-        <dt><kbd id="helpSnipKey">Alt+Shift+S</kbd></dt><dd>Screenshot an area of the screen onto the board, from any app</dd>
+        <dt><kbd id="helpSnipKey">Alt+Shift+S</kbd></dt><dd>Screenshot from any app: drag an area, or F the whole screen, W a window, L the last area; C copies the colour under the pointer</dd>
+        <dt><kbd>Screenshot</kbd></dt><dd>Draw on it: V move, P pen, H highlighter, L line, A arrow, R box, E ellipse, T text, N numbered step, B pixelate, 1 2 3 size</dd>
+        <dt><kbd>Enter</kbd></dt><dd>Screenshot onto the board · Ctrl C copy · Ctrl S save · Ctrl L short link · Ctrl P pin on top</dd>
         <dt><kbd>Tray icon</kbd></dt><dd>Also turns click-through off</dd>
       </dl></section>
       <section><h3>Edit</h3><dl>
@@ -2906,34 +2910,127 @@ async function addImageFiles(files, at) {
 }
 /* --- screenshots ---
    A key (Alt+Shift+S by default) or the board's right-click menu: drag over part of the screen and it lands on the
-   board as a picture. The desktop app works from any app (its main process captures every screen and shows a
-   frozen copy to drag on, and puts the picture on the clipboard too). In the browser, you pick which screen or
-   window to share, then drag on a frozen copy of it here. */
+   board as a picture. The desktop app works from any app: its main process captures every screen and shows a
+   frozen copy to pick the area on (or the whole screen, a window, the last area), which then becomes an editor for
+   drawing on it before it goes onto the board, the clipboard, a file, a short link or pinned on top. In the browser,
+   you pick which screen or window to share, then drag on a frozen copy of it here. */
 let snipAt = null;
-function takeScreenshot(at) {
-  if (blocked()) return;
+// opts (desktop app): {delay: seconds first} or {mode: 'window'} to start with the window picker
+function takeScreenshot(at, opts) {
   snipAt = at || null;
   hideMenus();
   // the board can be in the screenshot, so the desktop app waits for a menu that started it to close first;
   // the browser asks which screen to share straight from the click (it won't ask later)
-  if (desk && desk.snip) requestAnimationFrame(() => requestAnimationFrame(() => desk.snip()));
-  else browserSnip();
+  if (desk && desk.snip) { requestAnimationFrame(() => requestAnimationFrame(() => desk.snip(opts || {}))); return; }
+  if (!blocked()) browserSnip();
 }
 async function gotSnip(r) {
   if (!r) return;
   if (r.error === 'permission') { toast('Venom Board needs permission to see the screen: System Settings → Privacy & Security → Screen Recording, then restart the app.', 8000); return; }
   if (r.error) { toast("Couldn't capture the screen. Try again.", 4000); return; }
   // the desktop app sends a data: address; it's turned into a file here without fetch (the page's rules don't allow that)
-  try {
-    const bin = atob(String(r.image).split(',')[1] || ''), u = new Uint8Array(bin.length);
-    for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
-    await addSnip(new Blob([u], {type: 'image/png'}));
-  } catch (e) { toast("Couldn't add the screenshot.", 4000); }
+  let blob;
+  try { blob = dataUrlBlob(String(r.image)); } catch (e) { blob = null; }
+  if (!blob) { toast("Couldn't read the screenshot.", 4000); return; }
+  if (r.action === 'link') { linkShot(blob, shotName(), true); return; }
+  try { await addSnip(blob); } catch (e) { toast("Couldn't add the screenshot.", 4000); }
 }
 async function addSnip(blob) {
   await addImageFiles([new File([blob], 'Screenshot.png', {type: 'image/png'})], snipAt || viewCenter());
   snipAt = null;
   toast(desk ? 'Screenshot added to the board, and copied' : 'Screenshot added to the board');
+}
+/* --- screenshot links ---
+   A screenshot (from the screenshot tool, or any picture on a board) uploaded to your account on the team server
+   comes back as a short address anyone can open, like venomboard.com/s/…, and the address goes on the clipboard.
+   The server takes out where and how the picture was made first. Settings → Account lists yours, to copy or delete. */
+const shotName = () => { const d = new Date(), p = v => String(v).padStart(2, '0'); return `Screenshot ${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`; };
+async function copyText(text) {
+  if (desk && desk.copyText) return desk.copyText(text);
+  try { await navigator.clipboard.writeText(text); return true; } catch (e) { return false; }
+}
+// a link the clipboard wouldn't take, shown ready to copy by hand
+function showLink(url) {
+  const done = askText('Screenshot link', 'Copy the link from here:', 'Done');
+  const i = $('#pmField input');
+  if (i) { i.value = url; i.readOnly = true; i.select(); }
+  return done;
+}
+// fromSnip: it came from the screenshot tool, so Venom Board may be behind the app it was taken in; a note says how it went
+async function linkShot(blob, name, fromSnip) {
+  const note = n => { if (fromSnip && desk && desk.notify) desk.notify(n); };
+  if (!team.user) {
+    if (desk && desk.show) desk.show();
+    openSettings('account');
+    toast(fromSnip ? 'Sign in to make screenshot links. The screenshot is on your clipboard.' : 'Sign in to make screenshot links.', 6000);
+    return;
+  }
+  toast('Uploading the screenshot…', 30000);
+  try {
+    const r = await api('/api/shots?name=' + encodeURIComponent(name || shotName()), 'POST', blob);
+    const copied = await copyText(r.url), short = r.url.replace(/^https?:\/\//, '');
+    shotList = null;
+    if (!settingsEl.hidden && st.tab === 'account') loadShots();
+    toast(copied ? `Link copied: ${short}` : short, 6000);
+    note({title: copied ? 'Screenshot link copied' : 'Screenshot link ready', body: short + ' · click to open it', url: r.url});
+    if (!copied) showLink(r.url);
+  } catch (e) {
+    toast(e.message, 6000);
+    note({title: "Couldn't make the screenshot link", body: `${e.message} The screenshot is on your clipboard.`});
+  }
+}
+async function linkPicture(it) {
+  if (!it || it.type !== 'image') return;
+  let cv;
+  try { cv = picCanvas(it); } catch (e) { toast(e.message, 4500); return; }
+  const blob = await canvasBlob(cv).catch(() => null);
+  if (!blob) { toast("Couldn't read that picture.", 4000); return; }
+  const name = String(it.name || '').replace(/\.(png|jpe?g|gif|webp)$/i, '').trim();
+  linkShot(blob, name && name !== 'Screenshot' && name !== 'Pasted image' ? name : shotName(), false);
+}
+// your links, for Settings: loaded when the Account tab asks, and filled in wherever the list is showing
+let shotList = null, shotsLoading = null, shotsBox = null;
+const mbs = n => (n / 1048576).toFixed(n < 10485760 ? 1 : 0);
+function loadShots(more) {
+  if (shotsLoading) return shotsLoading;
+  const before = more && shotList && shotList.shots.length ? '?before=' + shotList.shots[shotList.shots.length - 1].createdAt : '';
+  shotsLoading = api('/api/shots' + before).then(r => {
+    shotList = more && shotList && !shotList.error ? {...r, shots: shotList.shots.concat(r.shots)} : r;
+  }, e => { shotList = {error: e.message}; }).finally(() => { shotsLoading = null; fillShots(); });
+  return shotsLoading;
+}
+function fillShots() {
+  const box = shotsBox;  // the list in the Settings drawn last
+  if (!box) return;
+  if (!shotList) { box.replaceChildren(mk('p', {class: 'tm-note'}, 'Loading your links…')); return; }
+  if (shotList.error) { box.replaceChildren(mk('p', {class: 'tm-err'}, shotList.error)); return; }
+  const L = shotList;
+  const row = s => mk('div', {class: 'tm-row st-shot'},
+    mk('img', {class: 'st-shot-img', src: s.image, alt: '', loading: 'lazy'}),
+    mk('div', {class: 'tm-row-main'}, mk('b', {}, s.name || 'Screenshot'),
+      mk('span', {}, `${new Date(s.createdAt).toLocaleDateString()} · ${s.width} × ${s.height} · ${plural(s.views, 'view')}`)),
+    mk('div', {class: 'tm-actions'},
+      mk('button', {class: 'tm-btn', type: 'button', onclick: async () => { if (await copyText(s.url)) toast('Link copied'); else showLink(s.url); }}, 'Copy link'),
+      mk('button', {class: 'tm-btn', type: 'button', onclick: () => openLink(s.url)}, icon('arrow'), 'Open'),
+      mk('button', {class: 'tm-btn bad-line', type: 'button', onclick: e => stRun(e.currentTarget, null, async () => {
+        if (!(await ask('Delete this screenshot link?', 'The link stops working for everyone who has it. This can’t be undone.', 'Delete'))) return;
+        const r = await api('/api/shots/' + encodeURIComponent(s.id), 'DELETE');
+        Object.assign(shotList, {used: r.used, max: r.max, count: r.count, shots: shotList.shots.filter(x => x.id !== s.id)});
+        fillShots();
+        toast('Screenshot link deleted');
+      })}, 'Delete')));
+  box.replaceChildren(
+    mk('p', {class: 'tm-note'}, L.count ? `${plural(L.count, 'link')} · ${mbs(L.used)} of ${mbs(L.max)} MB used` : 'No screenshot links yet.'),
+    ...L.shots.map(row),
+    ...(L.more ? [mk('div', {class: 'tm-actions'}, mk('button', {class: 'tm-btn', type: 'button', onclick: e => stRun(e.currentTarget, null, () => loadShots(true))}, 'Show older links'))] : []));
+}
+function shotsGroup() {
+  shotsBox = mk('div', {class: 'tm-list'});
+  fillShots();
+  if (!shotList) loadShots();
+  return stGroup('Screenshot links',
+    mk('p', {class: 'tm-note'}, `Screenshots you upload get a short link on ${hostOf(team.server)} that anyone you give it to can open. Make one with Ctrl+L in the screenshot tool, or right-click any picture on a board → Get a short link. Location and camera details are taken out of the picture first.`),
+    shotsBox);
 }
 async function browserSnip() {
   if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) { toast('Screenshots need the desktop app, or Chrome, Edge or Firefox.', 4500); return; }
@@ -3149,7 +3246,7 @@ function picEntries(it) {
   return [{label: 'Crop', icon: 'crop', run: () => startCrop(it)}, ...(it.crop ? [{label: 'Reset crop', run: () => resetCrop(it)}] : []),
     {label: 'Rotate left', icon: 'rotl', run: () => rotatePics(list, -1)}, {label: 'Rotate right', icon: 'rotr', run: () => rotatePics(list, 1)},
     {label: 'Pick a colour', icon: 'drop', kb: 'K', run: startPicking}, {label: 'Extract palette', icon: 'palette', run: () => extractPalette(it)},
-    {label: 'Copy image', icon: 'dup', kb: 'Ctrl C', run: () => copyPicture(it)}, '-'];
+    {label: 'Copy image', icon: 'dup', kb: 'Ctrl C', run: () => copyPicture(it)}, {label: 'Get a short link', icon: 'link', run: () => linkPicture(it)}, '-'];
 }
 /* --- copying a picture to the system clipboard ---
    A picture copies the way it shows on the board (cropped, turned, flipped, greyscale) at its own resolution, so it
@@ -5000,7 +5097,9 @@ function windowEntries() {
     {label: 'Pin on top', kb: 'Ctrl Shift A', icon: 'pin', cur: pinned, run: togglePin},
     {label: 'Lock window in place', icon: 'lock', cur: deskState.locked, run: toggleWinLock},
     {label: 'Click-through', kb: deskState.keyLabel, icon: 'ghost', run: () => toggleClickThrough(true)},
-    {label: 'Screenshot an area', kb: deskState.snipLabel, icon: 'image', run: () => takeScreenshot()});
+    {label: 'Screenshot an area', kb: deskState.snipLabel, icon: 'image', run: () => takeScreenshot()},
+    {label: 'Screenshot a window', icon: 'image', run: () => takeScreenshot(null, {mode: 'window'})},
+    {label: 'Screenshot in 3 seconds', icon: 'clock', run: () => takeScreenshot(null, {delay: 3})});
   E.push({label: topbarOn ? 'Hide top bar' : 'Show top bar', kb: 'Ctrl Shift B', icon: 'topbar', run: toggleTopbar});
   if (desk) E.push(
     {label: 'Opacity', icon: 'eye', slider: {min: 20, max: 100, value: Math.round(deskState.opacity * 100), onInput: v => queueOpacity(v)}},
@@ -7371,7 +7470,7 @@ function accountPane() {
   const calFeed = stGroup('Calendar feed', stRow('Your due dates in your calendar',
     "Subscribe in Google Calendar, Outlook or Apple Calendar to see the cards assigned to you that have a due date, and your teams' milestones. Turn it on and copy its private address on your account page.",
     mk('button', {class: 'tm-btn', type: 'button', onclick: () => openLink(team.server + '/account#calendar')}, icon('arrow'), 'Set up')));
-  return [profile, stGroup('Profile', nameForm, colorField, email, verify), stGroup('Security', pwForm), securityGroup(), signIns, teams, tools, calFeed, danger];
+  return [profile, stGroup('Profile', nameForm, colorField, email, verify), stGroup('Security', pwForm), securityGroup(), signIns, teams, shotsGroup(), tools, calFeed, danger];
 }
 
 function lookPane() {
@@ -7414,7 +7513,7 @@ function deskPane() {
       stRow('Lock window in place', 'Stops the window from being moved or resized by accident.', stSwitch(deskState.locked, 'Lock window in place', toggleWinLock)),
       stRow('Opacity', "See through the window to what's behind it.", mk('div', {class: 'st-inline st-op'}, op, opVal)),
       stRow('Click-through key', `Click-through lets clicks pass to the window behind. ${deskState.keyLabel} turns it off again from any app.`, mk('button', {class: 'tm-btn', type: 'button', onclick: () => recordShortcut('click')}, 'Change…')),
-      stRow('Screenshot key', deskState.snipOk ? `${deskState.snipLabel} lets you drag over any part of the screen, from any app, and puts it on the board (and on the clipboard).` : `${deskState.snipLabel} belongs to another app, so pick another key. The screenshot is also in the board's right-click menu.`, mk('button', {class: 'tm-btn', type: 'button', onclick: () => recordShortcut('snip')}, 'Change…'))),
+      stRow('Screenshot key', deskState.snipOk ? `${deskState.snipLabel} works from any app: drag an area (or F the whole screen, W a window), draw on it, then Enter puts it on the board, Ctrl+C copies it, Ctrl+S saves it, Ctrl+L makes a short link and Ctrl+P pins it on top.` : `${deskState.snipLabel} belongs to another app, so pick another key. The screenshot is also in the board's right-click menu.`, mk('button', {class: 'tm-btn', type: 'button', onclick: () => recordShortcut('snip')}, 'Change…'))),
     stGroup('Updates', upd),
   ];
 }

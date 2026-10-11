@@ -2,6 +2,19 @@
 
 All notable changes to Venom Board are listed here. The project follows [Semantic Versioning](https://semver.org).
 
+## [Unreleased]
+
+### Added
+- **A full screenshot tool** (desktop app, `Alt+Shift+S` from any app):
+  - Pick the area your way: drag it, press `F` for the whole screen, `W` to pick a window (captured at its own resolution, even when it's behind others) or `L` for the last area you used. A magnifier with a crosshair shows the exact pixel and its colour; `C` copies the colour's code
+  - Then adjust the area with its handles or the arrow keys and draw on it: pen, highlighter, line, arrow, rectangle, ellipse, text, numbered steps and pixelate (to hide something private), in seven colours and three sizes, with undo and redo. Shift keeps lines straight and boxes square
+  - And choose where it goes: `Enter` puts it on the board (and the clipboard), `Ctrl+C` only copies it, `Ctrl+S` saves it as a PNG or JPEG, `Ctrl+L` makes a short link, and `Ctrl+P` pins it on top of every window (drag it, scroll to zoom, Ctrl+scroll for opacity, double-click to close)
+  - *Screenshot a window* and *Screenshot in 3 seconds* are in the window menu
+- **Screenshot links**: upload a screenshot and get a short address like `venomboard.com/s/…` on your clipboard, to paste anywhere. Make one from the screenshot tool with `Ctrl+L`, or right-click any picture on a board → *Get a short link*. Anyone with the link sees the picture on a clean page, and chats like Discord show it inline. Location and camera details are taken out of the picture first. Settings → Account → *Screenshot links* lists yours, to copy, open or delete
+
+### Fixed
+- **Copying pictures works again** in the desktop app: *Copy image* and screenshots put the picture on the clipboard with the newer Electron clipboard
+
 ## [1.5.4] - 2026-10-09
 
 ### Added

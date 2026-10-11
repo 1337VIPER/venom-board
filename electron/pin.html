@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; style-src 'unsafe-inline'; script-src 'unsafe-inline'">
+<title>Venom Board pinned screenshot</title>
+<style>
+  /* A screenshot pinned on top of every window: drag to move, scroll to zoom, Ctrl+scroll for opacity,
+     double-click or Esc to close, right-click for its menu. */
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #000; cursor: grab; user-select: none; }
+  body.moving { cursor: grabbing; }
+  img { display: block; width: 100%; height: 100%; pointer-events: none; }
+  #edge { position: fixed; inset: 0; border: 1px solid rgba(255, 42, 79, .7); pointer-events: none; }
+</style>
+</head>
+<body>
+<img id="shot" alt="">
+<div id="edge"></div>
+<script>
+(() => {
+  const P = window.venomPin;
+  P.onImage(url => { document.getElementById('shot').src = url; });
+  let from = null;
+  addEventListener('pointerdown', e => {
+    if (e.button !== 0) return;
+    from = { x: e.screenX, y: e.screenY };
+    document.body.setPointerCapture(e.pointerId);
+    document.body.classList.add('moving');
+  });
+  addEventListener('pointermove', e => {
+    if (!from) return;
+    const dx = e.screenX - from.x, dy = e.screenY - from.y;
+    if (dx || dy) { P.move(dx, dy); from = { x: e.screenX, y: e.screenY }; }
+  });
+  addEventListener('pointerup', () => { from = null; document.body.classList.remove('moving'); });
+  addEventListener('dblclick', () => P.close());
+  addEventListener('keydown', e => {
+    if (e.key === 'Escape') P.close();
+    else if ((e.ctrlKey || e.metaKey) && e.key === '0') P.zoom(0);
+  });
+  addEventListener('contextmenu', e => { e.preventDefault(); P.menu(); });
+  addEventListener('wheel', e => {
+    e.preventDefault();
+    const steps = e.deltaY < 0 ? 1 : -1;
+    if (e.ctrlKey || e.metaKey) P.opacity(steps);
+    else P.zoom(steps, e.clientX / innerWidth, e.clientY / innerHeight);
+  }, { passive: false });
+})();
+</script>
+</body>
+</html>

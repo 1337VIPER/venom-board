@@ -13,13 +13,16 @@ contextBridge.exposeInMainWorld('venomDesktop', {
   setLock: on => ipcRenderer.invoke('vb:set-lock', on),
   setClickThrough: on => ipcRenderer.invoke('vb:set-click-through', on),
   setClickKey: accel => ipcRenderer.invoke('vb:set-click-key', accel),
-  snip: () => ipcRenderer.invoke('vb:snip'),
+  snip: opts => ipcRenderer.invoke('vb:snip', opts),
   onSnip: cb => {
     ipcRenderer.removeAllListeners('vb:snip');
     ipcRenderer.on('vb:snip', (e, r) => cb(r));
   },
   setSnipKey: accel => ipcRenderer.invoke('vb:set-snip-key', accel),
   copyImage: dataUrl => ipcRenderer.invoke('vb:copy-image', dataUrl),
+  copyText: text => ipcRenderer.invoke('vb:copy-text', text),
+  notify: n => ipcRenderer.invoke('vb:notify', n),
+  show: () => ipcRenderer.invoke('vb:show'),
   setTopbar: on => ipcRenderer.invoke('vb:set-topbar', on),
   setSkin: skin => ipcRenderer.invoke('vb:set-skin', skin),
   setUiScale: f => ipcRenderer.invoke('vb:set-ui-scale', f),
