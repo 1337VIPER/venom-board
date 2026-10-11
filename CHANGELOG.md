@@ -2,7 +2,7 @@
 
 All notable changes to Venom Board are listed here. The project follows [Semantic Versioning](https://semver.org).
 
-## [Unreleased]
+## [1.6.0] - 2026-10-11
 
 ### Added
 - **A full screenshot tool** (desktop app, `Alt+Shift+S` from any app):
