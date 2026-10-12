@@ -2,7 +2,7 @@
 
 All notable changes to Venom Board are listed here. The project follows [Semantic Versioning](https://semver.org).
 
-## [Unreleased]
+## [1.6.1] - 2026-10-12
 
 ### Changed
 - **The Hide box is black** in the screenshot tool, whatever colour you're drawing with. Pick another colour while Hide is chosen and it keeps that one instead
