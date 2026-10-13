@@ -11,6 +11,12 @@
 </p>
 
 <p align="center">
+  <a href="https://bsky.app/profile/venomboard.bsky.social"><img src="https://img.shields.io/badge/bluesky-%40venomboard.bsky.social-1185fe?style=for-the-badge&logo=bluesky&logoColor=white&labelColor=0e0e15" alt="Bluesky: @venomboard.bsky.social"></a>
+  <a href="https://x.com/Venomboardapp"><img src="https://img.shields.io/badge/x-%40Venomboardapp-0e0e15?style=for-the-badge&logo=x&logoColor=white&labelColor=0e0e15" alt="X: @Venomboardapp"></a>
+  <a href="https://www.reddit.com/user/Venomboard/"><img src="https://img.shields.io/badge/reddit-u%2FVenomboard-ff4500?style=for-the-badge&logo=reddit&logoColor=white&labelColor=0e0e15" alt="Reddit: u/Venomboard"></a>
+</p>
+
+<p align="center">
   <b>Pin your references, map your whole production as a living network of tasks, milestones and bugs, and build it with your team live, all on one infinite canvas that can float on top of your engine.</b>
 </p>
 
@@ -209,6 +215,16 @@ docs/             banner, screenshots and template pictures
 ```
 
 Because the whole app is one HTML file, the browser version and the desktop app always behave the same.
+
+## Follow Venom Board
+
+New versions and features are posted on Venom Board's official accounts:
+
+- **Bluesky**: [@venomboard.bsky.social](https://bsky.app/profile/venomboard.bsky.social)
+- **X**: [@Venomboardapp](https://x.com/Venomboardapp)
+- **Reddit**: [u/Venomboard](https://www.reddit.com/user/Venomboard/)
+
+These are the only official accounts. They're also listed at the bottom of every page on [venomboard.com](https://venomboard.com).
 
 ## Contributing
 
