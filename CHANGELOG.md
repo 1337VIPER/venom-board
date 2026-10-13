@@ -2,6 +2,11 @@
 
 All notable changes to Venom Board are listed here. The project follows [Semantic Versioning](https://semver.org).
 
+## [Unreleased]
+
+### Added
+- **Official accounts** in Settings → About: Venom Board on Bluesky, X and Reddit, the only official accounts
+
 ## [1.6.1] - 2026-10-12
 
 ### Changed

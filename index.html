@@ -7360,6 +7360,8 @@ function drawPeers() {
    menu entry, so the two can never disagree. */
 const APP_VERSION = '1.6.1';
 const REPO_URL = 'https://github.com/1337VIPER/venom-board';
+// Venom Board's only official accounts, also listed on venomboard.com and in the README
+const SOCIALS = [['Bluesky', '@venomboard.bsky.social', 'https://bsky.app/profile/venomboard.bsky.social'], ['X', '@Venomboardapp', 'https://x.com/Venomboardapp'], ['Reddit', 'u/Venomboard', 'https://www.reddit.com/user/Venomboard/']];
 document.querySelectorAll('[data-ver]').forEach(e => { e.textContent = 'v' + APP_VERSION; });
 const settingsEl = $('#settings'), stNav = $('#stNav'), stBody = $('#stBody');
 const ST_TABS = [['account', 'Account', 'user'], ['notify', 'Notifications', 'label'], ['look', 'Appearance', 'palette'], ['board', 'Board', 'card'], ['desktop', 'Desktop app', 'topbar'], ['about', 'About', 'info']];
@@ -7566,6 +7568,9 @@ function aboutPane() {
     mk('div', {class: 'st-about'}, mark, mk('div', {class: 'st-txt'}, mk('b', {}, 'Venom Board'), mk('span', {}, `Version ${ver} · ${desk ? 'desktop app' : 'web app'}`),
       mk('span', {}, 'A planning board for game development: references, tasks, phases and dependencies on one canvas.'))),
     stGroup('Made by', mk('p', {}, 'Designed and built by 1337VIPER.')),
+    stGroup('Official accounts',
+      mk('div', {class: 'st-links'}, ...SOCIALS.map(([site, handle, url]) => mk('button', {class: 'tm-btn', type: 'button', title: url, onclick: () => openLink(url)}, icon('arrow'), `${site} ${handle}`))),
+      mk('p', {class: 'tm-note'}, 'Follow Venom Board here. These are its only official accounts.')),
     stGroup('Help',
       mk('div', {class: 'st-links'},
         mk('button', {class: 'tm-btn', type: 'button', onclick: () => { closeSettings(); $('#help').hidden = false; }}, 'Keyboard shortcuts'),
