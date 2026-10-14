@@ -2,6 +2,18 @@
 
 All notable changes to Venom Board are listed here. The project follows [Semantic Versioning](https://semver.org).
 
+## [Unreleased]
+
+### Added
+- **Connect phases**: phases have the same dots as cards. Drag from a phase's right dot to the next phase, or onto empty space for a new phase lined up beside it, and everything in the next phase waits on the work in this one: *waits on*, *Ready to start*, Trace and the Timeline all follow it
+- **Every feature in the toolbar**: a new row in the tool spine for Screenshot, Kanban, Calendar, Timeline and Search everything, plus *More features* with the Planner, templates, the game jam clock, Tidy layout, timelapses, import and the keyboard shortcuts
+- **Hover labels on the toolbar**: each tool shows its name, its keys and what it does
+
+### Fixed
+- **Moving the window with the top bar hidden** (desktop app): a handle across the top shows where to drag it, with a *Show top bar* button beside it
+- **Close buttons hidden under the window's own buttons** (desktop app): Kanban, Calendar, the Timeline and other dialogs now open below the minimise, maximise and close buttons, and their Close buttons are labelled. Esc still closes them too
+- **The toolbar fits any screen**: its buttons size themselves to the window's height at every interface size, and on very short windows the features row folds into *More features*
+
 ## [1.6.2] - 2026-10-13
 
 ### Added

@@ -270,10 +270,12 @@ html.board-locked .frame:not(.collapsed) .f-fold{display:none}
 #tools{display:flex;flex-direction:column;gap:3px;padding:8px 6px;background:linear-gradient(180deg,var(--hide-2),var(--hide) 60%);border:1px solid var(--line);border-radius:24px 24px 22px 22px;box-shadow:inset 0 1px 0 var(--gloss),0 22px 44px -12px var(--shadow);overflow-y:auto;scrollbar-width:none;min-height:0}
 
 .drip{width:34px;height:30px;margin-top:-2px;flex:none;fill:var(--hide);stroke:var(--line);stroke-width:1}
-.tool{position:relative;width:40px;height:40px;flex:none;display:grid;place-items:center;border:0;border-radius:12px;background:transparent;color:var(--bone-dim);cursor:pointer;transition:border-radius .18s ease,background-color .18s ease}
+.tool{position:relative;width:var(--ts,40px);height:var(--ts,40px);flex:none;display:grid;place-items:center;border:0;border-radius:12px;background:transparent;color:var(--bone-dim);cursor:pointer;transition:border-radius .18s ease,background-color .18s ease}
 .tool:hover{color:var(--bone);background:var(--hide-3)}
 .tool[aria-pressed=true]{color:var(--void);background:var(--bone);border-radius:64% 10% 64% 10%;box-shadow:0 0 18px -3px color-mix(in srgb,var(--bone) 55%,transparent)}
-.tool svg{width:20px;height:20px}
+/* the spine's buttons size themselves to the window's height, so every one fits at any interface size */
+#tools{--ts:clamp(28px, calc((100vh - 300px) / 16), 40px)}
+.tool svg{width:calc(var(--ts,40px) * .5);height:calc(var(--ts,40px) * .5)}
 .tool .k{position:absolute;right:4px;bottom:2px;font:600 8.5px var(--font-mono);opacity:.5}
 .tool .dot{position:absolute;right:5px;top:5px;width:8px;height:8px;border-radius:50%;background:var(--c,var(--fang));box-shadow:0 0 0 1.5px var(--hide)}
 .tool[aria-pressed=true] .dot{box-shadow:0 0 0 1.5px var(--bone)}
@@ -405,8 +407,30 @@ html.board-locked .tool:not([data-tool=select]):not([data-tool=hand]){opacity:.2
 #dragStrip{display:none}
 html.desktop.mac #top{padding-right:14px;padding-left:calc(84px / var(--ui-scale, 1))}
 html.desktop.mac.ui-off #dragStrip,html.desktop.mac.topbar-off #dragStrip{right:0}
-html.desktop.ui-off #dragStrip,html.desktop.topbar-off #dragStrip{display:block;position:absolute;left:0;top:0;right:calc(150px / var(--ui-scale, 1));height:12px;-webkit-app-region:drag;z-index:39}
+html.desktop.ui-off #dragStrip,html.desktop.topbar-off #dragStrip{display:block;position:absolute;left:0;top:0;right:calc(150px / var(--ui-scale, 1));height:16px;-webkit-app-region:drag;z-index:39}
 html.desktop.win-locked #dragStrip{display:none}
+/* the handle that shows where to grab the window while the top bar is hidden, and a way to bring the bar back */
+#dragStrip .grip{position:absolute;left:50%;top:5px;width:54px;height:5px;margin-left:-27px;border-radius:9px;background:var(--bone-dim);opacity:.5;box-shadow:0 0 0 1px rgba(0,0,0,.3)}
+#topbarBack{display:none;position:absolute;right:4px;top:0;height:16px;padding:0 9px;border:0;border-radius:0 0 8px 8px;background:var(--hide-2);color:var(--bone-dim);font:600 10.5px var(--font-ui);cursor:pointer;-webkit-app-region:no-drag}
+html.desktop.topbar-off:not(.ui-off) #topbarBack{display:block}
+#topbarBack:hover{color:var(--bone)}
+html.desktop.ui-off #uiRestore{top:22px}
+/* dialogs and full-screen views start below the window's own buttons (so their close buttons are never under them),
+   and the strip above them still moves the window */
+html.desktop .modal{padding-top:58px}
+html.desktop.topbar-off .modal{padding-top:36px}
+html.desktop .modal::before{content:"";position:absolute;left:0;top:0;right:calc(150px / var(--ui-scale, 1));height:28px;-webkit-app-region:drag}
+html.desktop.mac .modal::before{right:0}
+html.desktop.win-locked .modal::before{display:none}
+.ib.lbl{width:auto;padding:0 12px 0 9px;display:inline-flex;align-items:center;gap:6px;font:600 12.5px var(--font-ui);border:1px solid var(--line-2)}
+.ib.lbl svg{width:16px;height:16px}
+/* hover labels for the tool spine: the name, its keys and what it does */
+#tip{position:fixed;z-index:75;pointer-events:none;width:max-content;max-width:250px;padding:9px 11px 10px;background:var(--hide-2);border:1px solid var(--line-2);border-radius:12px 12px 12px 4px;box-shadow:0 16px 34px -12px var(--shadow);color:var(--bone-dim);font:500 12px/1.45 var(--font-ui)}
+#tip b{color:var(--bone);font:700 13px var(--font-ui);margin-right:8px}
+#tip .tk{white-space:nowrap;color:var(--bone-faint)}
+#tip .tk kbd{display:inline-block;font:600 10.5px var(--font-mono);padding:1px 6px;margin:0 1px;border:1px solid var(--line-2);border-bottom-width:2px;border-radius:6px;color:var(--bone);background:var(--void-2)}
+#tip p{margin:5px 0 0}
+.u-pin.ph{stroke-width:2}
 html.ui-off #top,html.ui-off #dock,html.ui-off #ctx,html.ui-off #hud,html.ui-off #minimap,html.ui-off #planner{display:none!important}
 .modal{position:fixed;inset:0;z-index:80;display:grid;place-items:center;background:rgba(0,0,0,.55);padding:16px}
 .sheet{width:min(780px,100%);max-height:calc(100% - 32px);overflow:auto;background:var(--hide);border:1px solid var(--line-2);border-radius:26px 26px 26px 6px;padding:24px 26px 26px;box-shadow:0 40px 80px -20px rgba(0,0,0,.7)}
@@ -839,6 +863,8 @@ html.tl-dragging,html.tl-dragging *{cursor:ew-resize!important}
 
 /* ---------- kanban + calendar views ---------- */
 .modal#views{padding:8px}
+html.desktop .modal#views{padding-top:58px}
+html.desktop.topbar-off .modal#views{padding-top:36px}
 .vw-sheet{width:100%;height:100%;max-height:none;display:flex;flex-direction:column;padding:0;overflow:hidden;user-select:none;-webkit-user-select:none}
 .vw-top{gap:14px;flex-wrap:wrap}
 .vw-top h2{flex:none}
@@ -1054,11 +1080,14 @@ body:has(#views:not([hidden])) #toast,body:has(#timeline:not([hidden])) #toast{p
 @media (max-width:900px){.tool .k,#minimap,#hud{display:none}}
 @media (max-width:600px){#top{gap:4px;padding:0 8px}.boardsel{margin-left:4px}#dock{left:10px}#ctx{left:calc(50% + 29px);bottom:10px;max-width:calc(100% - 68px)}#wrap.pl-open #ctx{left:50%;bottom:10px;max-width:calc(100% - 20px)}.rng input{width:80px}.hint{white-space:normal;text-align:center;line-height:1.9}}
 /* short screens: the tool spine shrinks to fit instead of hiding tools off the bottom */
-@media (max-height:780px){#dock{max-height:calc(100% - 28px)}.tool{width:36px;height:36px}.tool svg{width:18px;height:18px}#tools{gap:2px;padding:6px 5px}.tsep{margin:3px 5px}}
-@media (max-height:620px){.tool{width:32px;height:32px;border-radius:10px}.tool svg{width:17px;height:17px}.tool .k{display:none}.drip{height:20px}}
-@media (max-height:500px){.tool{width:28px;height:28px;border-radius:9px}.tool svg{width:15px;height:15px}#tools{padding:4px 4px;gap:1px}.tsep{margin:2px 4px}.drip{display:none}#minimap{display:none}}
-@media (max-height:400px){#dock{max-height:calc(100% - 16px)}.tool{width:24px;height:24px;border-radius:8px}.tool svg{width:14px;height:14px}#tools{gap:0;padding:3px}.tsep{margin:2px 3px}.tool .dot{width:6px;height:6px;right:3px;top:3px}}
-@media (max-height:340px){.tool{width:22px;height:22px}.tool svg{width:13px;height:13px}}
+@media (max-height:780px){#dock{max-height:calc(100% - 28px)}#tools{--ts:clamp(20px, calc((100vh - 172px) / 16), 34px);gap:2px;padding:6px 5px}.tsep{margin:3px 5px}.drip{height:22px}}
+@media (max-height:700px){.tool{border-radius:10px}.tool .k{display:none}.tsep{margin:2px 5px}}
+@media (max-height:620px){.tool{border-radius:9px}.drip{height:20px}}
+@media (max-height:580px){.tool{border-radius:8px}#tools{gap:1px;padding:4px}.tsep{margin:2px 4px}}
+/* very short windows: the features row folds into More features */
+@media (max-height:540px){#tools{--ts:clamp(15px, calc((100vh - 118px) / 11), 30px);padding:3px;gap:1px}.tsep{margin:1px 4px}.drip{display:none}#tools [data-feat]:not([data-feat=more]){display:none}}
+@media (max-height:500px){#minimap{display:none}}
+@media (max-height:400px){#dock{max-height:calc(100% - 16px)}#tools{gap:0;padding:3px}.tsep{margin:2px 3px}.tool .dot{width:6px;height:6px;right:3px;top:3px}}
 /* if a very small window still can't fit every tool, show that the spine scrolls */
 #tools{scrollbar-width:thin;scrollbar-color:var(--line-2) transparent}
 #tools::-webkit-scrollbar{display:block;width:3px}
@@ -1148,6 +1177,13 @@ body:has(#views:not([hidden])) #toast,body:has(#timeline:not([hidden])) #toast{p
         <button class="tool" data-tool="link" title="Connector: drag from a card, release on another or on empty space (A)" aria-label="Connector" aria-pressed="false"><svg viewBox="0 0 20 20"><circle cx="4.8" cy="15.2" r="2"/><circle cx="15.2" cy="4.8" r="2"/><path d="M6.6 14.2c3.6-1.4 3.2-7 6.8-8.4"/></svg><span class="k">A</span></button>
         <button class="tool" data-tool="frame" title="Phase frame (F)" aria-label="Phase frame" aria-pressed="false"><svg viewBox="0 0 20 20"><path d="M3 7.5V3h4.5M12.5 3H17v4.5M17 12.5V17h-4.5M7.5 17H3v-4.5"/></svg><span class="k">F</span></button>
         <button class="tool" data-tool="image" title="Insert image (I) or just paste / drop" aria-label="Insert image" aria-pressed="false"><svg viewBox="0 0 20 20"><rect x="3" y="4" width="14" height="12" rx="2"/><circle cx="7.5" cy="8.5" r="1.4"/><path d="M3.5 14.5l4.2-4 3 2.7 2.3-2 3.5 3.3"/></svg><span class="k">I</span></button>
+        <div class="tsep"></div>
+        <button class="tool" data-feat="snip" aria-label="Screenshot"><svg viewBox="0 0 20 20"><path d="M3 7V4.5A1.5 1.5 0 0 1 4.5 3H7M13 3h2.5A1.5 1.5 0 0 1 17 4.5V7M17 13v2.5a1.5 1.5 0 0 1-1.5 1.5H13M7 17H4.5A1.5 1.5 0 0 1 3 15.5V13"/><circle cx="10" cy="10" r="2.6"/></svg></button>
+        <button class="tool" data-feat="kanban" aria-label="Kanban"><svg viewBox="0 0 20 20"><rect x="3" y="3.5" width="4" height="13" rx="1.2"/><rect x="8" y="3.5" width="4" height="9" rx="1.2"/><rect x="13" y="3.5" width="4" height="6" rx="1.2"/></svg></button>
+        <button class="tool" data-feat="calendar" aria-label="Calendar"><svg viewBox="0 0 20 20"><rect x="3.5" y="4.5" width="13" height="12" rx="2"/><path d="M3.5 8.5h13M7 3v3M13 3v3M7 11.5h.01M10 11.5h.01M13 11.5h.01M7 14h.01M10 14h.01"/></svg></button>
+        <button class="tool" data-feat="timeline" aria-label="Timeline"><svg viewBox="0 0 20 20"><path d="M3 3.5v13"/><rect x="5.5" y="4.5" width="7" height="2.8" rx="1.4"/><rect x="8.5" y="8.6" width="8" height="2.8" rx="1.4"/><rect x="6.5" y="12.7" width="5" height="2.8" rx="1.4"/></svg></button>
+        <button class="tool" data-feat="search" aria-label="Search everything"><svg viewBox="0 0 20 20"><circle cx="8.7" cy="8.7" r="5.2"/><path d="M12.6 12.6l4.2 4.2"/></svg></button>
+        <button class="tool" data-feat="more" aria-label="More features"><svg viewBox="0 0 20 20"><circle cx="5.5" cy="5.5" r="1.3"/><circle cx="10" cy="5.5" r="1.3"/><circle cx="14.5" cy="5.5" r="1.3"/><circle cx="5.5" cy="10" r="1.3"/><circle cx="10" cy="10" r="1.3"/><circle cx="14.5" cy="10" r="1.3"/><circle cx="5.5" cy="14.5" r="1.3"/><circle cx="10" cy="14.5" r="1.3"/><circle cx="14.5" cy="14.5" r="1.3"/></svg></button>
       </nav>
       <svg class="drip" viewBox="0 0 34 30" aria-hidden="true"><path d="M5 0h24c-3.6 0-5.4 2.6-6.4 7-1.1 5-1.6 11.4-5.6 11.4S12.5 12 11.4 7C10.4 2.6 8.6 0 5 0z"/><circle cx="17" cy="25.5" r="2.6"/></svg>
     </div>
@@ -1158,7 +1194,7 @@ body:has(#views:not([hidden])) #toast,body:has(#timeline:not([hidden])) #toast{p
     <input id="labelEdit" hidden aria-label="Connector label" maxlength="60" placeholder="Label">
     <div id="toast" role="status" hidden></div>
     <button id="uiRestore" class="ib" hidden title="Show interface (\)" aria-label="Show interface"><svg viewBox="0 0 20 20"><path d="M2.5 10s2.8-5 7.5-5 7.5 5 7.5 5-2.8 5-7.5 5-7.5-5-7.5-5z"/><circle cx="10" cy="10" r="2.2"/></svg></button>
-    <div id="dragStrip"></div>
+    <div id="dragStrip"><span class="grip"></span><button id="topbarBack" type="button" title="Show the top bar (Ctrl+Shift+B)">Show top bar</button></div>
     <div id="ctBadge" hidden>Click-through on · <kbd id="ctKey">Ctrl+Shift+X</kbd> to turn off</div>
 
     <aside id="planner" hidden aria-label="Planner">
@@ -1221,6 +1257,7 @@ body:has(#views:not([hidden])) #toast,body:has(#timeline:not([hidden])) #toast{p
         <dt><kbd>Tab</kbd></dt><dd>Add a connected task after the selected card</dd>
         <dt><kbd>Red dot</kbd></dt><dd>Drag it out: drop on a card to connect, or on empty space to choose what comes next</dd>
         <dt><kbd>Card pins</kbd></dt><dd>Drag the dot on a card's right edge to connect what comes next, or the left one to connect what it waits on</dd>
+        <dt><kbd>Phase pins</kbd></dt><dd>Phases have the same dots: drag from one phase to the next, and everything in the next phase waits on this one</dd>
         <dt><kbd>Collapse</kbd></dt><dd>Right-click a phase to fold it to its title bar. Double-click the bar to open it</dd>
         <dt><kbd>Tidy</kbd></dt><dd>Right-click the board or a phase, or use Arrange, to lay cards out by what they wait on</dd>
         <dt><kbd>Enter</kbd></dt><dd>Edit the selected card</dd>
@@ -1332,7 +1369,7 @@ body:has(#views:not([hidden])) #toast,body:has(#timeline:not([hidden])) #toast{p
   <div class="sheet tl-sheet" role="dialog" aria-modal="true" aria-labelledby="tlTitle">
     <div class="st-head tl-top"><h2 id="tlTitle">Timeline<em>.</em></h2>
       <div id="tlScale" class="st-seg" role="group" aria-label="Scale"><button type="button" data-v="days">Days</button><button type="button" data-v="weeks">Weeks</button></div>
-      <button id="tlClose" class="ib" aria-label="Close timeline" title="Close (Esc)"><svg viewBox="0 0 20 20"><path d="M5 5l10 10M15 5 5 15"/></svg></button></div>
+      <button id="tlClose" class="ib lbl" title="Back to the board (Esc)"><svg viewBox="0 0 20 20"><path d="M5 5l10 10M15 5 5 15"/></svg>Close</button></div>
     <p id="tlSummary" class="tl-summary"></p>
     <div class="tl-legend"><span><i class="lg crit"></i>Critical path: these decide the finish date</span><span><i class="lg late"></i>Late for its due date</span><span><i class="lg done"></i>Done</span><span>Working days only · estimates in days, a day if none · click a row to jump to the card · drag the end of a bar or a milestone to change it</span></div>
     <div id="tlBody" class="tl-body"></div>
@@ -1344,7 +1381,7 @@ body:has(#views:not([hidden])) #toast,body:has(#timeline:not([hidden])) #toast{p
     <div class="st-head vw-top"><h2 id="vwTitle">Kanban<em>.</em></h2>
       <div id="vwMode" class="st-seg" role="group" aria-label="View"><button type="button" data-v="kanban" title="Cards in columns by status (Shift+K)">Kanban</button><button type="button" data-v="calendar" title="Due dates and milestones by month (Shift+C)">Calendar</button></div>
       <div id="vwNav" class="vw-nav"></div>
-      <button id="vwClose" class="ib" aria-label="Close" title="Close (Esc)"><svg viewBox="0 0 20 20"><path d="M5 5l10 10M15 5 5 15"/></svg></button></div>
+      <button id="vwClose" class="ib lbl" title="Back to the board (Esc)"><svg viewBox="0 0 20 20"><path d="M5 5l10 10M15 5 5 15"/></svg>Close</button></div>
     <div id="vwFilters" class="vw-filters"></div>
     <div id="vwBody" class="vw-body"></div>
   </div>
@@ -1632,13 +1669,30 @@ function matches(n) {
   if (filt.q && !((n.title || '') + '\n' + (n.body || '')).toLowerCase().includes(filt.q.toLowerCase())) return false;
   return true;
 }
+// What a wire joins, as cards. A card is itself; a phase stands for the cards inside it, so a wire from one phase to
+// the next means every card in the second waits on the work in the first. `cache` keeps each phase's cards for one pass.
+function wireCards(end, cache) {
+  const o = end && end.id ? idx.get(end.id) : null;
+  if (!o) return [];
+  if (o.type === 'node') return [o];
+  if (o.type !== 'frame') return [];
+  if (cache && cache.has(o.id)) return cache.get(o.id);
+  const list = doc.items.filter(n => n.type === 'node' && containsBox(o, bboxOf(n)));
+  if (cache) cache.set(o.id, list);
+  return list;
+}
 function traceSet(id) {
-  const keep = new Set([id]);
+  const keep = new Set([id]), fc = new Map();
+  const phasesOf = o => (o && o.type === 'node' ? doc.items.filter(f => f.type === 'frame' && containsBox(f, bboxOf(o))).map(f => f.id) : []);
   for (const [a, b] of [['from', 'to'], ['to', 'from']]) {
     const q = [id], seen = new Set([id]);
     while (q.length) {
-      const cur = q.shift();
-      for (const l of doc.links) { const s = l[a].id, t = l[b].id; if (s === cur && t && !seen.has(t)) { seen.add(t); keep.add(t); q.push(t); } }
+      const cur = q.shift(), ends = new Set([cur, ...phasesOf(idx.get(cur))]);  // a card is also wired through its phases
+      for (const l of doc.links) {
+        const s = l[a].id, t = l[b].id; if (!ends.has(s) || !t || seen.has(t)) continue;
+        seen.add(t); keep.add(t); q.push(t);
+        for (const c of wireCards(l[b], fc)) if (c.id !== t && !seen.has(c.id)) { seen.add(c.id); keep.add(c.id); q.push(c.id); }
+      }
     }
   }
   return keep;
@@ -1648,11 +1702,13 @@ function computeDerived() {
   commentCounts = new Map();
   for (const c of doc.comments) commentCounts.set(c.card, (commentCounts.get(c.card) || 0) + 1);
   openDeps = new Map();
+  const fc = new Map();
   for (const l of doc.links) {
     if (!l.from.id || !l.to.id) continue;
-    const a = idx.get(l.from.id), b = idx.get(l.to.id);
-    if (!a || !b || a.type !== 'node' || b.type !== 'node' || a.kind === 'idea' || a.prio === 'wont') continue;
-    if (a.status !== 'done') openDeps.set(b.id, (openDeps.get(b.id) || 0) + 1);
+    // each wire counts once: a phase that still has work in it holds up everything the wire leads to
+    const A = wireCards(l.from, fc).filter(a => a.kind !== 'idea' && a.prio !== 'wont');
+    if (!A.some(a => a.status !== 'done')) continue;
+    for (const b of wireCards(l.to, fc)) if (!A.includes(b)) openDeps.set(b.id, (openDeps.get(b.id) || 0) + 1);
   }
   frameStats = new Map();
   for (const f of doc.items) {
@@ -2331,7 +2387,7 @@ function renderUI() {
   } else if (one && one.type !== 'stroke' && !one.locked) {
     const b = bboxOf(one), a = toScreen(b.x, b.y), W = b.w * z, H = b.h * z;
     const px = a.x + W + 24, py = a.y + H / 2;
-    if (one.type !== 'node' || !pinsOn()) {  // cards show their pins instead (see "pins on cards")
+    if (!(one.type === 'node' && pinsOn()) && !(one.type === 'frame' && pinsOn(PHASE_PIN_ZOOM))) {  // cards and phases show their pins instead (see "pins on cards")
       handles.push({kind: 'port', x: px, y: py});
       s += `<path class="u-port-line" d="M${rd(a.x + W + 3)} ${rd(py)}C${rd(a.x + W + 11)} ${rd(py - 7)} ${rd(px - 12)} ${rd(py + 7)} ${rd(px - 7)} ${rd(py)}"/><circle class="u-port" cx="${rd(px)}" cy="${rd(py)}" r="7.5"/><path class="u-port-plus" d="M${rd(px - 3)} ${rd(py)}h6M${rd(px)} ${rd(py - 3)}v6"/>`;
     }
@@ -3870,39 +3926,56 @@ function startLink(from, w, fromPort, rev) {
    or the input pin to connect what this card waits on; let go on empty space to pick a new card for it.
    A pin fills in when something is already wired to that side. Hidden when zoomed far out and when the board
    can't be edited. */
-const PIN_ZOOM = 0.35;
+/* Phases have the same pair of dots on their sides, to wire one phase to the next: everything in the next phase then
+   waits on the work in this one. They show on a phase under the pointer (away from its cards) and on a selected one,
+   and stay usable further out than cards' dots, since phases are big. */
+const PIN_ZOOM = 0.35, PHASE_PIN_ZOOM = 0.12;
 let pinHover = null, pinPtr = null;
-const pinsOn = () => tool === 'select' && cam.z >= PIN_ZOOM && !editing && !pending && !viewOnly();
-function pinCardAt(w) {  // the card under the pointer, counting a margin at its sides where the pins sit
-  const m = 12 / cam.z;
+const pinsOn = (z = PIN_ZOOM) => tool === 'select' && cam.z >= z && !editing && !pending && !viewOnly();
+const pinBox = o => (o.type === 'frame' && o.collapsed ? barBox(o) : o);  // where a phase's dots sit: halfway down its sides, or its bar
+function pinCardAt(w) {  // the card under the pointer, counting a margin at its sides where the pins sit, or else the phase
+  const m = 12 / cam.z; let phase = null, covered = false;
   for (let i = doc.items.length - 1; i >= 0; i--) {
     const o = doc.items[i];
-    if (o.type === 'frame' || tucked.by.has(o.id)) continue;
-    if (inRect(w, o.type === 'node' ? {x: o.x - m, y: o.y, w: o.w + m * 2, h: o.h || 0} : rawBox(o))) return o.type === 'node' && !o.locked ? o.id : null;
+    if (tucked.by.has(o.id)) continue;
+    if (o.type === 'frame') {
+      if (!phase && inRect(w, o.collapsed ? {...barBox(o), x: o.x - m, w: o.w + m * 2} : {...outerBox(o), x: o.x - m, w: o.w + m * 2})) phase = o.locked ? '' : o.id;
+      continue;
+    }
+    if (o.type === 'node' && !covered && inRect(w, {x: o.x - m, y: o.y, w: o.w + m * 2, h: o.h || 0})) return o.locked ? null : o.id;
+    if (o.type !== 'node' && inRect(w, rawBox(o))) covered = true;  // a picture or text on top: no card dots under it
   }
-  return null;
+  return phase || null;
+}
+// a phase under a point, the innermost one, leaving out `except`: where a wire from a phase's dot lands
+function phaseAt(w, except) {
+  let best = null;
+  for (const f of doc.items) if (f.type === 'frame' && f.id !== except && !f.locked && !tucked.by.has(f.id) && inRect(w, f.collapsed ? barBox(f) : outerBox(f)) && (!best || f.w * f.h < best.w * best.h)) best = f;
+  return best;
 }
 function pinUI() {
-  if (!pinsOn() || (drag && drag.type !== 'link')) return '';
-  const lit = new Map();  // card id → the pin to light up ('in', 'out' or '')
+  if (!pinsOn(PHASE_PIN_ZOOM) || (drag && drag.type !== 'link')) return '';
+  const lit = new Map();  // card or phase id → the pin to light up ('in', 'out' or '')
+  const pinnable = o => o && (o.type === 'node' || o.type === 'frame');
   if (drag) {
     const src = idx.get((drag.rev ? drag.temp.to : drag.temp.from).id), t = drag.target;
-    if (src && src.type === 'node') lit.set(src.id, drag.rev ? 'in' : 'out');
-    if (t && t.type === 'node') lit.set(t.id, drag.rev ? 'out' : 'in');
+    if (pinnable(src)) lit.set(src.id, drag.rev ? 'in' : 'out');
+    if (pinnable(t)) lit.set(t.id, drag.rev ? 'out' : 'in');
   } else {
     const one = sel.size === 1 ? idx.get([...sel][0]) : null;
-    if (one && one.type === 'node') lit.set(one.id, '');
+    if (pinnable(one)) lit.set(one.id, '');
     if (pinHover && !lit.has(pinHover)) lit.set(pinHover, '');
   }
   let s = '';
   for (const [id, on] of lit) {
     const c = idx.get(id); if (!c || c.locked || tucked.by.has(id)) continue;
-    const a = toScreen(c.x, c.y), y = a.y + (c.h || 0) * cam.z / 2;
-    for (const [side, x] of [['in', a.x], ['out', a.x + c.w * cam.z]]) {
+    const phase = c.type === 'frame'; if (!phase && cam.z < PIN_ZOOM) continue;
+    const b = pinBox(c), a = toScreen(b.x, b.y), y = a.y + (b.h || 0) * cam.z / 2;
+    for (const [side, x] of [['in', a.x], ['out', a.x + b.w * cam.z]]) {
       const hot = on === side || (!drag && pinPtr && pinPtr.id === id && pinPtr.side === side);
       const wired = doc.links.some(l => side === 'in' ? l.to.id === id : l.from.id === id);
       if (!drag) handles.push({kind: 'pin', id, rev: side === 'in', x, y});
-      s += `<circle class="u-pin${wired ? ' on' : ''}${hot ? ' hot' : ''}" cx="${rd(x)}" cy="${rd(y)}" r="${hot ? 6.5 : 5}" style="--pc:${col(c.color)}"/>`;
+      s += `<circle class="u-pin${phase ? ' ph' : ''}${wired ? ' on' : ''}${hot ? ' hot' : ''}" cx="${rd(x)}" cy="${rd(y)}" r="${hot ? (phase ? 7.5 : 6.5) : phase ? 6 : 5}" style="--pc:${col(c.color)}"/>`;
     }
   }
   return s;
@@ -3910,7 +3983,7 @@ function pinUI() {
 stage.addEventListener('pointermove', e => {
   if (e.pointerType === 'touch') return;
   let id = null, hot = null;
-  if (!drag && pinsOn()) {
+  if (!drag && pinsOn(PHASE_PIN_ZOOM)) {
     const p = screenPt(e);
     hot = handles.find(h => h.kind === 'pin' && Math.hypot(h.x - p.x, h.y - p.y) <= 10) || null;
     id = hot ? hot.id : pinCardAt(toWorld(p));
@@ -4047,8 +4120,9 @@ stage.addEventListener('pointermove', e => {
     case 'erase': hover = {eraser: p}; eraseAt(w); renderUI(); break;
     case 'frame': { const f = idx.get(drag.id), r = normRect(drag.a, w); Object.assign(f, {x: rd(r.x), y: rd(r.y), w: rd(r.w), h: rd(r.h)}); render(); teamPreview([drag.id]); break; }
     case 'link': {
-      const fixed = drag.rev ? drag.temp.to : drag.temp.from;
-      const h = itemAt(w, true), t = h && h.id !== fixed.id ? h : null;
+      const fixed = drag.rev ? drag.temp.to : drag.temp.from, from = fixed.id && idx.get(fixed.id);
+      const h = itemAt(w, true); let t = h && h.id !== fixed.id ? h : null;
+      if (from && from.type === 'frame' && drag.fromPort && t && t.type !== 'frame') t = phaseAt(w, from.id) || t;
       drag.target = t; drag.cur = w; drag.temp[drag.rev ? 'from' : 'to'] = t ? {id: t.id} : {x: rd(w.x), y: rd(w.y)};
       renderLinks(); renderUI(); break;
     }
@@ -4120,6 +4194,9 @@ function onUp(e) {
         // released on empty space from a card: ask what comes next (Blueprint-style), or what it waits on from an input pin
         pending = {temp: d.temp, rev: d.rev, at: {x: rd(d.cur.x), y: rd(d.cur.y)}, dir: unit(d.cur.x - d.start.x, d.cur.y - d.start.y)};
         refresh(); openPicker({x: e.clientX, y: e.clientY});
+        // from a phase, the likely next thing is another phase
+        const src = idx.get((d.rev ? d.temp.to : d.temp.from).id);
+        if (src && src.type === 'frame') { pkIndex = Math.max(0, pkItems.findIndex(p => p.k === 'frame')); renderPickList(); }
         return;
       } else if (moved) {
         const l = {...d.temp, id: uid()};
@@ -4242,6 +4319,8 @@ function placeNext(k) {
   else if (k === 'frame') { const n = doc.items.filter(i => i.type === 'frame').length + 1; it = {id: uid(), type: 'frame', x: 0, y: 0, w: 600, h: 400, title: `Phase ${pad2(n)}`, color: opts.frame.color}; hEst = 400; }
   else { it = cardObj(k, src); hEst = k === 'idea' ? 80 : 110; }
   positionNear(it, p.at, p.dir, hEst);
+  // a phase from a phase's dot lines up with it: same top and height, beside it
+  if (k === 'frame' && src && src.type === 'frame') { it.h = src.collapsed ? 400 : src.h; it.y = src.y; if (Math.abs(p.dir.x) >= Math.abs(p.dir.y)) it.x = rd(p.dir.x >= 0 ? Math.max(p.at.x, src.x + src.w + 40) : Math.min(p.at.x - it.w, src.x - 40 - it.w)); }
   doc.items.push(it);
   const l = {...p.temp, id: uid(), [p.rev ? 'from' : 'to']: {id: it.id}}; doc.links.push(l); grown = l.id;
   setTimeout(() => { if (grown === l.id) grown = null; }, 700);
@@ -6292,7 +6371,7 @@ async function toggleClickThrough(on) {
 }
 function toggleTopbar() {
   topbarOn = !topbarOn; savePref('topbar', topbarOn); applyTopbar();
-  if (!topbarOn) toast('Top bar hidden. Right-click anywhere or press Ctrl+Shift+B to bring it back.', 3600);
+  if (!topbarOn) toast(desk ? 'Top bar hidden. Drag the handle at the top to move the window, and right-click anywhere or press Ctrl+Shift+B to bring the bar back.' : 'Top bar hidden. Right-click anywhere or press Ctrl+Shift+B to bring it back.', 5000);
   else { clearTimeout(toastT); $('#toast').hidden = true; }
 }
 function applyTopbar() {
@@ -6505,6 +6584,74 @@ document.addEventListener('mousedown', e => { if (e.target.closest('#top button,
 
 /* ---------- chrome wiring ---------- */
 $('#tools').addEventListener('click', e => { const b = e.target.closest('[data-tool]'); if (b) setTool(b.dataset.tool); });
+$('#topbarBack').onclick = () => toggleTopbar();
+// the features row of the spine: views and tools that otherwise live in menus and shortcuts
+const FEATS = {
+  snip: () => takeScreenshot(viewCenter()),
+  kanban: () => openViews('kanban'),
+  calendar: () => openViews('calendar'),
+  timeline: () => openTimeline(),
+  search: () => openSearchAll(),
+  more: b => { const r = b.getBoundingClientRect(); showMenu(r.right + 10, r.top, moreFeatures()); },
+};
+function moreFeatures() {
+  const cards = doc.items.filter(o => o.type === 'node').length;
+  const folded = matchMedia('(max-height:540px)').matches;  // the features row is folded in here on very short windows
+  return [
+    {head: 'More features'},
+    ...(folded ? [{label: 'Screenshot', icon: 'image', run: FEATS.snip}, {label: 'Kanban', kb: 'Shift K', icon: 'arrange', run: FEATS.kanban}, {label: 'Calendar', kb: 'Shift C', icon: 'cal', run: FEATS.calendar},
+      {label: 'Timeline', kb: 'Shift G', icon: 'trace', run: FEATS.timeline}, {label: 'Search everything', kb: 'Ctrl Shift F', icon: 'notes', run: FEATS.search}, '-'] : []),
+    {label: plannerOpen ? 'Hide the Planner' : 'Planner', icon: 'notes', run: () => setPlanner(!plannerOpen)},
+    {label: 'Templates', icon: 'plus', run: openTemplates},
+    {label: 'Game jam clock', icon: 'clock', run: () => addJam(viewCenter())},
+    ...(cards >= 2 ? [{label: 'Tidy layout', icon: 'trace', run: tidyBoard}] : []),
+    {label: 'Make a timelapse…', icon: 'play', run: openTimelapse},
+    ...(board.team ? [{label: 'Version history…', icon: 'clock', run: openVersions}] : []),
+    '-',
+    ...(desk ? [{label: 'Screenshot a window', icon: 'image', run: () => takeScreenshot(null, {mode: 'window'})}, {label: 'Screenshot in 3 seconds', icon: 'clock', run: () => takeScreenshot(null, {delay: 3})}] : []),
+    {label: 'Import from PureRef, Trello, Jira or CSV…', icon: 'arrow', run: () => { if (!blocked()) $('#fileImport').click(); }},
+    {label: 'Keyboard shortcuts', kb: '?', icon: 'key', run: () => { $('#help').hidden = false; }},
+  ];
+}
+$('#tools').addEventListener('click', e => { const b = e.target.closest('[data-feat]'); if (b) { hideTip(); FEATS[b.dataset.feat](b); } });
+// what each spine button is, its keys and what it does, shown beside it on hover
+const TIPS = {
+  select: ['Select & move', 'V', 'Click to select, drag to move. Drag across empty space to select several.'],
+  hand: ['Pan', 'G · Space', 'Drag to move around the board. The mouse wheel zooms.'],
+  pen: ['Marker', 'P', 'Draw on the board. Ink drawn on a card or picture moves with it.'],
+  hl: ['Highlighter', 'H', 'See-through ink for marking things up.'],
+  eraser: ['Eraser', 'E', 'Drag over ink to rub it out.'],
+  node: ['Card', 'N', 'Click to add a task, milestone, bug or idea. Double-clicking empty space works too.'],
+  text: ['Text', 'T', 'Click to add a label or a heading.'],
+  link: ['Connector', 'A', 'Drag from a card or a phase to another one to show what waits on what.'],
+  frame: ['Phase', 'F', 'Drag out a phase to group cards. Drag the dots on its sides to connect it to the next phase.'],
+  image: ['Picture', 'I', 'Add a picture from a file. Pasting and dropping pictures work too.'],
+  snip: ['Screenshot', () => (desk ? deskState.snipLabel : 'Alt+Shift+S'), () => (desk ? 'Grab any part of any screen, mark it up, then put it on the board, copy it, save it or share a link.' : 'Grab part of a screen, a window or a tab and put it on the board.')],
+  kanban: ['Kanban', 'Shift+K', 'Your cards in To do, In progress, Blocked and Done columns. Drag them along.'],
+  calendar: ['Calendar', 'Shift+C', 'Due dates and milestones on a month grid. Drag a card to another day.'],
+  timeline: ['Timeline', 'Shift+G', 'The schedule in working days, worked out from estimates and connections.'],
+  search: ['Search everything', 'Ctrl+Shift+F', 'Find cards and text on every board on this computer and in your team projects.'],
+  more: ['More features', '', 'Planner, templates, game jam clock, tidy layout, timelapse, import and more.'],
+};
+const tipEl = document.createElement('div'); tipEl.id = 'tip'; tipEl.hidden = true; tipEl.setAttribute('role', 'tooltip'); document.body.append(tipEl);
+const val = v => (typeof v === 'function' ? v() : v);
+function showTip(b) {
+  const t = TIPS[b.dataset.tool || b.dataset.feat]; if (!t) return;
+  const keys = val(t[1]);
+  tipEl.innerHTML = `<b>${esc(t[0])}</b>${keys ? `<span class="tk">${keys.split(' · ').map(k => k.split('+').map(x => `<kbd>${esc(x)}</kbd>`).join('+')).join(' or ')}</span>` : ''}<p>${esc(val(t[2]))}</p>`;
+  tipEl.hidden = false;
+  const r = b.getBoundingClientRect(), h = tipEl.offsetHeight;
+  tipEl.style.left = rd(r.right + 10) + 'px';
+  tipEl.style.top = rd(clamp(r.top + r.height / 2 - h / 2, 8, innerHeight - h - 8)) + 'px';
+}
+function hideTip() { tipEl.hidden = true; }
+for (const b of document.querySelectorAll('#tools .tool')) b.removeAttribute('title');  // the hover label says it better
+$('#tools').addEventListener('pointerover', e => { const b = e.target.closest('.tool'); if (b && e.pointerType !== 'touch') showTip(b); });
+$('#tools').addEventListener('pointerout', e => { const b = e.target.closest('.tool'); if (b && !b.contains(e.relatedTarget)) hideTip(); });
+$('#tools').addEventListener('pointerdown', hideTip);
+$('#tools').addEventListener('focusin', e => { const b = e.target.closest('.tool'); if (b && b.matches(':focus-visible')) showTip(b); });
+$('#tools').addEventListener('focusout', hideTip);
+$('#tools').addEventListener('scroll', hideTip);
 $('#undoBtn').onclick = undo;
 $('#redoBtn').onclick = redo;
 $('#zoomBtn').onclick = () => fitTo(allObjs());
@@ -9027,7 +9174,12 @@ function workOffset(date) {
 function schedule() {
   const nodes = doc.items.filter(n => n.type === 'node' && n.kind !== 'idea' && n.prio !== 'wont');
   const byId = new Map(nodes.map(n => [n.id, n])), preds = new Map(nodes.map(n => [n.id, []])), succs = new Map(nodes.map(n => [n.id, []]));
-  for (const l of doc.links) if (l.from.id && l.to.id && byId.has(l.from.id) && byId.has(l.to.id) && l.from.id !== l.to.id) { preds.get(l.to.id).push(l.from.id); succs.get(l.from.id).push(l.to.id); }
+  const fc = new Map();
+  for (const l of doc.links) {
+    if (!l.from.id || !l.to.id || l.from.id === l.to.id) continue;
+    const A = wireCards(l.from, fc).filter(a => byId.has(a.id)), B = wireCards(l.to, fc).filter(b => byId.has(b.id));
+    for (const b of B) for (const a of A) if (a.id !== b.id && !preds.get(b.id).includes(a.id)) { preds.get(b.id).push(a.id); succs.get(a.id).push(b.id); }
+  }
   // order so every card comes after what it waits on (loops are broken where they close)
   const order = [], state = new Map();
   const visit = id => { if (state.get(id) === 2) return; if (state.get(id) === 1) return; state.set(id, 1); for (const p of preds.get(id)) visit(p); state.set(id, 2); order.push(id); };

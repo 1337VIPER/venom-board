@@ -83,6 +83,7 @@ Solo boards need no account, no subscription and no telemetry. They work offline
 - **Tidy layout**: lay cards out left to right by what they wait on, with fewer crossings, for the selection, one phase or the whole board
 - **Place next**: drag a connector out of a card into empty space and choose what comes next, Blueprint-style. `Tab` adds the next connected task instantly
 - **Dependency awareness**: cards show *waits on N* while anything feeding into them is unfinished, the *Ready to start* filter lists what you can pick up today, and **Trace** highlights a card's whole chain of dependencies
+- **Connect phases** like cards: drag the dot on a phase's side to the next phase (or onto empty space for a new one lined up beside it), and everything in the next phase waits on the work in this one, in the schedule, the Timeline, Trace and *Ready to start*
 - **Phase frames** carry everything inside them when moved and show finished tasks, progress and remaining estimate in their header. **Collapse** a phase to its title bar to hide what's inside, or make it a **sprint** with dates and capacity per teammate, with progress, capacity and velocity in the Planner
 - **Planner panel** (`Ctrl+F`): percent done, ready count, days of work left, open bugs, overdue items, milestone countdowns, a **burndown chart** to the next milestone, search and filters (including *Mine*) that dim the rest of the board
 - **Timeline** (`Shift+G`): every task scheduled in working days from its estimate and what it waits on, with the **critical path** that decides your finish date, due dates you'll miss, and finished work. Drag a bar's end to change its estimate, or a milestone to move its date
@@ -127,6 +128,7 @@ Solo boards need no account, no subscription and no telemetry. They work offline
 - **Automatic updates**: the app checks for new versions when it starts, downloads them in the background and installs them when you restart. *Restart to update* appears in the top bar when one is ready, and **Check for updates** is in the Window menu. Every update is checked against Venom Board's update signature before it installs
 - Right-click anywhere for the Window menu. Every window option is also in **Settings** (`Ctrl+,`)
 - Two skins: **Venom** (dark) and **Anti-Venom** (light)
+- **Every feature one click away**: the tool spine has buttons for Screenshot, Kanban, Calendar, Timeline and Search everything, and *More features* for the Planner, templates, the game jam clock, Tidy layout, timelapses and import. Hover any tool to see its name, keys and what it does
 - **Fits any screen**: on small or low-resolution screens the top bar folds its least-used buttons into a **⋯** menu and the tool spine compacts, and **View → Interface size** (80–150%) scales everything up or down
 
 ## Screenshots
