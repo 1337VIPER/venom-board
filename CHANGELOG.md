@@ -2,7 +2,7 @@
 
 All notable changes to Venom Board are listed here. The project follows [Semantic Versioning](https://semver.org).
 
-## [Unreleased]
+## [1.7.0] - 2026-10-14
 
 ### Added
 - **Connect phases**: phases have the same dots as cards. Drag from a phase's right dot to the next phase, or onto empty space for a new phase lined up beside it, and everything in the next phase waits on the work in this one: *waits on*, *Ready to start*, Trace and the Timeline all follow it
