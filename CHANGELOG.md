@@ -2,7 +2,7 @@
 
 All notable changes to Venom Board are listed here. The project follows [Semantic Versioning](https://semver.org).
 
-## [Unreleased]
+## [1.8.0] - 2026-10-15
 
 ### Added
 - **Track time**: a panel for logging how long you worked on each task. Type it (like *3h 20m*) with the day, start time and a note, or start the timer from it. Today's total fills a bar towards 8 hours, and every entry is listed by day with who logged it, its time and note, a button to track more on that task and one to delete it. Open it from the toolbar's new Track time button or a card's right-click menu
