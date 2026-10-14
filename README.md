@@ -128,6 +128,7 @@ Solo boards need no account, no subscription and no telemetry. They work offline
 - **Automatic updates**: the app checks for new versions when it starts, downloads them in the background and installs them when you restart. *Restart to update* appears in the top bar when one is ready, and **Check for updates** is in the Window menu. Every update is checked against Venom Board's update signature before it installs
 - Right-click anywhere for the Window menu. Every window option is also in **Settings** (`Ctrl+,`)
 - Two skins: **Venom** (dark) and **Anti-Venom** (light)
+- **Track time** on tasks: type how long you worked (*3h 20m*) or run a timer, see today's total, everyone's entries by day and who worked on what, a weekly **timesheet** per person, and export it all as CSV. The Timeline's **Hours** view shows the day hour by hour, like a calendar
 - **Every feature one click away**: the tool spine has buttons for Screenshot, Kanban, Calendar, Timeline and Search everything, and *More features* for the Planner, templates, the game jam clock, Tidy layout, timelapses and import. Hover any tool to see its name, keys and what it does
 - **Fits any screen**: on small or low-resolution screens the top bar folds its least-used buttons into a **⋯** menu and the tool spine compacts, and **View → Interface size** (80–150%) scales everything up or down
 

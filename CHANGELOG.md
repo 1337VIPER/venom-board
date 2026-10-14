@@ -2,6 +2,18 @@
 
 All notable changes to Venom Board are listed here. The project follows [Semantic Versioning](https://semver.org).
 
+## [Unreleased]
+
+### Added
+- **Track time**: a panel for logging how long you worked on each task. Type it (like *3h 20m*) with the day, start time and a note, or start the timer from it. Today's total fills a bar towards 8 hours, and every entry is listed by day with who logged it, its time and note, a button to track more on that task and one to delete it. Open it from the toolbar's new Track time button or a card's right-click menu
+- **Who worked on what**: on team boards each entry belongs to the person who logged it, and only they can delete it. A task shows its total and each person's share, and the list can show your time or everyone's
+- **Timesheet**: a week of tracked time, tasks down the side and days across, with each person's total. Go back week by week, pick one person, or export every entry as a CSV for a spreadsheet
+- **Hours in the Timeline**: a new *Hours* view shows one day hour by hour, like a calendar: the time people tracked sits at the hours they worked it (side by side when it overlaps), a running timer shows live, a line marks the current time, and the tasks planned or due that day are in the *All day* row. Move day by day, and click an empty hour to log time from then
+- **Upload progress**: a picture or video you paste, drop or screenshot shows in a tray at the bottom left with a preview, a progress bar and its percentage while it's read or uploaded, then *On the board* once it's there
+
+### Changed
+- **The timer keeps a record**: stopping it now adds an entry to the card's log (with the note you started it with), as well as adding to its tracked time
+
 ## [1.7.0] - 2026-10-14
 
 ### Added

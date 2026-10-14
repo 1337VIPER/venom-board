@@ -274,7 +274,7 @@ html.board-locked .frame:not(.collapsed) .f-fold{display:none}
 .tool:hover{color:var(--bone);background:var(--hide-3)}
 .tool[aria-pressed=true]{color:var(--void);background:var(--bone);border-radius:64% 10% 64% 10%;box-shadow:0 0 18px -3px color-mix(in srgb,var(--bone) 55%,transparent)}
 /* the spine's buttons size themselves to the window's height, so every one fits at any interface size */
-#tools{--ts:clamp(28px, calc((100vh - 300px) / 16), 40px)}
+#tools{--ts:clamp(28px, calc((100vh - 300px) / 17), 40px)}
 .tool svg{width:calc(var(--ts,40px) * .5);height:calc(var(--ts,40px) * .5)}
 .tool .k{position:absolute;right:4px;bottom:2px;font:600 8.5px var(--font-mono);opacity:.5}
 .tool .dot{position:absolute;right:5px;top:5px;width:8px;height:8px;border-radius:50%;background:var(--c,var(--fang));box-shadow:0 0 0 1.5px var(--hide)}
@@ -814,6 +814,48 @@ html.watching #tools .tool:not([data-tool=select]):not([data-tool=hand]),html.wa
 .tl-top h2{flex:none}
 .tl-top .st-seg{margin-left:auto}
 .tl-summary{margin:0;padding:12px 26px 4px;font-size:13px;color:var(--bone);max-width:none}
+/* the Timeline's Hours view: one day, hour by hour, with the time people tracked and the tasks planned for it */
+#timeline.hours .tl-legend{display:none}
+.th-top{position:sticky;top:0;z-index:5;background:var(--hide);border-bottom:1px solid var(--line)}
+.th-nav{display:flex;align-items:center;gap:8px;padding:10px 20px 6px}
+.th-nav b{font:800 14px var(--font-ui);margin-left:6px}
+.th-nav small{font:600 11px var(--font-mono);color:var(--bone-faint)}
+.th-allday{display:flex;gap:12px;align-items:flex-start;padding:4px 20px 10px}
+.th-lab{width:58px;flex:none;padding-top:6px;text-align:right;font:600 10.5px var(--font-mono);color:var(--bone-faint)}
+.th-chips{display:flex;flex-wrap:wrap;gap:6px;flex:1;min-width:0}
+.th-chips .tm-note{margin:5px 0 0}
+.th-chip{height:26px;max-width:280px;padding:0 10px;border-radius:8px;border:1px solid color-mix(in srgb,var(--c) 50%,transparent);background:color-mix(in srgb,var(--c) 12%,var(--hide-2));color:var(--bone);font:700 12px var(--font-ui);cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.th-chip.ms{border-radius:4px 12px 12px 4px}
+.th-grid{position:relative;margin:14px 24px 24px 92px;cursor:copy}
+.th-h{position:absolute;left:0;right:0;height:0;border-top:1px solid var(--line)}
+.th-h.half{border-top-style:dashed;opacity:.45}
+.th-h span{position:absolute;left:-70px;top:-7px;width:58px;text-align:right;font:600 10.5px var(--font-mono);color:var(--bone-faint)}
+.th-b{position:absolute;z-index:2;padding:3px 8px;border:0;border-left:3px solid var(--c);border-radius:4px 8px 8px 4px;background:color-mix(in srgb,var(--c) 22%,var(--hide-2));color:var(--bone);text-align:left;overflow:hidden;cursor:pointer;font:600 11.5px/1.35 var(--font-ui);box-shadow:0 0 0 1px var(--hide)}
+.th-b:hover{background:color-mix(in srgb,var(--c) 32%,var(--hide-2))}
+.th-b b{display:block;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.th-b span{display:block;color:var(--bone-dim);font:600 10.5px var(--font-mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.th-b.live{background-image:repeating-linear-gradient(135deg,transparent 0 6px,color-mix(in srgb,var(--c) 16%,transparent) 6px 12px)}
+.th-now{position:absolute;left:-6px;right:0;z-index:3;height:2px;background:var(--fang);pointer-events:none}
+.th-now span{position:absolute;left:-54px;top:-9px;padding:1px 6px;border-radius:6px;background:var(--fang);color:#fff;font:800 10px var(--font-mono)}
+/* pictures on their way to the board: a preview, a bar and the percentage, bottom left of the board */
+#uploads{position:absolute;left:76px;bottom:16px;z-index:30;display:flex;flex-direction:column;gap:8px;width:min(310px,calc(100% - 96px));pointer-events:none}
+html.ui-off #uploads{left:16px}
+.up-row{display:flex;align-items:center;gap:10px;padding:8px 12px 8px 8px;border:1px solid var(--line-2);border-radius:14px 14px 14px 4px;background:var(--hide-2);box-shadow:0 16px 34px -14px var(--shadow);animation:up-in .18s ease-out;pointer-events:auto}
+@keyframes up-in{from{opacity:0;transform:translateY(8px)}}
+.up-row img,.up-row .up-ico{width:42px;height:42px;flex:none;border-radius:8px;object-fit:cover;background:var(--void-2);display:grid;place-items:center;color:var(--bone-faint)}
+.up-mid{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+.up-mid em{font:700 12.5px var(--font-ui);font-style:normal;color:var(--bone);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.up-mid span{font:500 11px var(--font-ui);color:var(--bone-faint)}
+.up-bar{height:5px;border-radius:9px;background:var(--void-2);overflow:hidden}
+.up-bar i{display:block;width:0;height:100%;border-radius:9px;background:var(--fang);transition:width .2s ease}
+.up-row b{flex:none;min-width:38px;text-align:right;font:800 12.5px var(--font-mono);color:var(--bone)}
+.up-row.ok .up-bar i{background:var(--ok)}
+.up-row.ok .up-mid span{color:var(--ok)}
+.up-row.bad{border-color:color-mix(in srgb,var(--bad) 60%,transparent)}
+.up-row.bad .up-bar i{background:var(--bad)}
+.up-row.bad .up-mid span{color:var(--bad)}
+.up-row.out{opacity:0;transform:translateY(6px);transition:opacity .3s,transform .3s}
+.th-hint{position:sticky;bottom:0;margin:0;max-width:none;padding:8px 20px;background:linear-gradient(transparent,var(--hide) 40%);font:500 11.5px var(--font-ui);color:var(--bone-faint);text-align:center;pointer-events:none}
 .tl-legend{display:flex;flex-wrap:wrap;gap:6px 18px;padding:4px 26px 12px;font:500 11px var(--font-mono);color:var(--bone-faint);border-bottom:1px solid var(--line)}
 .tl-legend span{display:inline-flex;align-items:center;gap:6px}
 .lg{width:18px;height:8px;border-radius:3px;display:inline-block;background:var(--bone-faint)}
@@ -970,6 +1012,78 @@ body:has(#views:not([hidden])) #toast,body:has(#timeline:not([hidden])) #toast{p
 .n-tags .tg::before{content:"#";opacity:.5;margin-right:1px}
 .n-tags .tg:hover{color:var(--bone);border-color:color-mix(in srgb,var(--tag) 70%,transparent)}
 .chip.tk-spent{font-family:var(--font-mono);font-weight:600}
+/* the Track time panel: today's total, a form to log time or start the timer, and every entry by day */
+#trackPanel{position:absolute;top:0;right:0;bottom:0;width:min(380px,100%);background:var(--hide);border-left:1px solid var(--line);display:flex;flex-direction:column;z-index:15;box-shadow:-24px 0 40px -24px var(--shadow)}
+html.desktop.topbar-off #trackPanel{padding-top:calc(30px / var(--ui-scale, 1))}
+html.ui-off #trackPanel{display:none!important}
+#trBody{flex:1;overflow:auto;padding:4px 16px 18px;min-height:0;display:flex;flex-direction:column;gap:12px}
+.tr-today{display:flex;flex-direction:column;gap:7px}
+.tr-today .tr-row{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font:700 12.5px var(--font-ui);color:var(--bone-dim)}
+.tr-today b{font:800 15px var(--font-mono);color:var(--bone)}
+.tr-today small{font:600 12px var(--font-mono);color:var(--bone-faint)}
+.tr-bar{height:6px;border-radius:9px;background:var(--void-2);overflow:hidden}
+.tr-bar i{display:block;height:100%;border-radius:9px;background:var(--fang);transition:width .3s ease}
+.tr-run{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid color-mix(in srgb,var(--fang) 55%,transparent);border-radius:14px;background:color-mix(in srgb,var(--fang) 9%,var(--hide-2))}
+.tr-run .tc-dot{width:8px;height:8px;border-radius:50%;background:var(--run);box-shadow:0 0 8px var(--run);flex:none;animation:vbpulse 1.8s ease-in-out infinite}
+.tr-run div{flex:1;min-width:0}
+.tr-run b{display:block;font:700 13px var(--font-ui);color:var(--bone);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tr-run span{font:600 12px var(--font-mono);color:var(--bone-dim)}
+.tr-form{border:1px solid var(--line);border-radius:14px;background:var(--hide-2);display:flex;flex-direction:column}
+.tr-form>*{border-bottom:1px solid var(--line)}
+.tr-form>:last-child{border-bottom:0}
+.tr-f{display:flex;align-items:center;gap:9px;padding:6px 12px;min-height:44px}
+.tr-f .tm-ico{color:var(--bone-faint);flex:none}
+.tr-f input,.tr-f select{flex:1;min-width:0;height:32px;border:0;background:transparent;color:var(--bone);font:600 13px var(--font-ui);outline:none;padding:0}
+.tr-f select{cursor:pointer}
+.tr-f select option,.tr-f select optgroup{background:var(--hide);color:var(--bone)}
+.tr-f input::placeholder{color:var(--bone-faint);font-weight:500}
+.tr-f input[type=date],.tr-f input[type=time]{flex:none;width:auto;color-scheme:dark;font-family:var(--font-mono);font-size:12.5px}
+html[data-skin=anti] .tr-f input[type=date],html[data-skin=anti] .tr-f input[type=time]{color-scheme:light}
+.tr-f .tr-until{color:var(--bone-faint);font:600 12px var(--font-mono);white-space:nowrap}
+.tr-big input{font-size:15px}
+.tr-play{width:32px;height:32px;flex:none;border-radius:50%;border:0;background:var(--bone);color:var(--void);display:grid;place-items:center;cursor:pointer}
+.tr-play:hover{background:var(--fang);color:#fff}
+.tr-play svg{width:12px;height:12px;fill:currentColor;stroke:none}
+.tr-sum{padding:9px 12px;font:500 12px/1.5 var(--font-ui);color:var(--bone-dim)}
+.tr-sum b{color:var(--bone)}
+.tr-actions{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 12px}
+.tr-actions .tm-note{margin:0}
+.tr-who{align-self:flex-start}
+.tr-day{display:flex;justify-content:space-between;margin:8px 2px 0;font:700 11px var(--font-mono);letter-spacing:.05em;text-transform:uppercase;color:var(--bone-faint)}
+.tr-day b{color:var(--bone-dim)}
+.tr-e{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto auto;gap:2px 8px;align-items:center;padding:8px 8px 8px 11px;border:1px solid var(--line);border-radius:12px;background:var(--hide-2)}
+.tr-e .dot{width:11px;height:11px;border-radius:50%;border:2.5px solid var(--c);box-sizing:border-box}
+.tr-e .t{min-width:0;padding:0;border:0;background:none;color:var(--bone);font:700 13px var(--font-ui);text-align:left;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tr-e .t:hover{text-decoration:underline}
+.tr-e .m{grid-column:2 / 6;font:500 11.5px/1.45 var(--font-ui);color:var(--bone-faint);overflow-wrap:anywhere}
+.tr-e .m i{font-style:normal;color:var(--bone-dim)}
+.tr-e .d{font:700 12px var(--font-mono);color:var(--bone)}
+.tr-e .ib{width:28px;height:28px}
+.tr-e .ib svg{width:15px;height:15px}
+.tr-e .go{background:var(--hide-3);border-radius:50%}
+.tr-e .go svg{fill:currentColor;stroke:none;width:11px;height:11px}
+.tr-e .del:hover{color:var(--bad)}
+.tr-empty{padding:18px 6px;text-align:center}
+.tr-foot{display:flex;gap:8px;padding:10px 16px 14px;border-top:1px solid var(--line)}
+.tr-foot .tm-btn{flex:1;justify-content:center;height:34px}
+/* the timesheet: a week of time, by task and by day */
+.ts-sheet{width:min(1000px,100%)}
+.ts-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:4px 0 14px}
+.ts-top .ts-week{font:800 13px var(--font-ui);min-width:150px;text-align:center}
+.ts-wrap{overflow:auto;max-height:calc(100vh - 300px)}
+.ts-table{width:100%;border-collapse:collapse;font:600 12.5px var(--font-ui)}
+.ts-table th,.ts-table td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+.ts-table th:first-child,.ts-table td:first-child{text-align:left;white-space:normal;min-width:180px}
+.ts-table th{position:sticky;top:0;background:var(--hide);font:800 10px var(--font-display);letter-spacing:.12em;text-transform:uppercase;color:var(--bone-faint)}
+.ts-table th.today{color:var(--fang)}
+.ts-table td{color:var(--bone-dim);font-family:var(--font-mono)}
+.ts-table td:first-child{font-family:var(--font-ui);color:var(--bone)}
+.ts-table td:first-child small{display:block;color:var(--bone-faint);font-weight:500}
+.ts-table td.z{color:var(--bone-faint);opacity:.45}
+.ts-table td.tot,.ts-table tfoot td{color:var(--bone);font-weight:800}
+.ts-people{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+.ts-people .ts-p{display:flex;align-items:center;gap:8px;padding:6px 12px 6px 6px;border:1px solid var(--line);border-radius:99px;font:700 12.5px var(--font-ui)}
+.ts-people .ts-p b{font:800 12px var(--font-mono);color:var(--bone-dim)}
 .chip.tk-spent.over{color:var(--warn);border-color:color-mix(in srgb,var(--warn) 45%,transparent)}
 .f-spr{display:inline-flex;align-items:center;gap:7px;padding:4px 9px;border-radius:99px;border:1px solid color-mix(in srgb,var(--fc) 38%,transparent);background:color-mix(in srgb,var(--fc) 10%,var(--void))}
 .f-spr b{font:800 9px var(--font-display);letter-spacing:.14em;text-transform:uppercase}
@@ -1080,7 +1194,7 @@ body:has(#views:not([hidden])) #toast,body:has(#timeline:not([hidden])) #toast{p
 @media (max-width:900px){.tool .k,#minimap,#hud{display:none}}
 @media (max-width:600px){#top{gap:4px;padding:0 8px}.boardsel{margin-left:4px}#dock{left:10px}#ctx{left:calc(50% + 29px);bottom:10px;max-width:calc(100% - 68px)}#wrap.pl-open #ctx{left:50%;bottom:10px;max-width:calc(100% - 20px)}.rng input{width:80px}.hint{white-space:normal;text-align:center;line-height:1.9}}
 /* short screens: the tool spine shrinks to fit instead of hiding tools off the bottom */
-@media (max-height:780px){#dock{max-height:calc(100% - 28px)}#tools{--ts:clamp(20px, calc((100vh - 172px) / 16), 34px);gap:2px;padding:6px 5px}.tsep{margin:3px 5px}.drip{height:22px}}
+@media (max-height:780px){#dock{max-height:calc(100% - 28px)}#tools{--ts:clamp(20px, calc((100vh - 176px) / 17), 34px);gap:2px;padding:6px 5px}.tsep{margin:3px 5px}.drip{height:22px}}
 @media (max-height:700px){.tool{border-radius:10px}.tool .k{display:none}.tsep{margin:2px 5px}}
 @media (max-height:620px){.tool{border-radius:9px}.drip{height:20px}}
 @media (max-height:580px){.tool{border-radius:8px}#tools{gap:1px;padding:4px}.tsep{margin:2px 4px}}
@@ -1182,6 +1296,7 @@ body:has(#views:not([hidden])) #toast,body:has(#timeline:not([hidden])) #toast{p
         <button class="tool" data-feat="kanban" aria-label="Kanban"><svg viewBox="0 0 20 20"><rect x="3" y="3.5" width="4" height="13" rx="1.2"/><rect x="8" y="3.5" width="4" height="9" rx="1.2"/><rect x="13" y="3.5" width="4" height="6" rx="1.2"/></svg></button>
         <button class="tool" data-feat="calendar" aria-label="Calendar"><svg viewBox="0 0 20 20"><rect x="3.5" y="4.5" width="13" height="12" rx="2"/><path d="M3.5 8.5h13M7 3v3M13 3v3M7 11.5h.01M10 11.5h.01M13 11.5h.01M7 14h.01M10 14h.01"/></svg></button>
         <button class="tool" data-feat="timeline" aria-label="Timeline"><svg viewBox="0 0 20 20"><path d="M3 3.5v13"/><rect x="5.5" y="4.5" width="7" height="2.8" rx="1.4"/><rect x="8.5" y="8.6" width="8" height="2.8" rx="1.4"/><rect x="6.5" y="12.7" width="5" height="2.8" rx="1.4"/></svg></button>
+        <button class="tool" data-feat="track" aria-label="Track time"><svg viewBox="0 0 20 20"><circle cx="10" cy="11.2" r="5.8"/><path d="M10 11.2V8.4M8.2 2.9h3.6M14.6 6l1.2-1.2"/></svg></button>
         <button class="tool" data-feat="search" aria-label="Search everything"><svg viewBox="0 0 20 20"><circle cx="8.7" cy="8.7" r="5.2"/><path d="M12.6 12.6l4.2 4.2"/></svg></button>
         <button class="tool" data-feat="more" aria-label="More features"><svg viewBox="0 0 20 20"><circle cx="5.5" cy="5.5" r="1.3"/><circle cx="10" cy="5.5" r="1.3"/><circle cx="14.5" cy="5.5" r="1.3"/><circle cx="5.5" cy="10" r="1.3"/><circle cx="10" cy="10" r="1.3"/><circle cx="14.5" cy="10" r="1.3"/><circle cx="5.5" cy="14.5" r="1.3"/><circle cx="10" cy="14.5" r="1.3"/><circle cx="14.5" cy="14.5" r="1.3"/></svg></button>
       </nav>
@@ -1213,6 +1328,12 @@ body:has(#views:not([hidden])) #toast,body:has(#timeline:not([hidden])) #toast{p
 
     <div id="followBar" class="followbar" hidden role="status"></div>
     <div id="watchBar" class="watchbar" hidden><i class="wb-dot"></i><span id="wbText">Opening the shared board…</span><a href="https://venomboard.com/?from=share" target="_blank" rel="noopener">Make your own board · free</a><button id="wbReport" class="tm-link" type="button">Report</button></div>
+
+    <aside id="trackPanel" hidden aria-label="Track time">
+      <div class="pl-head"><h2>Track time<em>.</em></h2><button id="trClose" class="ib" aria-label="Close Track time" title="Close Track time"><svg viewBox="0 0 20 20"><path d="M5 5l10 10M15 5 5 15"/></svg></button></div>
+      <div id="trBody"></div>
+      <div class="tr-foot"><button id="trSheet" class="tm-btn" type="button">Timesheet</button><button id="trCsv" class="tm-btn" type="button">Export CSV</button></div>
+    </aside>
 
     <aside id="teamPanel" hidden aria-label="Team">
       <div class="pl-head"><h2>Team<em>.</em></h2><button id="tmClose" class="ib" aria-label="Close team panel" title="Close team panel"><svg viewBox="0 0 20 20"><path d="M5 5l10 10M15 5 5 15"/></svg></button></div>
@@ -1368,7 +1489,7 @@ body:has(#views:not([hidden])) #toast,body:has(#timeline:not([hidden])) #toast{p
 <div id="timeline" class="modal" hidden>
   <div class="sheet tl-sheet" role="dialog" aria-modal="true" aria-labelledby="tlTitle">
     <div class="st-head tl-top"><h2 id="tlTitle">Timeline<em>.</em></h2>
-      <div id="tlScale" class="st-seg" role="group" aria-label="Scale"><button type="button" data-v="days">Days</button><button type="button" data-v="weeks">Weeks</button></div>
+      <div id="tlScale" class="st-seg" role="group" aria-label="Scale"><button type="button" data-v="hours" title="One day, hour by hour: the time tracked and the tasks planned">Hours</button><button type="button" data-v="days">Days</button><button type="button" data-v="weeks">Weeks</button></div>
       <button id="tlClose" class="ib lbl" title="Back to the board (Esc)"><svg viewBox="0 0 20 20"><path d="M5 5l10 10M15 5 5 15"/></svg>Close</button></div>
     <p id="tlSummary" class="tl-summary"></p>
     <div class="tl-legend"><span><i class="lg crit"></i>Critical path: these decide the finish date</span><span><i class="lg late"></i>Late for its due date</span><span><i class="lg done"></i>Done</span><span>Working days only · estimates in days, a day if none · click a row to jump to the card · drag the end of a bar or a milestone to change it</span></div>
@@ -1384,6 +1505,13 @@ body:has(#views:not([hidden])) #toast,body:has(#timeline:not([hidden])) #toast{p
       <button id="vwClose" class="ib lbl" title="Back to the board (Esc)"><svg viewBox="0 0 20 20"><path d="M5 5l10 10M15 5 5 15"/></svg>Close</button></div>
     <div id="vwFilters" class="vw-filters"></div>
     <div id="vwBody" class="vw-body"></div>
+  </div>
+</div>
+
+<div id="timesheet" class="modal" hidden>
+  <div class="sheet ts-sheet" role="dialog" aria-modal="true" aria-labelledby="tsTitle">
+    <div class="st-head"><h2 id="tsTitle">Timesheet<em>.</em></h2><button id="tsClose" class="ib lbl" title="Back to the board (Esc)"><svg viewBox="0 0 20 20"><path d="M5 5l10 10M15 5 5 15"/></svg>Close</button></div>
+    <div id="tsBody"></div>
   </div>
 </div>
 
@@ -2596,6 +2724,7 @@ function cleanItem(i) {
       if (i.nopub === true) n.nopub = true;  // kept off the project's public roadmap
       const spent = cleanSpent(i.spent), tags = cleanTags(i.tags);
       if (spent) n.spent = spent;  // tracked time, in minutes
+      const lg = cleanLog(i.log); if (lg.length) n.log = lg;  // who tracked that time, and when
       if (tags.length) n.tags = tags;
       const gl = cleanGitLinks(i.gitLinks); if (gl.length) n.gitLinks = gl;  // linked pull requests and issues
       return n;
@@ -2636,6 +2765,20 @@ const okTime = v => Number.isFinite(v) && v > 1.5e12 && v < 4e12;
 const SPENT_MAX = 1000000, TAG_RE = /^[\p{L}\p{N}_-]{1,24}$/u;
 // a card's tracked time, in whole minutes
 const cleanSpent = v => (typeof v === 'number' && Number.isFinite(v) ? Math.round(clamp(v, 0, SPENT_MAX)) : 0);
+// a card's time log: up to 500 entries of who ('' on this computer), when they started, minutes (up to a day) and a note
+const LOG_MAX = 500, ENTRY_MAX = 1440;
+function cleanLog(v) {
+  const out = [], seen = new Set();
+  for (const e of Array.isArray(v) ? v.slice(-LOG_MAX * 2) : []) {
+    if (!e || typeof e !== 'object' || !okId(e.id) || seen.has(e.id) || !okTime(e.at)) continue;
+    const mins = Math.round(Number(e.mins));
+    if (!(mins >= 1 && mins <= ENTRY_MAX)) continue;
+    const x = {id: e.id, by: okId(e.by) ? e.by : '', at: e.at, mins}, note = txt(e.note, 200).trim();
+    if (note) x.note = note;
+    seen.add(e.id); out.push(x);
+  }
+  return out.slice(-LOG_MAX);
+}
 // up to 8 tags, each 1 to 24 lower-case letters, digits, - or _
 function cleanTags(v) {
   const out = [];
@@ -2919,7 +3062,7 @@ function openLink(url) {
 }
 
 /* ---------- images ---------- */
-const readFile = f => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = () => rej(r.error); r.readAsDataURL(f); });
+const readFile = (f, onProgress) => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = () => rej(r.error); if (onProgress) r.onprogress = e => { if (e.lengthComputable) onProgress(e.loaded / e.total); }; r.readAsDataURL(f); });
 const loadImg = (src, cors) => new Promise((res, rej) => { const i = new Image(); if (cors && /^https?:/i.test(src)) i.crossOrigin = 'anonymous'; i.onload = () => res(i); i.onerror = rej; i.src = src; });
 const teamAsset = src => !!src && src.startsWith(team.server + '/assets/');
 function fitSize(nw, nh) {
@@ -2945,11 +3088,12 @@ function placeImages(placed, at) {
   toast(vids && imgs ? `${placed.length} references pinned` : vids ? (vids === 1 ? 'Video pinned · double-click to play' : `${vids} videos pinned`) : imgs === 1 ? 'Image pinned' : `${imgs} images pinned`);
 }
 // A picture or video file kept for this board: uploaded to the team server, or stored with the board on this computer.
-async function mediaFromFile(f) {
-  const video = !isImageFile(f) && isVideoFile(f);
+async function mediaFromFile(f, job) {
+  const video = !isImageFile(f) && isVideoFile(f), step = p => { if (job) job.progress(p * 0.92); };
   let ref;
-  if (board.team) ref = {src: await uploadImage(f)};
-  else { const aid = uid(); assets[aid] = await readFile(f); ref = {asset: aid}; }
+  if (board.team) ref = {src: await uploadImage(f, job ? step : null)};
+  else { const aid = uid(); assets[aid] = await readFile(f, job ? step : null); ref = {asset: aid}; }
+  if (job) job.stage('Putting it on the board…');
   const src = ref.src || assets[ref.asset];
   if (video) { const v = await videoMeta(src); return {ref, video, nw: v.videoWidth || 640, nh: v.videoHeight || 360}; }
   const img = await loadImg(src, !!ref.src);
@@ -2963,7 +3107,9 @@ async function imageFromURL(url) {
     if (!teamAsset(url)) {
       const blob = url.startsWith('data:') ? dataUrlBlob(url) : await fetchImageBlob(url);
       if (!blob) throw new Error("That site doesn't allow copying its images. Save the image, then drop the file in.");
-      src = await uploadImage(blob);
+      const job = uploadJob(blob);
+      job.stage('Uploading…');
+      try { src = await uploadImage(blob, job.progress); job.done(); } catch (e) { job.fail(e.message); throw e; }
     }
     const img = await loadImg(src, teamAsset(src));
     return {ref: {src}, nw: img.naturalWidth, nh: img.naturalHeight};
@@ -2983,15 +3129,44 @@ async function imageFromURL(url) {
 }
 async function addImageFiles(files, at) {  // how many pictures went on the board
   if (blocked()) return 0;
-  const placed = [];
-  for (const f of files) {
+  const placed = [], jobs = [...files].map(f => uploadJob(f));  // each one shows in the tray straight away, waiting its turn
+  for (const [i, f] of [...files].entries()) {
+    const job = jobs[i];
     try {
-      const m = await mediaFromFile(f), sz = fitSize(m.nw, m.nh);
+      job.stage(board.team ? 'Uploading…' : 'Adding…');
+      const m = await mediaFromFile(f, job), sz = fitSize(m.nw, m.nh);
       placed.push({id: uid(), type: 'image', x: 0, y: 0, w: sz.w, h: sz.h, ...m.ref, name: f.name || 'Pasted image'});
-    } catch (e) { toast(board.team && e.message ? e.message : `Couldn't read ${f.name || 'that image'}`, 4000); }
+      job.done();
+    } catch (e) {
+      const msg = board.team && e.message ? e.message : `Couldn't read ${f.name || 'that image'}`;
+      job.fail(msg); toast(msg, 4000);
+    }
   }
   placeImages(placed, at);
   return placed.length;
+}
+/* ---------- pictures on their way to the board ---------- */
+// Reading a big picture, or uploading it to the team server, can take a moment, so each one shows in a tray at the
+// bottom left with a preview, a bar and how far it has got, then "On the board" once it's there. One that's done
+// in a blink never shows, so quick pastes stay quiet.
+const upTray = mk('div', {id: 'uploads', role: 'status', 'aria-live': 'polite'});
+$('#wrap').append(upTray);
+function uploadJob(file) {
+  const pic = file && /^image\//.test(file.type || '') ? URL.createObjectURL(file) : '';
+  const bar = mk('i'), pct = mk('b', {}, '0%'), what = mk('span', {}, 'Waiting…');
+  const row = mk('div', {class: 'up-row'}, pic ? mk('img', {src: pic, alt: ''}) : mk('span', {class: 'up-ico'}, icon(file && /^video\//.test(file.type || '') ? 'play' : 'image')),
+    mk('div', {class: 'up-mid'}, mk('em', {}, (file && file.name) || 'Pasted picture'), mk('div', {class: 'up-bar'}, bar), what), pct);
+  let shown = false, over = false;
+  const show = () => { if (!shown && !over) { shown = true; upTray.append(row); } };
+  const timer = setTimeout(show, 200);
+  const set = p => { p = clamp(Math.round(p * 100), 0, 100); bar.style.width = p + '%'; pct.textContent = p + '%'; };
+  const end = ms => { over = true; clearTimeout(timer); if (!shown) { if (pic) URL.revokeObjectURL(pic); return; } setTimeout(() => { row.classList.add('out'); setTimeout(() => { row.remove(); if (pic) URL.revokeObjectURL(pic); }, 320); }, ms); };
+  return {
+    progress: set,
+    stage: t => { what.textContent = t; },
+    done: () => { set(1); what.textContent = 'On the board ✓'; row.classList.add('ok'); end(1500); },
+    fail: msg => { if (!shown) { clearTimeout(timer); shown = true; upTray.append(row); } row.classList.add('bad'); what.textContent = msg || "Couldn't add it"; end(5000); },
+  };
 }
 /* --- screenshots ---
    A key (Alt+Shift+S by default) or the board's right-click menu: drag over part of the screen and it lands on the
@@ -3205,8 +3380,9 @@ $('#fileReplace').addEventListener('change', async e => {
   if (!f || !id) return;
   if (!isImageFile(f) && !isVideoFile(f)) { toast('Choose a picture or a video', 3000); return; }
   if (!board.team && !isImageFile(f) && f.size > 60 * 1048576) { toast(`${f.name} is over 60 MB. Trim it or export it smaller.`, 4000); return; }
-  try { swapMedia(id, await mediaFromFile(f), f.name || 'Pasted image'); }
-  catch (err) { toast(board.team && err.message ? err.message : `Couldn't read ${f.name || 'that file'}. Pictures and MP4 or WebM videos work best.`, 5000); }
+  const job = uploadJob(f); job.stage(board.team ? 'Uploading…' : 'Adding…');
+  try { swapMedia(id, await mediaFromFile(f, job), f.name || 'Pasted image'); job.done(); }
+  catch (err) { const msg = board.team && err.message ? err.message : `Couldn't read ${f.name || 'that file'}. Pictures and MP4 or WebM videos work best.`; job.fail(msg); toast(msg, 5000); }
 });
 async function replaceFromLink(it) {
   if (blocked()) return;
@@ -5287,9 +5463,10 @@ function toast(msg, ms = 2600) { const t = $('#toast'); t.textContent = msg; t.h
 /* ---------- planner ---------- */
 const planner = $('#planner');
 let plRaf = 0, searchIdx = -1;
-function schedulePlanner() { if (plannerOpen && !plRaf) plRaf = requestAnimationFrame(renderPlanner); scheduleViews(); }
+function schedulePlanner() { if (plannerOpen && !plRaf) plRaf = requestAnimationFrame(renderPlanner); scheduleViews(); scheduleTrack(); if (!$('#timesheet').hidden) renderTimesheet(); }
 function setPlanner(open, focusSearch) {
   plannerOpen = open; planner.hidden = !open;
+  if (open && tr.open) setTrack(false);
   if (open && team.panelOpen) setTeamPanel(false);
   if (open && cp.open) closeComments();
   syncPanels(); $('#planBtn').setAttribute('aria-pressed', String(open));
@@ -5418,7 +5595,7 @@ function timerNow() {
   if (tmr.key !== key) {  // another board (or another person on it): read its timer
     let t = null;
     try { t = JSON.parse(localStorage.getItem(key) || 'null'); } catch (e) {}
-    tmr = {key, t: t && typeof t === 'object' && okId(t.card) && okTime(t.start) ? {card: t.card, start: t.start, title: txt(t.title, 200)} : null};
+    tmr = {key, t: t && typeof t === 'object' && okId(t.card) && okTime(t.start) ? {card: t.card, start: t.start, title: txt(t.title, 200), note: txt(t.note, 200)} : null};
     queueMicrotask(paintTimer);
   }
   return tmr.t;
@@ -5430,7 +5607,7 @@ function setTimer(t) {
 }
 const timing = id => { const t = timerNow(); return !!t && t.card === id; };
 function toggleTimer(card) { if (timing(card.id)) stopTimer(); else startTimer(card); }
-async function startTimer(card) {
+async function startTimer(card, note) {
   if (!workCard(card) || blocked()) return;
   const cur = timerNow();
   if (cur && cur.card === card.id) return;
@@ -5438,7 +5615,7 @@ async function startTimer(card) {
   if (cur) { said = await stopTimer(true); if (said === null || timerNow()) return; }  // one at a time: the first one's time goes to its card
   const now = doc.items.find(i => i.id === card.id);
   if (!now) return;
-  setTimer({card: now.id, start: Date.now(), title: txt(now.title, 200)});
+  setTimer({card: now.id, start: Date.now(), title: txt(now.title, 200), note: txt(note, 200).trim()});
   toast(`${said ? said + ' ' : ''}Timer started on “${shortTitle(now.title)}”. Click it in the top bar to stop.`, said ? 4500 : 2800);
 }
 // Returns what happened, or null when the timer keeps running (the board can't be edited right now, or a
@@ -5460,6 +5637,9 @@ async function stopTimer(quiet) {
   if (!card) return gone();
   setTimer(null);
   if (min < 1) return say('Timer stopped. It ran for under a minute, so nothing was added.');
+  min = Math.min(min, ENTRY_MAX);  // one sitting is at most a day
+  const entry = {id: uid(), by: meId(), at: t.start, mins: min}; if (t.note) entry.note = t.note;
+  card.log = [...(card.log || []), entry].slice(-LOG_MAX);
   card.spent = Math.min(SPENT_MAX, (card.spent || 0) + min);
   refresh(); commit();
   return say(`Added ${fmtSpent(min)} to “${shortTitle(card.title)}”${card.est ? ` · ${fmtSpent(card.spent)} of ${card.est} now` : ''}.`);
@@ -5494,6 +5674,7 @@ function paintTimer() {
   const clock = (h ? h + ':' + pad2(Math.floor(s / 60) % 60) : Math.floor(s / 60)) + ':' + pad2(s % 60);
   const set = (q, v) => { const e = chip.querySelector(q); if (e.textContent !== v) e.textContent = v; };
   set('.tc-t', name); set('.tc-c', clock);
+  const pc = $('#trClock'); if (pc && pc.textContent !== clock) pc.textContent = clock;
   const tip = `Timing “${name}”${card ? '' : ' (no longer on the board)'}. Click to stop and add the time to the card.`;
   if (chip.title !== tip) { chip.title = tip; chip.setAttribute('aria-label', tip); }
 }
@@ -5501,6 +5682,241 @@ setInterval(paintTimer, 1000);
 $('#timerChip').onclick = () => stopTimer();
 // another window on this computer started or stopped a timer
 window.addEventListener('storage', e => { if (e.key && e.key.startsWith('venom-board-timer:')) { tmr.key = ''; render(); updateCtx(); } });
+/* ---------- the Track time panel and the timesheet ---------- */
+// Each card keeps a log of time entries (cleanLog): who, when they started, how long and a note. The card's tracked
+// time (spent) stays the total that estimates and the Planner use, so logging or deleting an entry moves it by the
+// same amount. On a team board an entry belongs to the person who logged it: only they can delete it (the server
+// checks too), and everyone can see who worked on what and for how long.
+const DAY_GOAL = 480;  // the day's bar fills at 8 hours
+const meId = () => (board.team && team.user ? team.user.id : '');
+const mine = e => !board.team || (!!team.user && e.by === team.user.id);
+function personName(by) {
+  if (!board.team || (team.user && by === team.user.id)) return 'You';
+  const m = by && memberById(by);
+  return m ? m.displayName || m.name || 'A teammate' : by ? 'A former teammate' : 'Before it was shared';
+}
+const ST_COLOR = {todo: 'var(--bone-dim)', doing: 'var(--run)', blocked: 'var(--bad)', done: 'var(--ok)'};
+const PLAY = '<svg viewBox="0 0 20 20"><path d="M6.5 4.2v11.6L16 10z"/></svg>';
+const dayKey = t => { const d = new Date(t); return d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate(); };
+const clockAt = t => new Date(t).toLocaleTimeString(undefined, {hour: 'numeric', minute: '2-digit'});
+const dayName = t => { const k = dayKey(t), today = dayKey(Date.now()); return k === today ? 'Today' : k === dayKey(Date.now() - 864e5) ? 'Yesterday' : new Date(t).toLocaleDateString(undefined, {weekday: 'short', day: 'numeric', month: 'short'}); };
+const dayOf = t => isoDay(new Date(t));
+// every entry on this board, newest first, with its card
+function allEntries() {
+  const out = [];
+  for (const c of doc.items) if (c.type === 'node' && c.log) for (const e of c.log) out.push({e, c});
+  return out.sort((a, b) => b.e.at - a.e.at);
+}
+function addEntry(cardId, mins, at, note) {
+  if (blocked()) return null;
+  const card = doc.items.find(i => i.id === cardId); if (!workCard(card)) return null;
+  const e = {id: uid(), by: meId(), at: Math.round(at), mins: Math.round(clamp(mins, 1, ENTRY_MAX))}, n = txt(note, 200).trim();
+  if (n) e.note = n;
+  card.log = [...(card.log || []), e].slice(-LOG_MAX);
+  card.spent = Math.min(SPENT_MAX, (card.spent || 0) + e.mins);
+  refresh(); commit();
+  return e;
+}
+function deleteEntry(cardId, entryId) {
+  if (blocked()) return;
+  const card = doc.items.find(i => i.id === cardId), e = card && (card.log || []).find(x => x.id === entryId);
+  if (!e || !mine(e)) return;
+  card.log = card.log.filter(x => x !== e);  // kept even when empty, so the team server knows the entries went
+  const left = Math.max(0, (card.spent || 0) - e.mins); if (left) card.spent = left; else delete card.spent;
+  refresh(); commit();
+  toast(`Deleted ${fmtHM(e.mins)} from “${shortTitle(card.title)}”. Ctrl+Z brings it back.`, 3600);
+}
+// the cards time can go on, in the order of the board's phases
+function trackGroups() { return boardGroups().map(g => ({title: g.title, cards: g.cards.filter(workCard)})).filter(g => g.cards.length); }
+
+const tr = {open: false, card: '', who: 'me', shown: 60, sig: ''};
+function setTrack(open, cardId) {
+  tr.open = open; $('#trackPanel').hidden = !open;
+  if (open) { if (plannerOpen) setPlanner(false); if (team.panelOpen) setTeamPanel(false); if (cp.open) closeComments(); }
+  if (cardId) tr.card = cardId;
+  syncPanels();
+  if (open) buildTrack();
+  scheduleMini();
+}
+let trRaf = 0;
+function scheduleTrack() { if (tr.open && !trRaf) trRaf = requestAnimationFrame(() => { trRaf = 0; if (tr.open) { fillTasks(); renderTrack(); } }); }
+function buildTrack() {
+  if (!tr.card || !workCard(idx.get(tr.card))) { const one = sel.size === 1 ? idx.get([...sel][0]) : null; tr.card = workCard(one) ? one.id : ''; }
+  tr.sig = ''; tr.shown = 60;
+  const field = (ico, ...kids) => mk('div', {class: 'tr-f'}, icon(ico), ...kids);
+  const stop = e => e.stopPropagation();
+  const time = mk('input', {id: 'trTime', type: 'text', placeholder: 'Time, like 3h 20m, or start the timer', 'aria-label': 'Time spent', maxlength: '20', autocomplete: 'off', oninput: syncTrackForm,
+    onkeydown: e => { stop(e); if (e.key === 'Enter') { e.preventDefault(); saveEntry(); } }});
+  const play = mk('button', {class: 'tr-play', type: 'button', title: 'Start the timer on this task', 'aria-label': 'Start the timer', onclick: () => { const c = idx.get(tr.card); if (!c) { toast('Pick a task first.'); return; } startTimer(c, $('#trNote').value); $('#trNote').value = ''; }});
+  play.innerHTML = PLAY;
+  const task = mk('select', {id: 'trTask', 'aria-label': 'Task', onchange: e => { tr.card = e.target.value; renderTrack(); syncTrackForm(); }, onkeydown: stop});
+  const date = mk('input', {id: 'trDate', type: 'date', value: dayOf(Date.now()), max: dayOf(Date.now()), 'aria-label': 'Day', oninput: syncTrackForm, onkeydown: stop});
+  const from = mk('input', {id: 'trFrom', type: 'time', 'aria-label': 'Started at (leave empty for "ending now")', title: 'When you started. Leave it empty and the time ends now.', oninput: syncTrackForm, onkeydown: stop});
+  const note = mk('input', {id: 'trNote', type: 'text', placeholder: 'Notes (optional)', 'aria-label': 'Notes', maxlength: '200', autocomplete: 'off', onkeydown: e => { stop(e); if (e.key === 'Enter') { e.preventDefault(); saveEntry(); } }});
+  const save = mk('button', {id: 'trSave', class: 'tm-btn ok', type: 'button', disabled: true, onclick: saveEntry}, 'Save');
+  $('#trBody').replaceChildren(
+    mk('div', {id: 'trToday', class: 'tr-today'}),
+    mk('div', {id: 'trRun'}),
+    mk('div', {class: 'tr-form'},
+      mk('div', {class: 'tr-f tr-big'}, time, play),
+      field('card', task),
+      mk('div', {id: 'trSum', class: 'tr-sum'}),
+      field('cal', date, mk('span', {class: 'tr-until'}, 'from'), from, mk('span', {id: 'trUntil', class: 'tr-until'})),
+      field('notes', note),
+      mk('div', {class: 'tr-actions'}, mk('p', {id: 'trHint', class: 'tm-note'}, ''), save)),
+    board.team ? mk('div', {id: 'trWho', class: 'st-seg tr-who', role: 'group', 'aria-label': 'Whose time'},
+      ...[['me', 'Mine'], ['all', 'Everyone']].map(([v, l]) => mk('button', {type: 'button', 'data-v': v, 'aria-pressed': String(tr.who === v), onclick: () => { tr.who = v; tr.shown = 60; renderTrack(); }}, l))) : '',
+    mk('div', {id: 'trList'}));
+  fillTasks(); renderTrack(); syncTrackForm();
+}
+// the task list: work cards by phase, kept in step with the board
+function fillTasks() {
+  const s = $('#trTask'); if (!s) return;
+  const groups = trackGroups(), sig = groups.map(g => g.title + ':' + g.cards.map(c => c.id + c.title).join(',')).join('|') + tr.card;
+  if (s._sig === sig) return;
+  s._sig = sig;
+  s.replaceChildren(mk('option', {value: ''}, groups.length ? 'Select a task' : 'No tasks or bugs on this board yet'),
+    ...groups.map(g => mk('optgroup', {label: g.title}, ...g.cards.map(c => mk('option', {value: c.id}, (c.kind === 'bug' ? 'Bug: ' : '') + (c.title || 'Untitled'))))));
+  s.value = workCard(idx.get(tr.card)) ? tr.card : '';
+  if (!s.value) tr.card = '';
+}
+// what the form will log: the minutes, and when they started
+function formEntry() {
+  const mins = parseSpent($('#trTime').value), day = $('#trDate').value, from = $('#trFrom').value;
+  if (!(mins >= 1)) return {mins: 0};
+  let at;
+  if (from) at = new Date(`${day || dayOf(Date.now())}T${from}`).getTime();
+  else if (!day || day === dayOf(Date.now())) at = Date.now() - mins * 60000;  // ending now
+  else at = new Date(`${day}T09:00`).getTime();  // an earlier day without a time: from 9 in the morning
+  return {mins: Math.min(mins, ENTRY_MAX), at, over: mins > ENTRY_MAX};
+}
+function syncTrackForm() {
+  const f = formEntry(), ok = f.mins >= 1 && Number.isFinite(f.at) && workCard(idx.get(tr.card)) && f.at <= Date.now() + 60000;
+  $('#trSave').disabled = !ok;
+  $('#trUntil').textContent = f.mins >= 1 && Number.isFinite(f.at) ? `${clockAt(f.at)} – ${clockAt(f.at + f.mins * 60000)}` : '';
+  const raw = $('#trTime').value.trim();
+  $('#trHint').textContent = raw && !(f.mins >= 1) ? 'Use hours and minutes, like 3h 20m, 45m or 1.5h' : f.over ? 'One entry can be up to 24 hours' : !tr.card ? 'Pick the task you worked on' : f.at > Date.now() + 60000 ? "That's in the future" : '';
+}
+function saveEntry() {
+  const f = formEntry();
+  if ($('#trSave').disabled || !(f.mins >= 1)) { syncTrackForm(); return; }
+  const card = idx.get(tr.card), e = addEntry(tr.card, f.mins, f.at, $('#trNote').value);
+  if (!e) return;
+  $('#trTime').value = ''; $('#trNote').value = ''; $('#trFrom').value = '';
+  syncTrackForm();
+  toast(`Logged ${fmtHM(e.mins)} on “${shortTitle(card.title)}”${card.est ? ` · ${fmtSpent(card.spent)} of ${card.est} now` : ''}`);
+}
+function renderTrack() {
+  if (!tr.open || !$('#trList')) return;
+  const all = allEntries(), me = meId(), today = dayKey(Date.now());
+  // today: your time on this board
+  // the part of your entries that falls today (one that started last night counts from midnight)
+  const t0 = new Date().setHours(0, 0, 0, 0), t1 = t0 + 864e5;
+  const todayMins = Math.round(all.filter(x => mine(x.e)).reduce((a, x) => a + Math.max(0, Math.min(t1, x.e.at + x.e.mins * 60000) - Math.max(t0, x.e.at)), 0) / 60000);
+  $('#trToday').replaceChildren(
+    mk('div', {class: 'tr-row'}, mk('span', {}, board.team ? 'Your time today on this board' : 'Today on this board'), mk('span', {}, mk('b', {}, fmtHM(todayMins)), mk('small', {}, ' / ' + fmtHM(DAY_GOAL)))),
+    mk('div', {class: 'tr-bar', role: 'progressbar', 'aria-valuemin': '0', 'aria-valuemax': String(DAY_GOAL), 'aria-valuenow': String(todayMins)}, mk('i', {css: {width: Math.min(100, todayMins / DAY_GOAL * 100) + '%'}})));
+  // a running timer on this board
+  const t = timerNow(), tc = t && idx.get(t.card);
+  $('#trRun').replaceChildren(...(t ? [mk('div', {class: 'tr-run'}, mk('i', {class: 'tc-dot'}),
+    mk('div', {}, mk('b', {title: (tc ? tc.title : t.title) || 'Untitled'}, (tc ? tc.title : t.title) || 'Untitled'), mk('span', {id: 'trClock'}, '0:00'), t.note ? mk('span', {}, ' · ' + t.note) : null),
+    mk('button', {class: 'tm-btn ok', type: 'button', onclick: () => stopTimer()}, 'Stop'))] : []));
+  paintTimer();
+  // the chosen task: its total, and who worked on it
+  const card = idx.get(tr.card), sum = $('#trSum');
+  if (workCard(card)) {
+    const per = new Map(); for (const e of card.log || []) per.set(e.by, (per.get(e.by) || 0) + e.mins);
+    const logged = [...per.values()].reduce((a, b) => a + b, 0), other = Math.max(0, (card.spent || 0) - logged);
+    const people = [...per.entries()].sort((a, b) => b[1] - a[1]).map(([by, m]) => `${personName(by)} ${fmtHM(m)}`);
+    if (other) people.push(`earlier or added by hand ${fmtHM(other)}`);
+    sum.hidden = false;
+    sum.replaceChildren(card.spent ? mk('span', {}, 'On this task: ', mk('b', {}, fmtHM(card.spent)), card.est ? ` of ${card.est}` : '', board.team && people.length ? ' · ' + people.join(' · ') : '')
+      : mk('span', {}, 'No time on this task yet' + (card.est ? ` (estimate ${card.est})` : '') + '.'));
+  } else sum.hidden = true;
+  // the entries, by day
+  const who = $('#trWho'); if (who) for (const b of who.children) b.setAttribute('aria-pressed', String(b.dataset.v === tr.who));
+  const list = all.filter(x => !board.team || tr.who === 'all' || mine(x.e)), shown = list.slice(0, tr.shown), out = [];
+  let day = null;
+  for (const {e, c} of shown) {
+    const k = dayKey(e.at);
+    if (k !== day) {
+      day = k;
+      const total = list.filter(x => dayKey(x.e.at) === k).reduce((a, x) => a + x.e.mins, 0);
+      out.push(mk('div', {class: 'tr-day'}, mk('span', {}, dayName(e.at)), mk('b', {}, fmtHM(total))));
+    }
+    const go = mk('button', {class: 'ib go', type: 'button', title: 'Track more time on this task', 'aria-label': 'Start the timer on ' + (c.title || 'Untitled'), onclick: () => startTimer(c)});
+    go.innerHTML = PLAY;
+    const del = mine(e) && !viewOnly() ? mk('button', {class: 'ib del', type: 'button', title: 'Delete this entry', 'aria-label': 'Delete this entry', onclick: () => deleteEntry(c.id, e.id)}, icon('trash')) : mk('span');
+    out.push(mk('div', {class: 'tr-e'},
+      mk('i', {class: 'dot', css: {'--c': ST_COLOR[c.status] || ST_COLOR.todo}, title: statusLabel(c.kind || 'task', c.status).replace('✓ ', '')}),
+      mk('button', {class: 't', type: 'button', title: 'Show it on the board', onclick: () => focusCard(c.id)}, c.title || 'Untitled'),
+      mk('span', {class: 'd'}, fmtHM(e.mins)), workCard(c) ? go : mk('span'), del,
+      mk('span', {class: 'm'}, `${clockAt(e.at)} – ${clockAt(e.at + e.mins * 60000)}`, board.team ? mk('i', {}, ' · ' + personName(e.by)) : null, e.note ? ' · ' + e.note : null)));
+  }
+  if (list.length > shown.length) out.push(mk('button', {class: 'tm-btn', type: 'button', onclick: () => { tr.shown += 120; renderTrack(); }}, `Show more (${list.length - shown.length} left)`));
+  if (!list.length) out.push(mk('p', {class: 'tm-note tr-empty'}, board.team && tr.who === 'all' ? 'Nobody has tracked time on this board yet.' : 'No time tracked yet. Type how long you worked on a task, or start the timer, and it shows up here.'));
+  $('#trList').replaceChildren(...out);
+}
+$('#trClose').onclick = () => setTrack(false);
+$('#trSheet').onclick = () => openTimesheet();
+$('#trCsv').onclick = () => saveTimeCSV();
+
+// the timesheet: one week (Monday to Sunday), tasks down the side, days across, and each person's total
+const tsv = {week: 0, who: 'all'};
+function weekStart(back) { const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - (d.getDay() + 6) % 7 - 7 * back); return d; }
+function openTimesheet() {
+  if (editing) finishEdit();
+  tsv.week = 0; tsv.who = board.team ? (tr.who === 'me' ? 'me' : 'all') : 'all';
+  $('#timesheet').hidden = false; renderTimesheet();
+}
+function closeTimesheet() { $('#timesheet').hidden = true; }
+function renderTimesheet() {
+  const start = weekStart(tsv.week), days = [...Array(7)].map((_, i) => { const d = new Date(start); d.setDate(d.getDate() + i); return d; });
+  const end = new Date(start); end.setDate(end.getDate() + 7);
+  const inWeek = allEntries().filter(x => x.e.at >= start.getTime() && x.e.at < end.getTime());
+  const list = inWeek.filter(x => tsv.who === 'all' || (tsv.who === 'me' ? mine(x.e) : x.e.by === tsv.who));
+  const rows = new Map();  // card id → minutes for each day
+  for (const {e, c} of list) { const r = rows.get(c.id) || {c, d: [0, 0, 0, 0, 0, 0, 0]}, i = Math.round((new Date(e.at).setHours(0, 0, 0, 0) - start.getTime()) / 864e5); if (i >= 0 && i < 7) r.d[i] += e.mins; rows.set(c.id, r); }
+  const phaseOf = new Map(); for (const g of boardGroups()) for (const c of g.cards) phaseOf.set(c.id, g.frame ? g.title : '');
+  const fmtCell = m => (m ? fmtHM(m) : '–'), today = dayKey(Date.now());
+  const dayTot = days.map((_, i) => [...rows.values()].reduce((a, r) => a + r.d[i], 0)), weekTot = dayTot.reduce((a, b) => a + b, 0);
+  const range = `${days[0].toLocaleDateString(undefined, {day: 'numeric', month: 'short'})} – ${days[6].toLocaleDateString(undefined, {day: 'numeric', month: 'short', year: 'numeric'})}`;
+  const people = board.team ? [...new Set(inWeek.map(x => x.e.by))] : [];
+  const whoSel = board.team ? mk('select', {class: 'tm-in', css: {width: 'auto', height: '32px'}, 'aria-label': 'Whose time', onchange: e => { tsv.who = e.target.value; renderTimesheet(); }},
+    mk('option', {value: 'all'}, 'Everyone'), mk('option', {value: 'me'}, 'Only me'),
+    ...team.members.filter(m => !team.user || m.id !== team.user.id).map(m => mk('option', {value: m.id}, m.displayName || m.name))) : null;
+  if (whoSel) whoSel.value = tsv.who;
+  const table = rows.size ? mk('div', {class: 'ts-wrap'}, mk('table', {class: 'ts-table'},
+    mk('thead', {}, mk('tr', {}, mk('th', {}, 'Task'), ...days.map(d => mk('th', {class: dayKey(d.getTime()) === today ? 'today' : null}, d.toLocaleDateString(undefined, {weekday: 'short', day: 'numeric'}))), mk('th', {}, 'Total'))),
+    mk('tbody', {}, ...[...rows.values()].sort((a, b) => b.d.reduce((x, y) => x + y, 0) - a.d.reduce((x, y) => x + y, 0)).map(r =>
+      mk('tr', {}, mk('td', {}, r.c.title || 'Untitled', phaseOf.get(r.c.id) ? mk('small', {}, phaseOf.get(r.c.id)) : null), ...r.d.map(m => mk('td', {class: m ? null : 'z'}, fmtCell(m))), mk('td', {class: 'tot'}, fmtHM(r.d.reduce((x, y) => x + y, 0)))))),
+    mk('tfoot', {}, mk('tr', {}, mk('td', {}, 'Total'), ...dayTot.map(m => mk('td', {}, fmtCell(m))), mk('td', {}, fmtHM(weekTot))))))
+    : mk('p', {class: 'tm-note'}, tsv.week ? 'No time tracked that week.' : 'No time tracked this week yet.');
+  const byPerson = board.team && tsv.who === 'all' && people.length ? mk('div', {class: 'ts-people'}, ...people.map(by => {
+    const m = memberById(by), mins = inWeek.filter(x => x.e.by === by).reduce((a, x) => a + x.e.mins, 0);
+    return mk('div', {class: 'ts-p'}, avatar(m || {displayName: personName(by), color: '#9d99aa'}), personName(by), mk('b', {}, fmtHM(mins)));
+  })) : null;
+  $('#tsBody').replaceChildren(
+    mk('div', {class: 'ts-top'},
+      mk('button', {class: 'tm-btn', type: 'button', 'aria-label': 'The week before', onclick: () => { tsv.week++; renderTimesheet(); }}, '‹'),
+      mk('span', {class: 'ts-week'}, tsv.week === 0 ? 'This week' : tsv.week === 1 ? 'Last week' : range),
+      mk('button', {class: 'tm-btn', type: 'button', 'aria-label': 'The week after', disabled: tsv.week === 0, onclick: () => { tsv.week = Math.max(0, tsv.week - 1); renderTimesheet(); }}, '›'),
+      mk('span', {class: 'tm-note', css: {margin: '0'}}, range), whoSel, mk('span', {css: {flex: '1'}}),
+      mk('button', {class: 'tm-btn', type: 'button', onclick: saveTimeCSV}, icon('arrow'), 'Export CSV')),
+    table, byPerson || '');
+}
+$('#tsClose').onclick = closeTimesheet;
+$('#timesheet').addEventListener('click', e => { if (e.target.id === 'timesheet') closeTimesheet(); });
+// every entry on the board as a spreadsheet: one row per entry, with its task, phase and person
+function saveTimeCSV() {
+  const q = v => { let t = String(v == null ? '' : v); if (typeof v === 'string' && /^[=+\-@\t\r]/.test(t)) t = "'" + t; return `"${t.replace(/"/g, '""')}"`; };
+  const phaseOf = new Map(); for (const g of boardGroups()) for (const c of g.cards) phaseOf.set(c.id, g.frame ? g.title : '');
+  const rows = [['Date', 'Start', 'End', 'Minutes', 'Hours', 'Task', 'Type', 'Phase', 'Person', 'Notes']];
+  for (const {e, c} of allEntries().reverse()) rows.push([dayOf(e.at), clockAt(e.at), clockAt(e.at + e.mins * 60000), e.mins, rd(e.mins / 60 * 100) / 100, c.title || 'Untitled', KIND_NAME[c.kind || 'task'], phaseOf.get(c.id) || '', personName(e.by), e.note || '']);
+  if (rows.length === 1) { toast('No time tracked on this board yet.'); return; }
+  saveFile(`${slug(board.name)}-time.csv`, new Blob(['\ufeff' + rows.map(r => r.map(q).join(',')).join('\r\n')], {type: 'text/csv'}), [{description: 'CSV', accept: {'text/csv': ['.csv']}}]);
+}
+
 // a card's timer glow and its tags
 function syncTrack(el, it) {
   el.classList.toggle('timing', timing(it.id));
@@ -5526,7 +5942,7 @@ function trackEntries(hit) {
   if (workCard(hit)) {
     const on = timing(hit.id);
     E.push({label: on ? 'Stop timer' : 'Start timer', icon: 'timer', kb: on ? 'running' : '', run: () => toggleTimer(hit)},
-      {label: 'Edit tracked time…', kb: hit.spent ? fmtSpent(hit.spent) : '', run: () => editSpent(hit)});
+      {label: 'Edit tracked time…', kb: hit.spent ? fmtSpent(hit.spent) : '', run: () => editSpent(hit)}, {label: 'Track time…', icon: 'timer', run: () => setTrack(true, hit.id)});
   }
   E.push({label: 'Tags…', icon: 'tag', kb: (hit.tags || []).length ? String(hit.tags.length) : '', run: () => tagMenu(ids, null)});
   return E;
@@ -6490,6 +6906,7 @@ window.addEventListener('keydown', e => {
   if (!$('#tlapse').hidden) { if (e.key === 'Escape') closeTimelapse(); return; }
   if (!$('#jamModal').hidden) { if (e.key === 'Escape') $('#jamModal').hidden = true; return; }
   if (!$('#sprintModal').hidden) { if (e.key === 'Escape') $('#sprintModal').hidden = true; return; }
+  if (!$('#timesheet').hidden) { if (e.key === 'Escape') { e.preventDefault(); closeTimesheet(); } return; }
   if (!$('#timeline').hidden && timelineKeys(e)) return;
   if (!$('#timeline').hidden) {
     if (e.key === 'Escape' || (e.shiftKey && e.code === 'KeyG')) { e.preventDefault(); closeTimeline(); }
@@ -6592,6 +7009,7 @@ const FEATS = {
   calendar: () => openViews('calendar'),
   timeline: () => openTimeline(),
   search: () => openSearchAll(),
+  track: () => setTrack(!tr.open),
   more: b => { const r = b.getBoundingClientRect(); showMenu(r.right + 10, r.top, moreFeatures()); },
 };
 function moreFeatures() {
@@ -6600,9 +7018,10 @@ function moreFeatures() {
   return [
     {head: 'More features'},
     ...(folded ? [{label: 'Screenshot', icon: 'image', run: FEATS.snip}, {label: 'Kanban', kb: 'Shift K', icon: 'arrange', run: FEATS.kanban}, {label: 'Calendar', kb: 'Shift C', icon: 'cal', run: FEATS.calendar},
-      {label: 'Timeline', kb: 'Shift G', icon: 'trace', run: FEATS.timeline}, {label: 'Search everything', kb: 'Ctrl Shift F', icon: 'notes', run: FEATS.search}, '-'] : []),
+      {label: 'Timeline', kb: 'Shift G', icon: 'trace', run: FEATS.timeline}, {label: 'Track time', icon: 'timer', run: FEATS.track}, {label: 'Search everything', kb: 'Ctrl Shift F', icon: 'notes', run: FEATS.search}, '-'] : []),
     {label: plannerOpen ? 'Hide the Planner' : 'Planner', icon: 'notes', run: () => setPlanner(!plannerOpen)},
     {label: 'Templates', icon: 'plus', run: openTemplates},
+    {label: 'Timesheet', icon: 'timer', run: openTimesheet},
     {label: 'Game jam clock', icon: 'clock', run: () => addJam(viewCenter())},
     ...(cards >= 2 ? [{label: 'Tidy layout', icon: 'trace', run: tidyBoard}] : []),
     {label: 'Make a timelapse…', icon: 'play', run: openTimelapse},
@@ -6630,6 +7049,7 @@ const TIPS = {
   kanban: ['Kanban', 'Shift+K', 'Your cards in To do, In progress, Blocked and Done columns. Drag them along.'],
   calendar: ['Calendar', 'Shift+C', 'Due dates and milestones on a month grid. Drag a card to another day.'],
   timeline: ['Timeline', 'Shift+G', 'The schedule in working days, worked out from estimates and connections.'],
+  track: ['Track time', '', 'Log how long you worked on each task, or run a timer. See everyone\'s time by day and in a weekly timesheet.'],
   search: ['Search everything', 'Ctrl+Shift+F', 'Find cards and text on every board on this computer and in your team projects.'],
   more: ['More features', '', 'Planner, templates, game jam clock, tidy layout, timelapse, import and more.'],
 };
@@ -6910,6 +7330,7 @@ const avatar = p => mk('span', {class: 'av', title: p.displayName || p.name || '
 const section = (title, ...kids) => mk('section', {class: 'tm-sec'}, mk('h4', {}, title), ...kids);
 function setTeamPanel(open) {
   team.panelOpen = open; $('#teamPanel').hidden = !open;
+  if (open && tr.open) setTrack(false);
   if (open && plannerOpen) setPlanner(false);
   if (open && cp.open) closeComments();
   syncPanels();
@@ -7415,11 +7836,33 @@ function dataUrlBlob(u) {
   for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
   return new Blob([bytes], {type: mime});
 }
-async function uploadImage(blob) { return (await api(`/api/projects/${team.project.id}/assets`, 'POST', blob)).url; }
+// a picture or video for this team project, sent to its server; `onProgress` hears how much has gone (0 to 1)
+async function uploadImage(blob, onProgress) {
+  if (!onProgress) return (await api(`/api/projects/${team.project.id}/assets`, 'POST', blob)).url;
+  // the same request as api(), through XMLHttpRequest, since fetch can't tell how much of an upload has gone
+  const data = await new Promise((res, rej) => {
+    const x = new XMLHttpRequest();
+    x.open('POST', team.server + `/api/projects/${team.project.id}/assets`);
+    x.setRequestHeader('X-VB', '1'); x.setRequestHeader('Content-Type', blob.type || 'application/octet-stream');
+    if (team.token) x.setRequestHeader('Authorization', 'Bearer ' + team.token);
+    x.withCredentials = team.server === location.origin;
+    x.upload.onprogress = e => { if (e.lengthComputable) onProgress(e.loaded / e.total); };
+    x.onload = () => {
+      let d = {}; try { d = JSON.parse(x.responseText); } catch (e) {}
+      if (x.status === 401 && team.user) signOutLocal();
+      if (x.status >= 200 && x.status < 300) res(d); else rej(Object.assign(new Error(d.error || `The server answered ${x.status}.`), {status: x.status, code: d.code}));
+    };
+    x.onerror = () => rej(new Error(`Can't reach ${hostOf(team.server)}. Check your internet connection.`));
+    x.send(blob);
+  });
+  return data.url;
+}
 async function teamShareBoard(teamId) {
   if (board.team) return;
   if (editing) finishEdit();
   const name = board.name, d = JSON.parse(JSON.stringify(doc));
+  // time logged on this computer was logged by the person sharing it
+  for (const it of d.items) for (const e of it.log || []) if (!e.by && team.user) e.by = team.user.id;
   const withAssets = d.items.filter(it => (it.type === 'image' || it.type === 'video') && it.asset && assets[it.asset]);
   // pictures linked from other sites are copied to the team server too, since shared boards don't link out
   const linked = d.items.filter(it => it.type === 'image' && !it.asset && it.src && !teamAsset(it.src));
@@ -7737,7 +8180,7 @@ settingsEl.addEventListener('click', e => { if (e.target === settingsEl && stDow
 const memberById = id => team.members.find(m => m.id === id) || null;
 // comments the server adds for a team's connected repositories (commits and pull requests that mention a card)
 const GIT_AUTHORS = {'vb-github': {name: 'GitHub', color: '#f1eef2'}, 'vb-gitlab': {name: 'GitLab', color: '#ff7a1a'}};
-function sidePanel() { return plannerOpen || team.panelOpen || cp.open; }
+function sidePanel() { return plannerOpen || team.panelOpen || cp.open || tr.open; }
 function syncPanels() { $('#wrap').classList.toggle('pl-open', sidePanel()); scheduleMini(); }
 function assignLabel(list) {
   const ids = list.length ? (list[0].assignees || []).filter(id => list.every(n => (n.assignees || []).includes(id))) : [];
@@ -7782,6 +8225,7 @@ function openComments(cardId, focus) {
   if (!commentable(it)) return;
   if (plannerOpen) setPlanner(false);
   if (team.panelOpen) setTeamPanel(false);
+  if (tr.open) setTrack(false);
   cp.open = true; $('#cardPanel').hidden = false;
   if (cp.card !== cardId || !$('#cpList')) { cp.card = cardId; cp.editing = null; buildCommentPanel(); }
   if (focus) { const f = doc.comments.find(c => c.id === focus); cp.focus = focus; cp.scrollFocus = true; if (f && f.resolved) cp.showRes = true; }
@@ -9214,6 +9658,8 @@ function openTimeline() {
 }
 function closeTimeline() { $('#timeline').hidden = true; }
 function renderTimeline() {
+  $('#timeline').classList.toggle('hours', tl.scale === 'hours');
+  if (tl.scale === 'hours') { renderHours(); return; }
   const {S, end} = schedule(), live = [...S.values()].filter(s => !s.done), critical = live.filter(s => s.critical && s.n.kind !== 'milestone').length;
   const late = live.filter(s => s.late).length, dayW = tl.scale === 'days' ? 30 : 9;
   const past = [...S.values()].filter(s => s.done && s.es !== null).map(s => s.es);
@@ -9257,6 +9703,73 @@ function renderTimeline() {
   $('#tlBody').innerHTML = `<div class="tl-head"><span class="tl-name tl-corner"></span><span class="tl-dates" style="width:${width}px">${months}${head}</span></div><div class="tl-rows"><div class="tl-grid" style="width:${width}px">${grid}</div>${rows || '<p class="tm-note tl-empty">No tasks yet. Add cards (and connect the ones that wait on each other) to see a schedule.</p>'}</div>`;
   const sc = $('#tlBody');
   if (!sc._scrolled) { sc.scrollLeft = Math.max(0, x(0) - 120); sc._scrolled = true; }
+}
+
+/* ---------- timeline, Hours: one day hour by hour ---------- */
+// The day's tracked time sits at the hours it was worked (everyone's on a team board, in their colour, side by side
+// when it overlaps), with a running timer as a live block and a line at the current time. The tasks the schedule
+// plans for that day, and cards due that day, are in the All day row. Clicking an empty hour logs time from there.
+const HOUR_H = 46;
+function isoWeek(d) { const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())), n = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - n); return Math.ceil(((t - Date.UTC(t.getUTCFullYear(), 0, 1)) / 864e5 + 1) / 7); }
+function hoursDay() { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), d.getDate() + (tl.day || 0)); }
+function renderHours() {
+  const day = hoursDay(), t0 = day.getTime(), t1 = new Date(day.getFullYear(), day.getMonth(), day.getDate() + 1).getTime(), now = Date.now();
+  // the blocks: tracked time that overlaps the day, and a timer running now
+  const blocks = allEntries().filter(x => x.e.at < t1 && x.e.at + x.e.mins * 60000 > t0).map(x => ({c: x.c, by: x.e.by, a: x.e.at, b: x.e.at + x.e.mins * 60000, note: x.e.note || ''}));
+  const t = timerNow(), tc = t && idx.get(t.card);
+  if (t && tc && t.start < t1 && now > t0) blocks.push({c: tc, by: meId(), a: t.start, b: Math.max(now, t.start + 60000), note: t.note || '', live: true});
+  blocks.sort((p, q) => p.a - q.a || q.b - p.b);
+  // side by side where they overlap: each block takes the first free lane, and a cluster of overlaps shares its width
+  const lanes = [];
+  let cluster = [], clusterEnd = -1;
+  const close = () => { const n = Math.max(1, ...cluster.map(k => k.lane + 1)); for (const k of cluster) k.of = n; cluster = []; };
+  for (const k of blocks) {
+    if (k.a >= clusterEnd) { close(); lanes.length = 0; }
+    let i = lanes.findIndex(e => e <= k.a); if (i < 0) { i = lanes.length; lanes.push(0); }
+    lanes[i] = k.b; k.lane = i; cluster.push(k); clusterEnd = Math.max(clusterEnd, k.b);
+  }
+  close();
+  const y = ms => (Math.min(t1, Math.max(t0, ms)) - t0) / 3600000 * HOUR_H;
+  const colour = k => (board.team && k.by && memberById(k.by) ? col(memberById(k.by).color) : col(DISC_MAP[k.c.disc] ? DISC_MAP[k.c.disc][2] : k.c.color));
+  const hourName = h => new Date(2000, 0, 1, h).toLocaleTimeString(undefined, {hour: 'numeric'});
+  let grid = '';
+  for (let h = 0; h < 24; h++) grid += `<i class="th-h" style="top:${h * HOUR_H}px">${h ? `<span>${esc(hourName(h))}</span>` : ''}</i><i class="th-h half" style="top:${h * HOUR_H + HOUR_H / 2}px"></i>`;
+  for (const k of blocks) {
+    const top = y(k.a), h = Math.max(18, y(k.b) - top), w = 100 / k.of, who = board.team ? ' · ' + personName(k.by) : '';
+    const range = `${clockAt(k.a)} – ${k.live ? 'now' : clockAt(k.b)}`;
+    grid += `<button class="th-b${k.live ? ' live' : ''}" data-id="${esc(k.c.id)}" style="top:${rd(top)}px;height:${rd(h - 2)}px;left:calc(${rd(k.lane * w)}% + 2px);width:calc(${rd(w)}% - 4px);--c:${colour(k)}" title="${esc(`${k.c.title || 'Untitled'} · ${range} (${fmtHM((k.b - k.a) / 60000)})${who}${k.note ? ' · ' + k.note : ''}`)}"><b>${esc(k.c.title || 'Untitled')}</b>${h >= 34 ? `<span>${esc(range + who)}</span>` : ''}${h >= 52 && k.note ? `<span>${esc(k.note)}</span>` : ''}</button>`;
+  }
+  if (now >= t0 && now < t1) grid += `<i class="th-now" style="top:${rd(y(now))}px"><span>${esc(clockAt(now))}</span></i>`;
+  // the All day row: tasks the schedule puts on this day (working days only), and cards due that day
+  const chips = [], seen = new Set(), dayIso = isoDay(day);
+  const weekday = day.getDay() !== 0 && day.getDay() !== 6;
+  if (weekday) {
+    const off = workOffset(day), {S} = schedule();
+    for (const st of S.values()) if (!st.done && st.n.kind !== 'milestone' && st.es !== undefined && st.es <= off + 0.01 && st.ef > off + 0.01) { chips.push(st.n); seen.add(st.n.id); }
+  }
+  for (const n of doc.items) if (n.type === 'node' && n.due === dayIso && !seen.has(n.id)) chips.push(n);
+  const chipHTML = chips.map(n => `<button class="th-chip${n.kind === 'milestone' ? ' ms' : ''}" data-id="${esc(n.id)}" style="--c:${col(n.kind === 'milestone' ? BONE : DISC_MAP[n.disc] ? DISC_MAP[n.disc][2] : n.color)}" title="${esc((n.due === dayIso ? 'Due today · ' : 'Planned for this day · ') + (n.title || 'Untitled'))}">${n.kind === 'milestone' ? '◆ ' : ''}${esc(n.title || 'Untitled')}</button>`).join('');
+  const total = blocks.reduce((a, k) => a + (Math.min(t1, k.b) - Math.max(t0, k.a)), 0) / 60000, people = new Set(blocks.map(k => k.by)).size;
+  const label = tl.day === 0 ? 'Today' : tl.day === -1 ? 'Yesterday' : tl.day === 1 ? 'Tomorrow' : day.toLocaleDateString(undefined, {weekday: 'long'});
+  $('#tlSummary').textContent = `${label}: ${total ? `${fmtHM(total)} tracked${board.team && people > 1 ? ` by ${people} people` : ''}` : 'no time tracked yet'}. ${chips.length ? `${chips.length} ${chips.length === 1 ? 'task' : 'tasks'} planned or due.` : ''}`;
+  document.querySelectorAll('#tlScale button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === tl.scale)));
+  $('#tlBody').innerHTML = `<div class="th-top"><div class="th-nav"><button class="tm-btn" type="button" data-th-day="-1" aria-label="The day before">‹</button><button class="tm-btn" type="button" data-th-day="0">Today</button><button class="tm-btn" type="button" data-th-day="1" aria-label="The day after">›</button><b>${esc(day.toLocaleDateString(undefined, {weekday: 'short', day: 'numeric', month: 'long', year: 'numeric'}))}</b><small>W${isoWeek(day)}</small></div>
+    <div class="th-allday"><span class="th-lab">All day</span><div class="th-chips">${chipHTML || '<p class="tm-note">Nothing planned or due.</p>'}</div></div></div>
+    <div class="th-grid" style="height:${24 * HOUR_H}px">${grid}</div><p class="th-hint">${viewOnly() ? '' : 'Click an empty hour to log time from then. Click a block or a task to find it on the board.'}</p>`;
+  const sc = $('#tlBody');
+  if (!sc._scrolled) { sc.scrollTop = Math.max(0, (tl.day === 0 ? y(now) : 8 * HOUR_H) - 3 * HOUR_H); sc._scrolled = true; }
+}
+setInterval(() => { if (!$('#timeline').hidden && tl.scale === 'hours') renderHours(); }, 30000);
+// a click on an empty hour: Track time, ready to log from that time on that day
+function logFromHours(e) {
+  const g = e.target.closest('.th-grid'); if (!g || e.target.closest('.th-b') || viewOnly()) return false;
+  const day = hoursDay(), mins = clamp(Math.round((e.clientY - g.getBoundingClientRect().top) / HOUR_H * 4) * 15, 0, 23 * 60 + 45);
+  const at = new Date(day.getFullYear(), day.getMonth(), day.getDate(), 0, mins);
+  if (at.getTime() > Date.now()) { toast("That's still to come: time can be logged once it's worked."); return true; }
+  closeTimeline(); setTrack(true);
+  $('#trDate').value = isoDay(at); $('#trFrom').value = `${pad2(at.getHours())}:${pad2(at.getMinutes())}`;
+  syncTrackForm(); $('#trTime').focus();
+  return true;
 }
 
 /* ---------- timeline: drag a bar's end to change its estimate, a milestone to change its date ---------- */
@@ -10217,10 +10730,12 @@ async function addVideoFiles(files, at) {
   const placed = [];
   for (const f of files) {
     if (!board.team && f.size > 60 * 1048576) { toast(`${f.name} is over 60 MB. Trim it or export it smaller.`, 4000); continue; }
+    const job = uploadJob(f); job.stage(board.team ? 'Uploading…' : 'Adding…');
     try {
-      const m = await mediaFromFile(f), sz = fitSize(m.nw, m.nh);
+      const m = await mediaFromFile(f, job), sz = fitSize(m.nw, m.nh);
       placed.push({id: uid(), type: 'video', x: 0, y: 0, w: sz.w, h: sz.h, ...m.ref, name: f.name || 'Video', loop: true, autoplay: false});
-    } catch (e) { toast(board.team && e.message ? e.message : `Couldn't play ${f.name || 'that video'}. MP4 and WebM work best.`, 6000); }
+      job.done();
+    } catch (e) { const msg = board.team && e.message ? e.message : `Couldn't play ${f.name || 'that video'}. MP4 and WebM work best.`; job.fail(msg); toast(msg, 6000); }
   }
   placeImages(placed, at);
 }
@@ -10349,10 +10864,13 @@ $('#searchAll').addEventListener('click', e => { if (e.target.id === 'searchAll'
 $('#saClose').onclick = closeSearchAll;
 $('#timeline').addEventListener('click', e => {
   if (e.target.id === 'timeline') { closeTimeline(); return; }
-  const r = e.target.closest('.tl-row');
+  const r = e.target.closest('.tl-row, .th-b, .th-chip');
   if (r) { closeTimeline(); focusCard(r.dataset.id); return; }
+  const nd = e.target.closest('[data-th-day]');
+  if (nd) { tl.day = nd.dataset.thDay === '0' ? 0 : (tl.day || 0) + +nd.dataset.thDay; $('#tlBody')._scrolled = false; renderTimeline(); return; }
+  if (logFromHours(e)) return;
   const s = e.target.closest('#tlScale button');
-  if (s) { tl.scale = s.dataset.v; $('#tlBody')._scrolled = false; renderTimeline(); }
+  if (s) { tl.scale = s.dataset.v; tl.day = 0; $('#tlBody')._scrolled = false; $('#tlBody').scrollTop = 0; renderTimeline(); }
 });
 $('#tlClose').onclick = closeTimeline;
 $('#fileImport').addEventListener('change', e => { const f = e.target.files[0]; e.target.value = ''; importFile(f); });
