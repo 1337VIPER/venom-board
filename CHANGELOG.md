@@ -2,7 +2,7 @@
 
 All notable changes to Venom Board are listed here. The project follows [Semantic Versioning](https://semver.org).
 
-## [Unreleased]
+## [1.9.0] - 2026-10-15
 
 ### Added
 - **Manage the project from the Timeline**: click a task to change its title, status, estimate, start and due dates and people right there. It also shows what the schedule makes of it (its dates, critical path or slack), with buttons to open it on the board, start its timer, plan its hours or track time
