@@ -10321,6 +10321,7 @@ function syncPop() {
   const name = (($('#thTask') || {}).value || '').trim(), msg = $('#thMsg');
   if (msg) msg.textContent = name && !th.labels.has(name) && p.kind === 'new' ? `“${shortTitle(name)}” isn't on the board yet: saving adds it as a new task.` : '';
   if (msg && msg.textContent === '' && $('#thTask') && document.activeElement !== $('#thTask')) msg.textContent = popProblem();
+  placeHoursPop();  // a message makes it taller: keep it all on screen
 }
 function popKeys(e) {
   e.stopPropagation();
@@ -10329,7 +10330,7 @@ function popKeys(e) {
 }
 function savePop() {
   const p = th.pop; if (!p) return;
-  const problem = popProblem(); if (problem) { $('#thMsg').textContent = problem; return; }
+  const problem = popProblem(); if (problem) { $('#thMsg').textContent = problem; placeHoursPop(); return; }
   const name = $('#thTask').value.trim(), t = popTimes(), mins = (t.b - t.a) / 60000, note = $('#thNote').value;
   let card = th.labels.has(name) ? idx.get(th.labels.get(name)) : null, added = false;
   if (!card) { card = newTaskCard(name); added = !!card; }

@@ -143,16 +143,16 @@ Solo boards need no account, no subscription and no telemetry. They work offline
 | **Feedback pins** · comments pinned to a spot on a picture, with replies and resolving | **Sprint planning** · work left, capacity per person, velocity and tag filters |
 | ![Comments and mentions on a card](docs/screenshots/comments.png) | ![Planner panel with a burndown](docs/screenshots/planner.png) |
 | **Comments and @mentions** · talk right on the card; teammates' cursors and selections show live | **Planner** · progress, a burndown to the next milestone, and filters that dim the rest of the board |
-| ![Timeline with the critical path](docs/screenshots/timeline.png) | ![A public roadmap page](docs/screenshots/roadmap.png) |
-| **Timeline** · every task scheduled from its estimate and what it waits on, with the critical path | **Public roadmap** · a page players follow and vote on, made from your board |
+| ![The Timeline with arrows between tasks, tracked time in the bars and a task's editor open](docs/screenshots/timeline.png) | ![The Hours view: a week of tracked and planned time, with a new block being planned](docs/screenshots/hours.png) |
+| **Timeline** · every task scheduled from its estimate and what it waits on, with the critical path. Click a task to change it, drag a bar to give it a start date | **Hours** · the week hour by hour: drag across it to plan time or log what you worked. Striped is planned, solid is tracked |
 | ![Game jam clock](docs/screenshots/jam.png) | ![Template gallery](docs/screenshots/templates.png) |
 | **Game jam clock** · the countdown, the theme, a scope check and Cut scope | **Templates** · twelve ready-made game production structures |
 | ![Close-up of task cards](docs/screenshots/cards.png) | ![Place next picker](docs/screenshots/place-next.png) |
 | **Cards** · discipline, priority, estimates, due dates, checklists and dependencies | **Place next** · drag a tendril into empty space to choose the next card |
 | ![The sample game roadmap](docs/screenshots/board.png) | ![Window menu](docs/screenshots/window-menu.png) |
 | **Boards on your computer** · the sample roadmap, no account needed | **Overlay controls** · pin, lock, click-through, opacity, board lock |
-| ![Anti-Venom light skin](docs/screenshots/anti-venom.png) | |
-| **Anti-Venom** · the light skin | |
+| ![Anti-Venom light skin](docs/screenshots/anti-venom.png) | ![A public roadmap page](docs/screenshots/roadmap.png) |
+| **Anti-Venom** · the light skin | **Public roadmap** · a page players follow and vote on, made from your board |
 
 ## Keyboard shortcuts
 

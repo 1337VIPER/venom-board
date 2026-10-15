@@ -2,6 +2,11 @@
 
 All notable changes to Venom Board are listed here. The project follows [Semantic Versioning](https://semver.org).
 
+## [Unreleased]
+
+### Fixed
+- **The Hours popup stays on screen**: near the bottom of the window, the note that a new name will become a task no longer pushes its Save button out of sight
+
 ## [1.9.0] - 2026-10-15
 
 ### Added
