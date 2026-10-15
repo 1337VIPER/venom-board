@@ -2,6 +2,43 @@
 
 All notable changes to Venom Board are listed here. The project follows [Semantic Versioning](https://semver.org).
 
+## [Unreleased]
+
+### Added
+- **Manage the project from the Timeline**: click a task to change its title, status, estimate, start and due dates and people right there. It also shows what the schedule makes of it (its dates, critical path or slack), with buttons to open it on the board, start its timer, plan its hours or track time
+- **Start dates**: give a task a day it can't start before, and the schedule waits for it. Drag a whole bar along the Timeline to set it, or type it in the task's editor. The card shows *Starts …* until then, everything that waits on it moves along, and Ctrl+Z puts it back
+- **Arrows on the Timeline** for what waits on what, red along the critical path, and **tracked time as progress** inside each bar (amber once it passes the estimate)
+- **Add task** under each phase on the Timeline: type a name, press Enter, and the card goes into that phase on the board
+- **Whose tasks** (team boards): show everyone's tasks, yours, one person's or nobody's yet, with each bar showing who's on it
+- **Hours by the week**: the Hours view shows a day or a whole week, Monday to Sunday, hour by hour
+- **Plan and log by dragging**: drag across empty hours, name the task (or a new one) and choose *Plan* or *Log*. Planned time is striped and can be ahead; logged time is solid and counts on the card. Drag a block to move it, drag its bottom edge to change how long it is, and click it to edit it, delete it, log a planned block or start a timer
+- **Pick out one task** in Hours to see only its time. Clicking a task in the *All day* row does the same
+- **Shift+H, Shift+T and Shift+W** open Hours, Track time and the Timesheet from anywhere, next to Shift+G (Timeline), Shift+K (Kanban) and Shift+C (Calendar). Pressing the key of what's open takes you back to the board
+- **A card's time in one place**: its right-click menu has a Time section with the timer, Track time, *Plan hours* and *Show on the timeline*
+- **Views side by side**: Kanban, Calendar and Timeline switch from the top of each, and Track time and the Timesheet sit beside the Timeline's schedule and its hours
+- **MCP**: cards have `starts` (read and set), and the schedule follows start dates and arrows between phases
+
+### Changed
+- **The toolbar in groups**: select and pan, ink, cards and phases, pictures and screenshots, the views with Track time, then Search and More features
+- **More features in sections**: Plan, Time (Track time, Hours, Timesheet), Capture and import, History and help, each with its keys
+- **A card's right-click menu** starts with editing, then comments, people and tags, then its time and its status
+- **The shortcuts panel** has sections for the views and time keys and for the Timeline and Hours
+- **Track time** has an *Hours* button next to the Timesheet
+
+### Fixed
+- **Keyboard clashes**, from a check of every shortcut:
+  - Copy, cut and paste no longer reach the board hidden behind Kanban, the Calendar, the Timeline or a dialog
+  - Desktop app: Ctrl+R, Ctrl+W, Ctrl+0, Ctrl+- and Ctrl++ no longer reload or close the app or change the interface size behind Settings' back
+  - Typing a capital G, K or C in the Timeline's fields no longer switches view
+  - Ctrl+S saves while you're typing in a card or the board name
+  - The screenshot and click-through keys can't be set to one of the app's own shortcuts
+  - A button you reach with Tab keeps Space and Enter: they press it instead of panning or editing a card
+  - Esc closes a box opened from Settings before Settings itself, and closes Search everything even after clicking away from its box
+  - Ctrl+F in the Planner's search closes the Planner
+  - Other keyboards: on AZERTY the digit keys pick colours, AltGr characters like [ ] and \ no longer run shortcuts, and letter shortcuts follow the letter you type (Dvorak) or the key's place (Cyrillic, Greek)
+  - Ctrl+Shift+D, O, E and Y are left to the browser, and Cmd+Enter sends multi-line prompts on macOS
+- **Hints match the keys**: redo shows both of its keys, C for the connector is listed, and menus write keys the same way
+
 ## [1.8.0] - 2026-10-15
 
 ### Added

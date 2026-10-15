@@ -695,6 +695,10 @@ if (!app.requestSingleInstanceLock()) {
     win.focus();
   });
   app.whenReady().then(() => {
+    // No built-in menu: its hidden shortcuts reload the app (Ctrl+R), close it (Ctrl+W), open developer tools and
+    // change the interface size behind Settings' back (Ctrl+0, Ctrl+-, Ctrl++). macOS keeps the menus that make
+    // copy and paste work in text fields.
+    Menu.setApplicationMenu(MAC ? Menu.buildFromTemplate([{ role: 'appMenu' }, { role: 'editMenu' }, { role: 'windowMenu' }]) : null);
     // the page only ever copies text (and a video player may go full screen): cameras, microphones, location,
     // notifications and every other permission are refused without asking
     const OK_PERMS = new Set(['clipboard-sanitized-write', 'fullscreen', 'mediaKeySystem']);

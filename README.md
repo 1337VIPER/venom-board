@@ -86,9 +86,10 @@ Solo boards need no account, no subscription and no telemetry. They work offline
 - **Connect phases** like cards: drag the dot on a phase's side to the next phase (or onto empty space for a new one lined up beside it), and everything in the next phase waits on the work in this one, in the schedule, the Timeline, Trace and *Ready to start*
 - **Phase frames** carry everything inside them when moved and show finished tasks, progress and remaining estimate in their header. **Collapse** a phase to its title bar to hide what's inside, or make it a **sprint** with dates and capacity per teammate, with progress, capacity and velocity in the Planner
 - **Planner panel** (`Ctrl+F`): percent done, ready count, days of work left, open bugs, overdue items, milestone countdowns, a **burndown chart** to the next milestone, search and filters (including *Mine*) that dim the rest of the board
-- **Timeline** (`Shift+G`): every task scheduled in working days from its estimate and what it waits on, with the **critical path** that decides your finish date, due dates you'll miss, and finished work. Drag a bar's end to change its estimate, or a milestone to move its date
+- **Timeline** (`Shift+G`): every task scheduled in working days from its estimate and what it waits on, with the **critical path** that decides your finish date, due dates you'll miss, and finished work. Arrows show what waits on what and each bar fills with the time tracked on it. Click a task to change its status, estimate, dates and people in place; drag a whole bar to give it a **start date** (everything after it moves along), drag its end to change its estimate, or a milestone to move its date. **Add task** puts a new card straight into a phase, and on team boards you can show just one person's tasks
+- **Hours** (`Shift+H`): a day or a week hour by hour, like a calendar. Drag across empty hours to **plan** time on a task (striped, and it can be ahead) or **log** time you've worked (solid, and it counts on the card), then drag blocks to move them or their edge to resize them. Pick out one task to see only its time; a running timer shows live
 - **Kanban** (`Shift+K`) and **Calendar** (`Shift+C`) views of the same cards: drag between status columns to change status, or between days to change due dates
-- **Time tracking**: start a timer on a card and see tracked time against the estimate on the card and in the Planner
+- **Time tracking** (`Shift+T`): log how long you worked on any task, or run a timer. On team boards each entry belongs to whoever logged it, a weekly **Timesheet** (`Shift+W`) shows everyone's time by day with a CSV export, and tracked time shows against the estimate on the card and in the Planner
 - **Tags and saved filters**: tag cards, filter the Planner by tag, and save sets of filters to pick again
 - **Import** from **Trello** (JSON export), **Jira** (CSV export) or any spreadsheet saved as CSV: lists, sprints or statuses become phases, with statuses, priorities, estimates, due dates and checklists carried over
 - **Search everything** (`Ctrl+Shift+F`): every board on this computer and every team project you're in, at once
@@ -155,27 +156,35 @@ Solo boards need no account, no subscription and no telemetry. They work offline
 
 ## Keyboard shortcuts
 
-| Tools | | Planning | |
+| Tools | | Views and time | |
 |---|---|---|---|
-| `V` | Select and move | `Tab` | Add a connected task |
-| `G` / hold `Space` | Pan | `Enter` | Edit the selected card |
-| `P` / `H` / `E` | Marker, highlighter, eraser | `Ctrl+F` | Planner search and filters |
-| `N` | Card | `PgDn` / `PgUp` | Fly between phases |
-| `T` | Text | `Shift+1` / `Shift+2` | Fit board / fit selection |
-| `A` | Connector | `Ctrl+Shift+K` | Lock the board |
-| `F` | Phase frame | `Ctrl+Shift+L` | Lock selected items |
-| `I` | Insert image or video | `Ctrl+,` | Settings |
-| `Shift+G` | Timeline | `Ctrl+Shift+F` | Search every board and project |
-| `Shift+K` / `Shift+C` | Kanban / Calendar | `K` | Colour picker |
+| `V` | Select and move | `Shift+G` | Timeline |
+| `G` / hold `Space` | Pan | `Shift+H` | Hours, a day or week hour by hour |
+| `P` / `H` / `E` | Marker, highlighter, eraser | `Shift+K` / `Shift+C` | Kanban / Calendar |
+| `N` | Card | `Shift+T` | Track time |
+| `T` | Text | `Shift+W` | Timesheet |
+| `A` / `C` | Connector | `Ctrl+F` | Planner search and filters |
+| `F` | Phase frame | `Ctrl+Shift+F` | Search every board and project |
+| `I` | Insert image or video | `Esc` | Back to the board |
+
+| Planning | | Timeline and Hours | |
+|---|---|---|---|
+| `Tab` | Add a connected task | Click a task | Change its status, estimate, dates and people |
+| `Enter` | Edit the selected card | Drag a bar | Move when it starts (its end: the estimate) |
+| `PgDn` / `PgUp` | Fly between phases | Drag across hours | Plan or log time on a task |
+| `Shift+1` / `Shift+2` | Fit board / fit selection | `←` / `→` | The day or week before or after |
+| `Ctrl+Shift+K` / `Ctrl+Shift+L` | Lock the board / selected items | `T` | Back to today |
+| `K` | Colour picker | `D` / `W` | One day / the whole week |
 
 | Editing | | Window (desktop) | |
 |---|---|---|---|
-| `Ctrl+Z` / `Ctrl+Shift+Z` | Undo / redo | `Ctrl+Shift+A` | Pin on top |
+| `Ctrl+Z` / `Ctrl+Shift+Z` | Undo / redo (or `Ctrl+Y`) | `Ctrl+Shift+A` | Pin on top |
 | `Ctrl+C` `X` `V` `D` | Copy, cut, paste, duplicate | `Ctrl+Shift+X` | Click-through on / off |
 | `Alt`+drag | Duplicate while dragging | `Ctrl+Shift+B` | Hide the top bar |
 | `Alt+Shift+S` | Screenshot an area onto the board | `Alt+Shift+S` | The same, from any app |
 | `Ctrl`+drag | Move without snapping | `\` | Hide the whole interface |
 | `1`–`8`, `[` `]` | Ink colour, brush size | `Ctrl+S` / `Ctrl+O` / `Ctrl+E` | Save, open, export PNG |
+| `Ctrl+,` | Settings | `?` | All the shortcuts |
 
 Press `?` inside the app for the full list.
 
