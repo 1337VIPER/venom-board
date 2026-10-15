@@ -14,6 +14,7 @@
   <a href="https://bsky.app/profile/venomboard.bsky.social"><img src="https://img.shields.io/badge/bluesky-%40venomboard.bsky.social-1185fe?style=for-the-badge&logo=bluesky&logoColor=white&labelColor=0e0e15" alt="Bluesky: @venomboard.bsky.social"></a>
   <a href="https://x.com/Venomboardapp"><img src="https://img.shields.io/badge/x-%40Venomboardapp-0e0e15?style=for-the-badge&logo=x&logoColor=white&labelColor=0e0e15" alt="X: @Venomboardapp"></a>
   <a href="https://www.reddit.com/user/Venomboard/"><img src="https://img.shields.io/badge/reddit-u%2FVenomboard-ff4500?style=for-the-badge&logo=reddit&logoColor=white&labelColor=0e0e15" alt="Reddit: u/Venomboard"></a>
+  <a href="https://venomboard.com/discord"><img src="https://img.shields.io/badge/discord-join%20the%20community-5865f2?style=for-the-badge&logo=discord&logoColor=white&labelColor=0e0e15" alt="Discord: join the community"></a>
 </p>
 
 <p align="center">
@@ -230,8 +231,11 @@ Because the whole app is one HTML file, the browser version and the desktop app 
 
 ## Follow Venom Board
 
+Join the **[Venom Board Discord](https://venomboard.com/discord)**, a community of game developers, artists and teams: show what you're making, find a team, get help, and help shape the app.
+
 New versions and features are posted on Venom Board's official accounts:
 
+- **Discord**: [venomboard.com/discord](https://venomboard.com/discord) (releases in #announcements)
 - **Bluesky**: [@venomboard.bsky.social](https://bsky.app/profile/venomboard.bsky.social)
 - **X**: [@Venomboardapp](https://x.com/Venomboardapp)
 - **Reddit**: [u/Venomboard](https://www.reddit.com/user/Venomboard/)
@@ -240,7 +244,7 @@ These are the only official accounts. They're also listed at the bottom of every
 
 ## Contributing
 
-Bug reports and feature ideas are very welcome. Open an [issue](https://github.com/1337VIPER/venom-board/issues) and tell us how you plan your games. Pull requests are welcome too. Please keep changes focused and describe what you tested.
+Bug reports and feature ideas are very welcome. Open an [issue](https://github.com/1337VIPER/venom-board/issues) and tell us how you plan your games, or talk it through on the [Discord](https://venomboard.com/discord) first. Pull requests are welcome too. Please keep changes focused and describe what you tested.
 
 ## Credits
 

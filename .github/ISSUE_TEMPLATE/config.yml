@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Ask the community on Discord
+    url: https://venomboard.com/discord
+    about: Questions, help with the app, and showing what you're making. Bugs and feature ideas are welcome here as issues.

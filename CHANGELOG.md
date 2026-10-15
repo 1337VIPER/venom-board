@@ -4,6 +4,9 @@ All notable changes to Venom Board are listed here. The project follows [Semanti
 
 ## [Unreleased]
 
+### Added
+- **The Venom Board Discord**: Settings → About and *More features* link to the community server, where game developers show their work, find teams and get help
+
 ### Fixed
 - **The Hours popup stays on screen**: near the bottom of the window, the note that a new name will become a task no longer pushes its Save button out of sight
 
