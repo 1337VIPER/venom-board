@@ -2,7 +2,7 @@
 
 All notable changes to Venom Board are listed here. The project follows [Semantic Versioning](https://semver.org).
 
-## [Unreleased]
+## [1.10.0] - 2026-10-25
 
 ### Added
 - **Run your own server**: the server behind venomboard.com's accounts and teams is now in `server/`, with Docker and install instructions, for teams who want their projects on their own machine. It covers shared projects, live editing, comments, versions, MCP, public roadmaps, playtest forms and the bug reporter, and keeps its data in SQLite. The server is licensed under the AGPL-3.0; the app stays MIT
