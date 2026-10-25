@@ -1,0 +1,11 @@
+# HTTPS for the Venom Board server: Caddy gets the certificate for DOMAIN and passes everything on, including the
+# live connections (WebSockets). The visitor's real address goes in X-Real-IP, which the server's rate limits use.
+{$DOMAIN} {
+	encode zstd gzip
+	request_body {
+		max_size 40MB
+	}
+	reverse_proxy venom-board:8787 {
+		header_up X-Real-IP {client_ip}
+	}
+}

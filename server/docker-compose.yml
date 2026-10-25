@@ -1,0 +1,42 @@
+# The Venom Board server behind Caddy, which gets and renews an HTTPS certificate for your domain by itself.
+# 1. Point your domain (or a subdomain) at this machine, and open ports 80 and 443.
+# 2. Copy .env.example to .env in this folder and set DOMAIN (and email, if you want it).
+# 3. From this folder:  docker compose up -d
+services:
+  venom-board:
+    build:
+      context: ..
+      dockerfile: server/Dockerfile
+    image: venom-board-server
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      HOST: 0.0.0.0
+      PORT: "8787"
+      DATA_DIR: /data
+      PUBLIC_URL: https://${DOMAIN:?Set DOMAIN in server/.env}
+      # only Caddy can reach this container, and it sets the visitor's address in X-Real-IP
+      TRUST_PROXY: "true"
+    volumes:
+      - venom-board-data:/data
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    depends_on:
+      - venom-board
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      DOMAIN: ${DOMAIN}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+
+volumes:
+  venom-board-data:
+  caddy-data:
+  caddy-config:

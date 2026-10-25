@@ -490,6 +490,11 @@ select.tm-in{padding-right:6px;cursor:pointer}
 .tm-wide{justify-content:center;width:100%;height:38px}
 .tm-err{color:var(--bad);font-size:12.5px;margin:0}
 .tm-links{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.tm-server{margin:2px 0 0}
+.tm-server b{color:var(--bone)}
+.tm-server-box{display:grid;gap:8px}
+.tm-server-box .tm-row{display:flex;gap:8px;padding:0}
+.tm-server-box .tm-row .tm-in{flex:1;min-width:0}
 .tm-link{border:0;background:none;color:var(--bone-dim);font:700 12px var(--font-ui);cursor:pointer;padding:2px 0;text-decoration:underline;text-underline-offset:3px}
 .tm-link:hover{color:var(--bone)}
 .tm-link.danger{color:var(--fang)}
@@ -7351,11 +7356,21 @@ const team = {server: pageServer || HOSTED_SERVER, token: '', devices: {}, user:
 const canGrantRole = (actor, role) => (actor === 'leader' ? ['admin', 'editor', 'viewer'] : actor === 'admin' ? ['editor', 'viewer'] : []).includes(role);
 const canManageRole = (actor, target) => actor === 'leader' ? target !== 'leader' : actor === 'admin' ? ROLE_RANK[target] < ROLE_RANK.admin : false;
 const hostOf = u => { try { return new URL(u).host; } catch (e) { return String(u); } };
+// A server address someone typed: its origin (https, or http on this computer only), or '' if it isn't one.
+// "boards.studio.com" means https://boards.studio.com.
+function serverOrigin(raw) {
+  const t = String(raw || '').trim();
+  let u; try { u = new URL(/^[a-z][a-z0-9+.-]*:\/\//i.test(t) ? t : 'https://' + t); } catch (e) { return ''; }
+  const local = /^(localhost|127\.0\.0\.1|\[::1\])$/.test(u.hostname);
+  if (u.username || u.password || !(u.protocol === 'https:' || (u.protocol === 'http:' && local))) return '';
+  return u.origin;
+}
 const keepSignIn = !!desk || !!pageServer;
 function loadAccount() {
   try {
     const a = JSON.parse(localStorage.getItem('venom-board-account') || '{}');
     if (!keepSignIn) { if (a.token || a.devices) localStorage.removeItem('venom-board-account'); return; }
+    if (!pageServer && serverOrigin(a.server)) team.server = serverOrigin(a.server);  // a team's own server, if one was chosen
     if (typeof a.token === 'string') team.token = a.token;
     if (a.devices && typeof a.devices === 'object') for (const [k, v] of Object.entries(a.devices)) if (typeof v === 'string') team.devices[k] = v;
   } catch (e) {}
@@ -7414,7 +7429,7 @@ async function loadMe(seq, quiet, background) {
   if (team.user) acctConnect(); else acctClose();
 }
 async function teamSignIn(login, password) {
-  team.server = pageServer || HOSTED_SERVER;
+  team.server = pageServer || serverOrigin(team.server) || HOSTED_SERVER;
   const r = await api('/api/auth/login', 'POST', {login, password, device: team.devices[team.server] || '', ...(pageServer ? {web: true} : {})});
   if (r.twoFactor) return {ticket: r.ticket};  // the form asks for the code next
   await finishSignIn(r);
@@ -7534,10 +7549,33 @@ function signInView() {
   return [
     mk('p', {class: 'tm-lead'}, 'Sign in to share projects with your team and build them together, live.'),
     form,
+    pageServer ? null : serverChooser(),
     mk('div', {class: 'tm-links'},
       mk('button', {class: 'tm-link', type: 'button', onclick: () => openLink(team.server + '/account#signup')}, 'Create a free account'),
       mk('button', {class: 'tm-link', type: 'button', onclick: () => openLink(team.server + '/account#forgot')}, 'Forgot password?')),
   ];
+}
+// Which server the app signs in to: venomboard.com, or one a team runs itself (the web app always uses the server
+// it came from). Switching keeps nothing from the other server: you sign in there afresh.
+function serverChooser() {
+  const own = team.server !== HOSTED_SERVER;
+  const input = mk('input', {class: 'tm-in', type: 'text', inputmode: 'url', placeholder: 'boards.yourstudio.com', 'aria-label': 'Your server\'s address', autocomplete: 'off', spellcheck: 'false', value: own ? team.server : '', oninput: () => { err.hidden = true; }});
+  const err = mk('p', {class: 'tm-err', hidden: true});
+  const use = () => {
+    const o = serverOrigin(input.value);
+    if (!o) { err.textContent = 'That isn\'t a server address. It looks like boards.yourstudio.com, with https.'; err.hidden = false; return; }
+    team.server = o; saveAccount(); team.ui.serverOpen = false; renderTeam(); if (!settingsEl.hidden) renderSettings();
+    toast(`Signing in to ${hostOf(o)}`);
+  };
+  input.addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Enter') { e.preventDefault(); use(); } else if (e.key === 'Escape') { team.ui.serverOpen = false; renderTeam(); } });
+  const back = () => { team.server = HOSTED_SERVER; saveAccount(); team.ui.serverOpen = false; renderTeam(); if (!settingsEl.hidden) renderSettings(); toast('Signing in to venomboard.com'); };
+  const line = mk('p', {class: 'tm-note tm-server'}, 'Signing in to ', mk('b', {}, hostOf(team.server)), ' · ',
+    own ? mk('button', {class: 'tm-link', type: 'button', onclick: back}, 'Use venomboard.com')
+      : mk('button', {class: 'tm-link', type: 'button', onclick: () => { team.ui.serverOpen = !team.ui.serverOpen; renderTeam(); if (!settingsEl.hidden) renderSettings(); }}, 'Use your own server'));
+  if (!team.ui.serverOpen) return line;
+  return mk('div', {class: 'tm-server-box'}, line,
+    mk('p', {class: 'tm-note'}, 'If your team runs its own Venom Board server, enter its address. Your account there is separate from one on venomboard.com.'),
+    mk('div', {class: 'tm-row'}, input, mk('button', {class: 'tm-btn', type: 'button', onclick: use}, 'Use it')), err);
 }
 function signedInView() {
   const u = team.user;

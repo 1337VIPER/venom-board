@@ -1,0 +1,7 @@
+# The server's Docker image takes the app (index.html, assets/, docs/banner.png) and server/ from this folder.
+.git
+**/node_modules
+dist
+release
+server/data
+server/.env

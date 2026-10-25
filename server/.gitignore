@@ -1,0 +1,4 @@
+# made while the server runs, and its settings: never committed
+node_modules/
+data/
+.env

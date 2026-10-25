@@ -36,8 +36,8 @@ A token acts as you, with your role in each team, so keep it to yourself. Each p
 settings on this computer, never in the project, so it can't end up in version control. You can revoke a token on
 the Account page at any time; changing your password or signing out your other devices revokes all of them.
 
-If your team runs its own Venom Board server, put its address in the **Server** field (the default is
-`https://venomboard.com`).
+If your team runs its own Venom Board server ([how to set one up](../server/README.md)), put its address in the
+**Server** field (the default is `https://venomboard.com`).
 
 ## Godot 4
 

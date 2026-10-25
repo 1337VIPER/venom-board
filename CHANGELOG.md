@@ -5,6 +5,8 @@ All notable changes to Venom Board are listed here. The project follows [Semanti
 ## [Unreleased]
 
 ### Added
+- **Run your own server**: the server behind venomboard.com's accounts and teams is now in `server/`, with Docker and install instructions, for teams who want their projects on their own machine. It covers shared projects, live editing, comments, versions, MCP, public roadmaps, playtest forms and the bug reporter, and keeps its data in SQLite. The server is licensed under the AGPL-3.0; the app stays MIT
+- **Use your own server** in the Team panel's sign-in: the desktop app signs in to your team's server instead of venomboard.com, and remembers it
 - **The Venom Board Discord**: Settings → About and *More features* link to the community server, where game developers show their work, find teams and get help
 
 ### Fixed

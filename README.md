@@ -194,7 +194,20 @@ Press `?` inside the app for the full list.
 - Boards autosave locally, and you can keep as many boards as you like.
 - **Save** writes a `.venomboard.json` file containing the board and its images. Use it for backups, to move boards between computers, or to commit next to your project.
 - The desktop app and a browser keep separate local storage; use Save and Open to move boards between them.
-- Solo boards never leave your machine, videos included. Team projects, with their comments and versions, are stored on venomboard.com so everyone in the team can open them.
+- Solo boards never leave your machine, videos included. Team projects, with their comments and versions, are stored on venomboard.com so everyone in the team can open them, or on [your own server](#run-your-own-server).
+
+## Run your own server
+
+The server behind venomboard.com's accounts and teams is in [`server/`](server): shared projects, live editing, comments, versions, MCP, public roadmaps, playtest forms and the bug reporter, for your team on your own machine. It's one Node.js program with its data in SQLite (no separate database), and it serves the web app from this repository. With Docker:
+
+```bash
+git clone https://github.com/1337VIPER/venom-board.git
+cd venom-board/server
+cp .env.example .env   # set DOMAIN
+docker compose up -d
+```
+
+Then sign in from the desktop app with **Use your own server** in the Team panel. [server/README.md](server/README.md) has the details: running it without Docker, email, settings, backups and updates.
 
 ## Build from source
 
@@ -221,8 +234,9 @@ The Linux AppImage and the macOS app are built on those systems with `npx electr
 index.html        the entire app: UI, canvas engine, planner, timeline, templates, team client and export
 electron/         desktop shell: window, pin, opacity, click-through, file dialogs and signed updates
   dev/            self-test and screenshot generator used during development
+server/           the team server: accounts, live editing, MCP and more, to run yourself (AGPL-3.0)
 tools/            release checks: check-build.js and sign-update.js
-.github/          the workflow that builds the Linux and macOS apps
+.github/          the workflows that build the Linux and macOS apps and test the server
 assets/           app icon
 docs/             banner, screenshots and template pictures
 ```
@@ -254,4 +268,6 @@ The concept, the feature set, the workflow and the Venom visual direction all co
 
 ## License
 
-[MIT](LICENSE) © 2026 1337VIPER. Free to use, modify and share.
+The app is [MIT](LICENSE) © 2026 1337VIPER: free to use, modify and share. The server in [`server/`](server) is licensed under the [GNU AGPL v3.0](server/LICENSE): run it, change it and share it, and if you let others use a changed version over a network, offer them its source too.
+
+Found a security problem? Please report it privately, as [SECURITY.md](SECURITY.md) describes.

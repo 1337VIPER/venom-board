@@ -1,0 +1,48 @@
+# Tests the server in server/ and builds its Docker image, whenever either changes. Nothing is published from here
+# and no secrets are used. Third-party steps are pinned to exact commits, so a moved tag can't change what runs.
+name: Server
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['server/**', 'index.html', '.dockerignore', '.github/workflows/server.yml']
+  pull_request:
+    paths: ['server/**', 'index.html', '.dockerignore']
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+      - name: Install
+        working-directory: server
+        run: npm ci
+      - name: Test
+        working-directory: server
+        run: npm test
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Build the image
+        run: docker build -f server/Dockerfile -t venom-board-server .
+      - name: Start it and check it answers
+        run: |
+          docker run -d --name vb -p 8787:8787 -e PUBLIC_URL=http://localhost:8787 venom-board-server
+          for i in $(seq 1 40); do curl -fs http://localhost:8787/api/session > /dev/null && break; sleep 1; done
+          curl -fs http://localhost:8787/api/session
+          curl -fs http://localhost:8787/app | grep -q '<title>Venom Board</title>'
+          curl -fs -o /dev/null http://localhost:8787/account
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8787/)" = 302
+          test "$(docker inspect -f '{{.Config.User}}' venom-board-server)" = node
+      - name: Server log
+        if: always()
+        run: docker logs vb || true

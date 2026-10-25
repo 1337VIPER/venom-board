@@ -1,0 +1,26 @@
+{
+  "name": "venom-board-server",
+  "version": "1.0.0",
+  "private": true,
+  "description": "The Venom Board server: accounts, teams, live collaboration and MCP, to run yourself",
+  "main": "src/index.js",
+  "author": "1337VIPER",
+  "license": "AGPL-3.0-only",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node src/index.js",
+    "test": "node --test \"test/*.test.js\""
+  },
+  "dependencies": {
+    "better-sqlite3": "^13.0.3",
+    "nodemailer": "^10.0.15",
+    "ws": "^8.22.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/1337VIPER/venom-board.git",
+    "directory": "server"
+  }
+}
