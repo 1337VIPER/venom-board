@@ -72,6 +72,12 @@ Solo boards need no account, no subscription and no telemetry. They work offline
 - **Videos and GIFs** as references: GIFs animate on the board, video files play on hover or double-click (loop, autoplay, sound), and YouTube or Vimeo links become players that only load when you click them
 - **Import PureRef boards**: drop a `.pur` file (PureRef 1.x or 2.x) on the board or use Import. Pictures keep their places, sizes, rotation, flips and crops, notes become text and groups become frames, placed next to what's already there
 - **Replace** a picture or video with another file or link (right-click → Replace, or ⇄ in its toolbar). It keeps its place, width, connectors and settings, takes the new shape, and a picture can become a YouTube, Vimeo or video file and back
+- **Mood board** (`Shift+M`): every picture, GIF and video on the board on one wall, in **collections**, with room of its own away from your tasks
+  - a collection is a frame for references: it stays out of your phases, the schedule and the public roadmap. Make one from the mood board, or right-click any frame → *Make it a mood board collection*
+  - drop, paste or add pictures straight into a collection and they line up in rows on the board; the frame grows to fit and pushes the frames below it down. Drag a picture onto another collection to move it there
+  - click a reference for a **closer look**: see it big, step through with the arrow keys, play a slideshow (`Space`) or go full screen (`F`), and copy its colours
+  - give pictures and videos **tags, a note and a source link** (the page it came from, kept by itself when you drop a picture from a web page), then filter the wall by tag or search it
+  - **arrange** a collection into tidy rows in one click, and take **one palette** from all of its pictures
 - **Crop and rotate** pictures without re-encoding them, pick any colour off a picture with the **colour picker** (`K`), and **extract a palette** of its main colours as swatches with hex codes
 - Export the whole board or just the selection as a 2× PNG, or as a **PureRef board** (`.pur`) with crops, turns and flips intact
 - **Timelapse**: turn a board's history into a video of it coming together (landscape, square or vertical, saved as MP4 or WebM), ready for #screenshotsaturday, TikTok or Shorts. Team projects use their version history; boards on your computer keep a snapshot every 20 minutes of work
@@ -161,7 +167,7 @@ Solo boards need no account, no subscription and no telemetry. They work offline
 |---|---|---|---|
 | `V` | Select and move | `Shift+G` | Timeline |
 | `G` / hold `Space` | Pan | `Shift+H` | Hours, a day or week hour by hour |
-| `P` / `H` / `E` | Marker, highlighter, eraser | `Shift+K` / `Shift+C` | Kanban / Calendar |
+| `P` / `H` / `E` | Marker, highlighter, eraser | `Shift+K` / `Shift+C` / `Shift+M` | Kanban / Calendar / Mood board |
 | `N` | Card | `Shift+T` | Track time |
 | `T` | Text | `Shift+W` | Timesheet |
 | `A` / `C` | Connector | `Ctrl+F` | Planner search and filters |

@@ -90,6 +90,7 @@ test.before(async () => {
   await api('POST', `/api/invites/${inv}/accept`, undefined, S.nyx);
   const items = [
     { id: 'ph1', type: 'frame', x: -100, y: -100, w: 1200, h: 900, title: 'Vertical slice' },
+    { id: 'mb1', type: 'frame', x: 1900, y: -100, w: 700, h: 600, title: 'Characters', mood: true },  // a mood board collection, not a phase
     card('c1', { title: 'Boss arena; blockout, pass 2\nwith a backslash \\ and a very long tail so the line has to be folded more than once: Café Ünïcödé 日本語 ✓ ✓ ✓', due: '2026-11-30', assignees: [S.veeId], prio: 'must', disc: 'level', est: '3d' }),
     card('c2', { title: 'Nyx only', due: '2026-11-04', assignees: [S.nyxId] }),
     card('c3', { kind: 'milestone', title: 'Vertical slice', due: '2026-12-18', x: 2000 }),
@@ -165,6 +166,7 @@ test('calendar feed: valid iCalendar with your cards and the team milestones', a
   assert.equal(e1.DESCRIPTION, `Slice · Vertical slice\\nTo do · Must · Level · estimate 3d\\nOpen it: http://localhost:9/app#p=${S.project}&c=c1`);
   assert.equal(f.events.get(uid(S.project, 'c3')).SUMMARY, '◆ Vertical slice');
   assert.equal(f.events.get(uid(S.project, 'c3')).CATEGORIES, 'Milestone');
+  assert.match(f.events.get(uid(S.project, 'c3')).DESCRIPTION, /^Slice\\n/, 'the mood board collection around it is not its phase');
   assert.equal(f.events.get(uid(S.project, 'c7')).SUMMARY, '✓ Finished thing');
   assert.equal(f.events.get(uid(S.project, 'c8')).SUMMARY, 'Bug: Clips through stairs');
   assert.ok(!f.text.includes('Not yours') && !f.text.includes('Their launch') && !f.text.includes('Nyx only'));

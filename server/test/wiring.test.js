@@ -1,5 +1,5 @@
 // Collapsed phases on shared boards: a frame's `collapsed: true` survives new projects, live edits, reloads and
-// versions, and anything else in that field is dropped.
+// versions, and anything else in that field is dropped. Mood board collections too: a frame's `mood` (true or false).
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('fs');
@@ -116,5 +116,38 @@ test('live: collapsing and expanding reach everyone, survive a reload and versio
   await new Promise(r => setTimeout(r, 300));
   const again = await joined(S.vee, S.project);
   assert.equal(again.snapshot.doc.items.find(i => i.id === 'p2').collapsed, true, 'still collapsed after everyone left and came back');
+  again.close();
+});
+
+test('sanitize: a frame keeps mood when it is exactly true or false, and nothing else has it', () => {
+  const d = cleanDoc({ items: [frame('a', { mood: true }), frame('b', { mood: false }), frame('c', { mood: 'true' }), frame('d', { mood: 1 }), frame('e', { mood: null }), frame('f'), card('n', { mood: true }),
+    { id: 't', type: 'text', x: 0, y: 0, text: 'hi', mood: true }] });
+  const by = id => d.items.find(i => i.id === id);
+  assert.equal(by('a').mood, true);
+  assert.equal(by('b').mood, false, 'false is kept: a collection made a phase again');
+  for (const id of ['c', 'd', 'e', 'f', 'n', 't']) assert.equal('mood' in by(id), false, id + ' has no mood field');
+  assert.equal(cleanOp({ k: 'items', op: 'put', obj: frame('g', { mood: true }) }).obj.mood, true);
+  assert.equal('mood' in cleanOp({ k: 'items', op: 'put', obj: frame('h', { mood: { on: true } }) }).obj, false);
+});
+
+test('live: a mood board collection stays one when an older app moves it, and making it a phase again sticks', async () => {
+  const v = await joined(S.vee, S.project), n = await joined(S.nyx, S.project);
+  const next = c => c.next(m => m.t === 'ops' && m.by && m.ops.some(o => o.obj && o.obj.id === 'mb')).then(m => m.ops.find(o => o.obj && o.obj.id === 'mb').obj);
+  n.send({ t: 'ops', batch: 1, ops: [{ k: 'items', op: 'put', obj: frame('mb', { x: 2000, title: 'Characters', mood: true }) }] });
+  assert.equal((await next(v)).mood, true);
+  // an app from before mood boards moves it: it stays a collection
+  v.send({ t: 'ops', batch: 1, ops: [{ k: 'items', op: 'put', obj: frame('mb', { x: 2400, title: 'Characters' }) }] });
+  let got = await next(n);
+  assert.deepEqual([got.x, got.mood], [2400, true]);
+  // made a phase again (false, not left out), and an older app's edit keeps it one
+  n.send({ t: 'ops', batch: 2, ops: [{ k: 'items', op: 'put', obj: frame('mb', { x: 2400, title: 'Characters', mood: false }) }] });
+  assert.equal((await next(v)).mood, false);
+  v.send({ t: 'ops', batch: 2, ops: [{ k: 'items', op: 'put', obj: frame('mb', { x: 2500, title: 'Characters' }) }] });
+  got = await next(n);
+  assert.deepEqual([got.x, got.mood], [2500, false]);
+  v.close(); n.close();
+  await new Promise(r => setTimeout(r, 300));
+  const again = await joined(S.vee, S.project);
+  assert.equal(again.snapshot.doc.items.find(i => i.id === 'mb').mood, false, 'saved as a phase');
   again.close();
 });

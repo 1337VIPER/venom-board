@@ -15,7 +15,8 @@ const pathOf = (rm, name) => `/r/${rm.token}${slug(name) ? '-' + slug(name) : ''
 
 // What a roadmap shows of a board. votes: card id -> count.
 function view(doc, rm, votes) {
-  const frames = doc.items.filter(i => i.type === 'frame').sort((a, b) => Math.round(a.y / 500) - Math.round(b.y / 500) || a.x - b.x);
+  // the phases: a mood board collection (a frame of reference pictures) isn't one
+  const frames = doc.items.filter(i => i.type === 'frame' && !i.mood).sort((a, b) => Math.round(a.y / 500) - Math.round(b.y / 500) || a.x - b.x);
   const order = new Map(frames.map((f, i) => [f.id, i]));
   const phase = new Map();
   for (const c of doc.items) {

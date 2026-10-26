@@ -274,7 +274,7 @@ html.board-locked .frame:not(.collapsed) .f-fold{display:none}
 .tool:hover{color:var(--bone);background:var(--hide-3)}
 .tool[aria-pressed=true]{color:var(--void);background:var(--bone);border-radius:64% 10% 64% 10%;box-shadow:0 0 18px -3px color-mix(in srgb,var(--bone) 55%,transparent)}
 /* the spine's buttons size themselves to the window's height, so every one fits at any interface size */
-#tools{--ts:clamp(28px, calc((100vh - 324px) / 17), 40px)}
+#tools{--ts:clamp(28px, calc((100vh - 324px) / 18), 40px)}
 .tool svg{width:calc(var(--ts,40px) * .5);height:calc(var(--ts,40px) * .5)}
 .tool .k{position:absolute;right:4px;bottom:2px;font:600 8.5px var(--font-mono);opacity:.5}
 .tool .dot{position:absolute;right:5px;top:5px;width:8px;height:8px;border-radius:50%;background:var(--c,var(--fang));box-shadow:0 0 0 1.5px var(--hide)}
@@ -1285,7 +1285,7 @@ html[data-skin=anti] .tr-f input[type=date],html[data-skin=anti] .tr-f input[typ
 @media (max-width:900px){.tool .k,#minimap,#hud{display:none}}
 @media (max-width:600px){#top{gap:4px;padding:0 8px}.boardsel{margin-left:4px}#dock{left:10px}#ctx{left:calc(50% + 29px);bottom:10px;max-width:calc(100% - 68px)}#wrap.pl-open #ctx{left:50%;bottom:10px;max-width:calc(100% - 20px)}.rng input{width:80px}.hint{white-space:normal;text-align:center;line-height:1.9}}
 /* short screens: the tool spine shrinks to fit instead of hiding tools off the bottom */
-@media (max-height:780px){#dock{max-height:calc(100% - 28px)}#tools{--ts:clamp(20px, calc((100vh - 194px) / 17), 34px);gap:2px;padding:6px 5px}.tsep{margin:3px 5px}.drip{height:22px}}
+@media (max-height:780px){#dock{max-height:calc(100% - 28px)}#tools{--ts:clamp(20px, calc((100vh - 194px) / 18), 34px);gap:2px;padding:6px 5px}.tsep{margin:3px 5px}.drip{height:22px}}
 @media (max-height:700px){.tool{border-radius:10px}.tool .k{display:none}.tsep{margin:2px 5px}}
 @media (max-height:620px){.tool{border-radius:9px}.drip{height:20px}}
 @media (max-height:580px){.tool{border-radius:8px}#tools{gap:1px;padding:4px}.tsep{margin:2px 4px}}
@@ -1306,6 +1306,118 @@ html[data-skin=anti] .tr-f input[type=date],html[data-skin=anti] .tr-f input[typ
 .snipov .sv-hint{position:absolute;top:18px;left:50%;transform:translateX(-50%);padding:8px 14px;border-radius:10px 10px 10px 4px;background:rgba(14,14,21,.92);border:1px solid var(--line-2);color:var(--bone);font:600 13px var(--font-ui);white-space:nowrap}
 .snipov .sv-hint b{color:var(--fang)}
 .snipov.dragging .sv-dim,.snipov.dragging .sv-hint{display:none}
+/* mood board: a wall of every reference, in collections */
+.frame.mood{border-style:dashed}
+.frame.mood .f-title::before{content:"";display:inline-block;vertical-align:-1px;width:12px;height:10px;margin-right:8px;border:1.6px solid currentColor;border-radius:3px;background:linear-gradient(135deg,transparent 52%,currentColor 52% 68%,transparent 68%)}
+.modal#mood{padding:8px}
+body:has(#mood:not([hidden])) #toast,body:has(#mood:not([hidden])) #uploads{position:fixed;z-index:96}
+body:has(#mood:not([hidden])) .menu{z-index:97}
+.md-sheet{width:100%;height:100%;max-height:none;display:flex;flex-direction:column;padding:0;overflow:hidden}
+.md-top{gap:12px;flex-wrap:wrap}
+.md-top h2{flex:none}
+.md-top #mdSum{margin-right:auto}
+.md-search{display:flex;align-items:center;gap:7px;height:32px;padding:0 10px;border:1px solid var(--line);border-radius:10px;background:var(--void-2);color:var(--bone-faint);width:min(260px,40vw);min-width:0}
+.md-search:focus-within{border-color:var(--line-2)}
+.md-search svg{width:15px;height:15px;flex:none;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round}
+.md-search input{flex:1;min-width:0;border:0;background:none;color:var(--bone);font:600 12.5px var(--font-ui);outline:none}
+#mdSize button{min-width:30px}
+.md-body{flex:1;min-height:0;overflow-y:auto;scrollbar-gutter:stable;padding:16px 22px 26px;display:flex;flex-direction:column;gap:16px}
+.md-col{--c:var(--bone-faint);flex:none;border:1px solid var(--line);border-radius:6px 20px 20px 20px;background:linear-gradient(170deg,color-mix(in srgb,var(--c) 7%,var(--hide)),var(--hide) 70%);padding:12px 16px 16px;transition:border-color .15s,box-shadow .15s}
+.md-col.into{border-color:color-mix(in srgb,var(--c) 38%,var(--line))}
+.md-col.over{border-color:var(--c);box-shadow:0 0 0 3px color-mix(in srgb,var(--c) 25%,transparent)}
+.md-head{display:flex;align-items:center;gap:9px;min-height:30px;margin-bottom:10px;flex-wrap:wrap}
+.md-head>i{width:9px;height:9px;border-radius:3px;background:var(--c);flex:none}
+.md-head h3{margin:0;font:800 13px var(--font-display);letter-spacing:.09em;text-transform:uppercase;color:var(--c);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.md-head h3[data-md]{cursor:text}
+.md-head em{font:600 11px var(--font-mono);font-style:normal;color:var(--bone-faint)}
+.md-kind{font:700 9.5px var(--font-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--bone-faint);border:1px solid var(--line-2);border-radius:99px;padding:2px 7px}
+.md-acts{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.md-wall{position:relative}
+.md-tile{position:absolute;padding:0;border:0;border-radius:8px;overflow:hidden;background:var(--void-2);cursor:zoom-in;box-shadow:0 0 0 1px var(--line);touch-action:none}
+.md-tile:hover,.md-tile:focus-visible{box-shadow:0 0 0 2px var(--c),0 14px 30px -14px rgba(0,0,0,.85);z-index:1;outline:none}
+.md-tile img,.md-tile video{display:block;pointer-events:none}
+.md-tile video{width:100%;height:100%;object-fit:cover}
+.md-tile.gray img,.md-tile.gray video,.lb-pic.gray img,.lb-pic.gray video{filter:grayscale(1)}
+.md-play{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:rgba(0,0,0,.55);color:#fff;pointer-events:none}
+.md-play .tm-ico svg{width:18px;height:18px}
+.md-emb{position:absolute;inset:0;display:flex;align-items:flex-end;justify-content:flex-start;padding:9px 11px;background:linear-gradient(160deg,#2a1830,#120c18);color:#fff;font:800 10.5px var(--font-display);letter-spacing:.1em;text-transform:uppercase}
+.md-info{position:absolute;left:6px;right:6px;bottom:6px;display:flex;gap:4px;align-items:center;flex-wrap:wrap;opacity:0;transition:opacity .15s;pointer-events:none}
+.md-tile:hover .md-info,.md-tile:focus-visible .md-info{opacity:1}
+.md-info i{font:700 10px var(--font-mono);font-style:normal;color:#fff;background:rgba(0,0,0,.62);border-radius:99px;padding:2px 7px}
+.md-info .tm-ico{display:grid;place-items:center;width:20px;height:20px;border-radius:50%;background:rgba(0,0,0,.62);color:#fff}
+.md-info .tm-ico svg{width:12px;height:12px}
+.md-drop{margin:0;padding:22px;border:1px dashed var(--line-2);border-radius:12px;text-align:center;font-size:12.5px;color:var(--bone-faint)}
+.md-none{color:var(--bone-faint);text-align:center;margin:40px 0}
+.md-empty{margin:auto;max-width:470px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:10px;padding:42px 26px;border:1.5px dashed var(--line-2);border-radius:26px 26px 26px 6px}
+.md-empty>.tm-ico svg{width:42px;height:42px;color:var(--fang)}
+.md-empty h3{margin:4px 0 0;font:800 18px var(--font-display);letter-spacing:.04em}
+.md-empty p{margin:0;color:var(--bone-dim);line-height:1.55;font-size:13.5px}
+.md-empty-acts{display:flex;gap:8px;margin-top:6px;flex-wrap:wrap;justify-content:center}
+#mood.md-drop-on .md-body{outline:2px dashed color-mix(in srgb,var(--fang) 55%,transparent);outline-offset:-8px}
+.md-ghost{position:fixed;z-index:96;margin:0;pointer-events:none;transform-origin:0 0;box-shadow:0 26px 50px -18px rgba(0,0,0,.85);opacity:.95}
+.md-lift{opacity:.3}
+.md-dragging,.md-dragging *{cursor:grabbing!important}
+/* a closer look at one reference */
+.md-light{position:fixed;inset:0;z-index:90;display:flex;flex-direction:column;background:rgba(6,5,10,.94);backdrop-filter:blur(6px)}
+.md-light[hidden]{display:none}
+.lb-top{display:flex;align-items:center;gap:10px;padding:12px 16px;color:var(--bone);flex-wrap:wrap}
+.lb-count{font:600 12px var(--font-mono);color:var(--bone-faint);min-width:56px}
+.lb-col{font:800 12px var(--font-display);letter-spacing:.09em;text-transform:uppercase;color:var(--c,var(--bone-dim))}
+.lb-gap{flex:1}
+.lb-wrap{flex:1;min-height:0;display:flex}
+.lb-main{flex:1;min-width:0;display:flex;align-items:center;gap:6px;padding:0 8px 16px 12px}
+.lb-stage{flex:1;align-self:stretch;min-width:0;display:grid;place-items:center;overflow:hidden}
+.lb-pic{position:relative;overflow:hidden;border-radius:6px;background:var(--void-2);box-shadow:0 30px 80px -30px rgba(0,0,0,.9)}
+.lb-pic img{display:block}
+.lb-pic video,.lb-pic iframe{width:100%;height:100%;border:0;display:block;background:#000}
+.lb-nav{flex:none;width:44px;height:64px;border-radius:14px;border:1px solid var(--line);background:var(--hide-2);color:var(--bone);cursor:pointer;display:grid;place-items:center}
+.lb-nav:hover{border-color:var(--line-2);background:var(--hide-3)}
+.lb-nav svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.lb-side{flex:none;width:300px;overflow-y:auto;padding:4px 18px 18px;border-left:1px solid var(--line);display:flex;flex-direction:column;gap:14px;color:var(--bone)}
+.lb-f{display:flex;flex-direction:column;gap:6px}
+.lb-f>span{font:800 9px var(--font-display);letter-spacing:.14em;text-transform:uppercase;color:var(--bone-faint)}
+.lb-f textarea.tm-in{height:auto;min-height:70px;padding:8px 12px;resize:vertical;line-height:1.45}
+.lb-src{align-self:flex-start;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.lb-tags{display:flex;flex-wrap:wrap;gap:5px;align-items:center}
+.lb-tag{display:inline-flex;align-items:center;gap:2px;font:700 11px var(--font-mono);padding:3px 3px 3px 9px;border-radius:99px;background:var(--hide-2);border:1px solid var(--line)}
+.lb-tag button{border:0;background:none;color:var(--bone-faint);cursor:pointer;font-size:14px;line-height:1;padding:0 5px}
+.lb-tag button:hover{color:var(--bad)}
+.lb-tags .tm-in.lb-tagin{width:120px;height:28px;font-size:12px;padding:0 10px}
+.lb-pal{display:flex;flex-wrap:wrap;gap:8px;min-height:20px}
+.lb-sw{display:flex;flex-direction:column;align-items:center;gap:4px;border:0;background:none;padding:0;cursor:pointer;color:var(--bone-dim);font:600 9.5px var(--font-mono)}
+.lb-sw i{width:38px;height:38px;border-radius:10px;background:var(--c);box-shadow:inset 0 0 0 1px rgba(255,255,255,.14)}
+.lb-sw:hover{color:var(--bone)}
+.lb-acts{display:flex;flex-direction:column;gap:6px;margin-top:auto}
+.lb-acts .tm-btn{justify-content:flex-start}
+.lb-emb{width:100%;height:100%;border:0;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;background:linear-gradient(160deg,#2a1830,#120c18);color:#fff;font:600 12px var(--font-ui)}
+.lb-emb b{font:800 13px var(--font-display);letter-spacing:.1em;text-transform:uppercase}
+.lb-emb .tm-ico svg{width:36px;height:36px}
+.md-light:fullscreen{background:#000}
+.md-light:fullscreen .lb-side,.md-light:fullscreen .lb-top{display:none}
+.md-light:fullscreen .lb-main{padding:0}
+@media (max-width:1100px){.md-search{width:100%;order:9}}
+@media (max-width:900px){.md-top #mdSum{display:none}.md-top #mdSize{margin-left:auto}}
+@media (max-width:820px){.lb-wrap{flex-direction:column}.lb-side{width:auto;border-left:0;border-top:1px solid var(--line);max-height:42%}.md-search{width:100%;order:9}.lb-nav{width:34px;height:52px}}
+/* what's new, after an update */
+.modal#whatsNew{z-index:85}
+.wn-sheet{width:min(620px,100%);padding:0;display:flex;flex-direction:column;overflow:hidden}
+.wn-hero{padding:28px 30px 18px;background:radial-gradient(120% 140% at 0% 0%,color-mix(in srgb,var(--fang) 22%,transparent),transparent 60%),radial-gradient(90% 120% at 100% 0%,color-mix(in srgb,#9a3dff 18%,transparent),transparent 60%);border-bottom:1px solid var(--line)}
+.wn-tag{display:inline-block;font:800 10px var(--font-mono);letter-spacing:.14em;text-transform:uppercase;color:var(--fang);border:1px solid color-mix(in srgb,var(--fang) 45%,transparent);border-radius:99px;padding:4px 10px}
+.wn-hero h2{margin:12px 0 6px}
+.wn-hero p{margin:0;color:var(--bone-dim);line-height:1.5}
+.wn-body{overflow-y:auto;max-height:min(56vh,520px);padding:4px 30px 8px}
+.wn-ver{padding:16px 0;border-bottom:1px solid var(--line)}
+.wn-ver:last-child{border-bottom:0}
+.wn-ver h3{display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 10px;margin:0 0 10px}
+.wn-ver h3 b{font:800 15px var(--font-display);letter-spacing:.03em}
+.wn-ver h3 span{font:600 11px var(--font-mono);color:var(--bone-faint)}
+.wn-ver ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:9px}
+.wn-ver li{position:relative;padding-left:18px;color:var(--bone-dim);line-height:1.5;font-size:13.5px}
+.wn-ver li::before{content:"";position:absolute;left:2px;top:.55em;width:7px;height:7px;border-radius:2px;background:var(--bone-faint);transform:rotate(45deg)}
+.wn-first li::before{background:var(--fang)}
+.wn-ver li b{color:var(--bone)}
+.wn-ver li .tm-btn{margin-left:8px;vertical-align:middle}
+.wn-foot{display:flex;justify-content:space-between;gap:10px;padding:14px 30px 20px;border-top:1px solid var(--line)}
 </style>
 
 <div id="app">
@@ -1384,6 +1496,7 @@ html[data-skin=anti] .tr-f input[type=date],html[data-skin=anti] .tr-f input[typ
         <div class="tsep"></div>
         <button class="tool" data-tool="image" title="Picture or video (I), or just paste or drop" aria-label="Insert a picture or video" aria-pressed="false"><svg viewBox="0 0 20 20"><rect x="3" y="4" width="14" height="12" rx="2"/><circle cx="7.5" cy="8.5" r="1.4"/><path d="M3.5 14.5l4.2-4 3 2.7 2.3-2 3.5 3.3"/></svg><span class="k">I</span></button>
         <button class="tool" data-feat="snip" aria-label="Screenshot"><svg viewBox="0 0 20 20"><path d="M3 7V4.5A1.5 1.5 0 0 1 4.5 3H7M13 3h2.5A1.5 1.5 0 0 1 17 4.5V7M17 13v2.5a1.5 1.5 0 0 1-1.5 1.5H13M7 17H4.5A1.5 1.5 0 0 1 3 15.5V13"/><circle cx="10" cy="10" r="2.6"/></svg></button>
+        <button class="tool" data-feat="mood" aria-label="Mood board"><svg viewBox="0 0 20 20"><rect x="3" y="3" width="6" height="8" rx="1.4"/><rect x="11" y="3" width="6" height="5" rx="1.4"/><rect x="3" y="13" width="6" height="4" rx="1.4"/><rect x="11" y="10" width="6" height="7" rx="1.4"/></svg></button>
         <div class="tsep fsep"></div>
         <button class="tool" data-feat="kanban" aria-label="Kanban"><svg viewBox="0 0 20 20"><rect x="3" y="3.5" width="4" height="13" rx="1.2"/><rect x="8" y="3.5" width="4" height="9" rx="1.2"/><rect x="13" y="3.5" width="4" height="6" rx="1.2"/></svg></button>
         <button class="tool" data-feat="calendar" aria-label="Calendar"><svg viewBox="0 0 20 20"><rect x="3.5" y="4.5" width="13" height="12" rx="2"/><path d="M3.5 8.5h13M7 3v3M13 3v3M7 11.5h.01M10 11.5h.01M13 11.5h.01M7 14h.01M10 14h.01"/></svg></button>
@@ -1472,6 +1585,8 @@ html[data-skin=anti] .tr-f input[type=date],html[data-skin=anti] .tr-f input[typ
         <dt><kbd>Shift G</kbd></dt><dd>Timeline: the schedule and its critical path</dd>
         <dt><kbd>Shift H</kbd></dt><dd>Hours: a day or a week hour by hour, to plan and log time</dd>
         <dt><kbd>Shift K</kbd> <kbd>Shift C</kbd></dt><dd>Kanban, Calendar</dd>
+        <dt><kbd>Shift M</kbd></dt><dd>Mood board: every picture, GIF and video, in collections</dd>
+        <dt><kbd>←</kbd> <kbd>→</kbd> <kbd>Space</kbd> <kbd>F</kbd></dt><dd>In the mood board's closer look: next, slideshow, full screen</dd>
         <dt><kbd>Shift T</kbd></dt><dd>Track time: log time or run a timer</dd>
         <dt><kbd>Shift W</kbd></dt><dd>Timesheet: the week's time, day by day</dd>
         <dt><kbd>Esc</kbd></dt><dd>Back to the board, or press the view's key again</dd>
@@ -1621,6 +1736,29 @@ html[data-skin=anti] .tr-f input[type=date],html[data-skin=anti] .tr-f input[typ
       <button id="vwClose" class="ib lbl" title="Back to the board (Esc)"><svg viewBox="0 0 20 20"><path d="M5 5l10 10M15 5 5 15"/></svg>Close</button></div>
     <div id="vwFilters" class="vw-filters"></div>
     <div id="vwBody" class="vw-body"></div>
+  </div>
+</div>
+
+<div id="mood" class="modal" hidden>
+  <div class="sheet md-sheet" role="dialog" aria-modal="true" aria-labelledby="mdTitle">
+    <div class="st-head md-top"><h2 id="mdTitle">Mood board<em>.</em></h2><span id="mdSum" class="vw-sum"></span>
+      <label class="md-search"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="8.7" cy="8.7" r="5.2"/><path d="M12.6 12.6l4.2 4.2"/></svg><input id="mdSearch" type="search" placeholder="Search names, notes and tags" autocomplete="off" spellcheck="false" aria-label="Search the mood board"></label>
+      <div id="mdSize" class="st-seg" role="group" aria-label="Picture size"><button type="button" data-size="s" title="Small pictures">S</button><button type="button" data-size="m" title="Medium pictures">M</button><button type="button" data-size="l" title="Large pictures">L</button></div>
+      <button id="mdNew" class="tm-btn" type="button" data-md="new" title="A new collection on the board, kept out of the schedule">New collection</button>
+      <button id="mdAdd" class="tm-btn ok" type="button" data-md="add" title="Add pictures or videos from files. Pasting and dropping them here works too">Add pictures</button>
+      <button id="mdClose" class="ib lbl" title="Back to the board (Esc)"><svg viewBox="0 0 20 20"><path d="M5 5l10 10M15 5 5 15"/></svg>Close</button></div>
+    <div id="mdFilters" class="vw-filters" hidden></div>
+    <div id="mdBody" class="md-body"></div>
+    <input id="mdFile" type="file" accept="image/*,video/*,.png,.jpg,.jpeg,.gif,.webp,.avif,.bmp,.svg,.mp4,.webm,.mov,.m4v" multiple hidden>
+  </div>
+  <div id="mdLight" class="md-light" role="dialog" aria-modal="true" aria-label="A closer look" hidden></div>
+</div>
+
+<div id="whatsNew" class="modal" hidden>
+  <div class="sheet wn-sheet" role="dialog" aria-modal="true" aria-labelledby="wnTitle">
+    <div class="wn-hero"><span class="wn-tag">Updated</span><h2 id="wnTitle">What's new<em>.</em></h2><p id="wnSub"></p></div>
+    <div id="wnBody" class="wn-body"></div>
+    <div class="wn-foot"><button class="tm-btn" type="button" data-wn="log">Full changelog</button><button id="wnOk" class="tm-btn ok" type="button" data-wn="ok">Got it</button></div>
   </div>
 </div>
 
@@ -1884,7 +2022,7 @@ function ensureVisible(it) {
 let phaseIdx = -1;
 const sortFrames = arr => arr.sort((a, b) => (Math.round(a.y / 300) - Math.round(b.y / 300)) || (a.x - b.x));
 function flyPhase(d) {
-  const fr = sortFrames(doc.items.filter(i => i.type === 'frame'));
+  const fr = sortFrames(doc.items.filter(i => i.type === 'frame' && !i.mood));
   if (!fr.length) { toast('No phase frames yet. Press F to draw one.'); return; }
   phaseIdx = (phaseIdx + d + fr.length) % fr.length;
   fitTo([fr[phaseIdx]], true, 1.4); toast(fr[phaseIdx].title);
@@ -1957,9 +2095,12 @@ function computeDerived() {
   frameStats = new Map();
   for (const f of doc.items) {
     if (f.type !== 'frame') continue;
-    let total = 0, done = 0, est = 0;
-    for (const n of doc.items) if (isWork(n) && containsBox(f, bboxOf(n))) { total++; if (n.status === 'done') done++; else est += estDays(n.est); }
-    frameStats.set(f.id, {total, done, est});
+    let total = 0, done = 0, est = 0, pics = 0;
+    for (const n of doc.items) {
+      if (isWork(n) && containsBox(f, bboxOf(n))) { total++; if (n.status === 'done') done++; else est += estDays(n.est); }
+      else if ((n.type === 'image' || n.type === 'video') && containsBox(f, bboxOf(n))) pics++;
+    }
+    frameStats.set(f.id, {total, done, est, pics});
   }
   tucked = tuckFor(doc, true);
   dimSet = null;
@@ -2155,8 +2296,9 @@ function syncEl(el, it) {
     el.style.width = it.w + 'px'; el.style.height = it.h + 'px';
     el.style.setProperty('--fc', col(it.color));
     const t = el.firstChild; if (!ed && t.textContent !== it.title) t.textContent = it.title;
+    el.classList.toggle('mood', !!it.mood);
     const st = frameStats.get(it.id), pct = st && st.total ? Math.round(st.done / st.total * 100) : 0;
-    const meta = sprintMetaHTML(it, st) + (st && st.total ? `<span>${st.done}/${st.total}</span><span class="f-bar"><i style="width:${pct}%"></i></span><span>${pct}%</span>${st.est ? `<span>· ${fmtDays(st.est)} left</span>` : ''}` : '');
+    const meta = it.mood ? (st && st.pics ? `<span>${st.pics} reference${st.pics === 1 ? '' : 's'}</span>` : '') : sprintMetaHTML(it, st) + (st && st.total ? `<span>${st.done}/${st.total}</span><span class="f-bar"><i style="width:${pct}%"></i></span><span>${pct}%</span>${st.est ? `<span>· ${fmtDays(st.est)} left</span>` : ''}` : '');
     if (el.children[1]._m !== meta) { el.children[1]._m = meta; el.children[1].innerHTML = meta; }
   } else if (it.type === 'jam') {
     el.style.width = it.w + 'px';
@@ -2853,6 +2995,7 @@ function cleanItem(i) {
       const f = {...base, title: txt(i.title, 200), color: colorOr(i.color, '#a66bff')}, sp = cleanSprint(i.sprint);
       if (sp) f.sprint = sp;  // a phase used as a sprint
       if (i.collapsed === true) f.collapsed = true;  // folded down to its title bar
+      if (i.mood === true) f.mood = true;  // a mood board collection, not a phase
       return f;
     }
     case 'jam': {  // a game jam's clock: deadline, theme and a scope check
@@ -2867,19 +3010,33 @@ function cleanItem(i) {
       else if (typeof i.src === 'string' && /^(https?:|data:image\/)/i.test(i.src)) img.src = i.src;
       const crop = cleanCrop(i.crop); if (crop) img.crop = crop;  // the part of the picture that shows
       if (i.rot === 90 || i.rot === 180 || i.rot === 270) img.rot = i.rot;  // quarter turns, clockwise
-      return img;
+      return refInfo(img, i);
     }
     case 'video': {
       const v = {...base, name: txt(i.name, 200), loop: i.loop !== false, autoplay: !!i.autoplay}, e = cleanEmbed(i.embed);
       if (e) v.embed = e;
       else if (okId(i.asset)) v.asset = i.asset;
       else if (typeof i.src === 'string' && /^https?:/i.test(i.src)) v.src = i.src;
-      return v;
+      return refInfo(v, i);
     }
   }
   return null;
 }
 const okTime = v => Number.isFinite(v) && v > 1.5e12 && v < 4e12;
+// where a reference came from: a plain web address, only ever shown as a link to click, never loaded
+function cleanSource(v) {
+  const s = typeof v === 'string' ? v.trim() : '';
+  if (!s || s.length > 600 || /[\s\p{Cc}]/u.test(s)) return '';  // no spaces or hidden characters
+  try { const u = new URL(s); return (u.protocol === 'http:' || u.protocol === 'https:') && !u.username && !u.password ? s : ''; } catch (e) { return ''; }
+}
+// a picture's or video's tags, a note on why it's on the board, and the page it came from
+function refInfo(o, i) {
+  const tags = cleanTags(i.tags), note = txt(i.note, 500).trim(), src = cleanSource(i.source);
+  if (tags.length) o.tags = tags;
+  if (note) o.note = note;
+  if (src) o.source = src;
+  return o;
+}
 /* --- time tracking, tags and sprints: optional fields, rebuilt like everything else --- */
 const SPENT_MAX = 1000000, TAG_RE = /^[\p{L}\p{N}_-]{1,24}$/u;
 // a card's tracked time, in whole minutes
@@ -3246,22 +3403,24 @@ async function imageFromURL(url) {
   if (data) { const aid = uid(); assets[aid] = data; return {ref: {asset: aid}, nw: img.naturalWidth, nh: img.naturalHeight}; }
   return {ref: {src: url}, nw: img.naturalWidth, nh: img.naturalHeight, linked: true};
 }
-async function addImageFiles(files, at) {  // how many pictures went on the board
+// o.place puts them somewhere other than at (a mood board collection); o.source is the page one picture came from
+async function addImageFiles(files, at, o = {}) {  // how many pictures went on the board
   if (blocked()) return 0;
+  const source = files.length === 1 ? cleanSource(o.source) : '';
   const placed = [], jobs = [...files].map(f => uploadJob(f));  // each one shows in the tray straight away, waiting its turn
   for (const [i, f] of [...files].entries()) {
     const job = jobs[i];
     try {
       job.stage(board.team ? 'Uploading…' : 'Adding…');
       const m = await mediaFromFile(f, job), sz = fitSize(m.nw, m.nh);
-      placed.push({id: uid(), type: 'image', x: 0, y: 0, w: sz.w, h: sz.h, ...m.ref, name: f.name || 'Pasted image'});
+      placed.push({id: uid(), type: 'image', x: 0, y: 0, w: sz.w, h: sz.h, ...m.ref, name: f.name || 'Pasted image', ...(source ? {source} : {})});
       job.done();
     } catch (e) {
       const msg = board.team && e.message ? e.message : `Couldn't read ${f.name || 'that image'}`;
       job.fail(msg); toast(msg, 4000);
     }
   }
-  placeImages(placed, at);
+  (o.place || placeImages)(placed, at);
   return placed.length;
 }
 /* ---------- pictures on their way to the board ---------- */
@@ -3474,11 +3633,11 @@ function pickArea(frame) {
     });
   });
 }
-async function addImageURL(url, at) {
+async function addImageURL(url, at, o = {}) {
   if (blocked()) return;
   try {
-    const m = await imageFromURL(url), sz = fitSize(m.nw, m.nh);
-    placeImages([{id: uid(), type: 'image', x: 0, y: 0, w: sz.w, h: sz.h, ...m.ref, name: url.slice(0, 80)}], at);
+    const m = await imageFromURL(url), sz = fitSize(m.nw, m.nh), source = cleanSource(o.source);
+    (o.place || placeImages)([{id: uid(), type: 'image', x: 0, y: 0, w: sz.w, h: sz.h, ...m.ref, name: /^data:/i.test(url) ? 'Pasted image' : url.slice(0, 80), ...(source ? {source} : {})}], at);
     if (m.linked) setTimeout(() => toast('Linked image: that site blocks copying, so it needs internet to show'), 1400);
   } catch (e) { toast(e && e.message ? e.message : "That image couldn't be loaded.", 4000); }
 }
@@ -3935,6 +4094,29 @@ function picPixels(it, img, max) {  // the visible part's pixels, small, as they
   for (let i = 0; i < d.length; i += 4) if (d[i + 3] >= 128) out.push(it.gray ? greyOf(d.subarray(i, i + 3)) : [d[i], d[i + 1], d[i + 2]]);
   return out;
 }
+// A strip of swatches (a small picture itself, so the colour picker works on it) with each hex under its swatch, a
+// little below box.y and up to box.w wide; avoid is an item it moves down past others for. It goes on the board
+// (refresh and commit are the caller's), and what it made comes back, or null when it couldn't be made.
+async function swatchStrip(cols, box, name, avoid, alive) {
+  const n = cols.length, side = rd(clamp(box.w / n, 64, 180)), gap = rd(side * 0.3);
+  let size = clamp(Math.round(side * 0.2), 10, 24);
+  mctx.font = `700 ${size}px Manrope, "Segoe UI", system-ui, sans-serif`;
+  while (size > 9 && mctx.measureText('#d0d0d0').width + 12 > side) mctx.font = `700 ${--size}px Manrope, "Segoe UI", system-ui, sans-serif`;
+  const b = {x: box.x, y: box.y + gap, w: side * n, h: side + size * 1.5 + 8};
+  if (avoid) for (let i = 0; i < 40 && doc.items.some(o => o.type !== 'frame' && o.id !== avoid && intersects(b, bboxOf(o))); i++) b.y += gap + 8;
+  const cv = document.createElement('canvas'); cv.width = 64 * n; cv.height = 64;
+  const g = cv.getContext('2d'); cols.forEach((c, i) => { g.fillStyle = c; g.fillRect(i * 64, 0, 64, 64); });
+  let ref;
+  try {
+    if (board.team) ref = {src: await uploadImage(await new Promise(r => cv.toBlob(r, 'image/png')))};
+    else { const aid = uid(); assets[aid] = cv.toDataURL('image/png'); ref = {asset: aid}; }
+  } catch (e) { toast(e && e.message ? e.message : "Couldn't add the palette.", 4000); return null; }
+  if (alive && !alive()) return null;
+  const strip = {id: uid(), type: 'image', x: rd(b.x), y: rd(b.y), w: rd(side * n), h: side, ...ref, name: txt(name, 200), flip: false, gray: false};
+  const labels = cols.map((c, i) => ({id: uid(), type: 'text', x: rd(b.x + i * side), y: rd(b.y + side + 4), w: 10, h: 10, text: c, size, color: BONE}));
+  doc.items.push(strip, ...labels);
+  return {items: [strip, ...labels], box: b};
+}
 async function extractPalette(it) {
   if (!it || it.type !== 'image' || blocked()) return;
   const el = els.get(it.id), img = el && el.firstChild;
@@ -3942,28 +4124,12 @@ async function extractPalette(it) {
   let cols;
   try { cols = paletteOf(picPixels(it, img, 96)); } catch (e) { toast(PICK_BLOCKED, 4500); return; }
   if (!cols.length) { toast('That picture is see-through, so it has no colours to take.'); return; }
-  // a strip of swatches under the picture (a small picture itself, so the colour picker works on it), each hex under its swatch
-  const n = cols.length, side = rd(clamp(it.w / n, 64, 180)), gap = rd(side * 0.3);
-  let size = clamp(Math.round(side * 0.2), 10, 24);
-  mctx.font = `700 ${size}px Manrope, "Segoe UI", system-ui, sans-serif`;
-  while (size > 9 && mctx.measureText('#d0d0d0').width + 12 > side) mctx.font = `700 ${--size}px Manrope, "Segoe UI", system-ui, sans-serif`;
-  const box = {x: it.x, y: it.y + it.h + gap, w: side * n, h: side + size * 1.5 + 8};
-  for (let i = 0; i < 40 && doc.items.some(o => o.type !== 'frame' && o.id !== it.id && intersects(box, bboxOf(o))); i++) box.y += gap + 8;
-  const cv = document.createElement('canvas'); cv.width = 64 * n; cv.height = 64;
-  const g = cv.getContext('2d'); cols.forEach((c, i) => { g.fillStyle = c; g.fillRect(i * 64, 0, 64, 64); });
-  let ref;
-  try {
-    if (board.team) ref = {src: await uploadImage(await new Promise(r => cv.toBlob(r, 'image/png')))};
-    else { const aid = uid(); assets[aid] = cv.toDataURL('image/png'); ref = {asset: aid}; }
-  } catch (e) { toast(e && e.message ? e.message : "Couldn't add the palette.", 4000); return; }
-  if (!idx.has(it.id)) return;
-  const strip = {id: uid(), type: 'image', x: rd(box.x), y: rd(box.y), w: rd(side * n), h: side, ...ref, name: txt('Palette · ' + (it.name || 'picture'), 200), flip: false, gray: false};
-  const labels = cols.map((c, i) => ({id: uid(), type: 'text', x: rd(box.x + i * side), y: rd(box.y + side + 4), w: 10, h: 10, text: c, size, color: BONE}));
-  doc.items.push(strip, ...labels);
+  const made = await swatchStrip(cols, {x: it.x, y: it.y + it.h, w: it.w}, 'Palette · ' + (it.name || 'picture'), it.id, () => idx.has(it.id));
+  if (!made) return;
   if (tool !== 'select') setTool('select');
-  sel.clear(); [strip, ...labels].forEach(o => sel.add(o.id));
+  sel.clear(); made.items.forEach(o => sel.add(o.id));
   refresh(); commit();
-  toast(`Palette: ${n} colour${n === 1 ? '' : 's'} from the picture. Ctrl+Z takes it away.`, 3500);
+  toast(`Palette: ${cols.length} colour${cols.length === 1 ? '' : 's'} from the picture. Ctrl+Z takes it away.`, 3500);
 }
 
 /* ---------- editing text ---------- */
@@ -4655,15 +4821,11 @@ stage.addEventListener('drop', async e => {
   if (blocked()) return;
   const pur = files.find(f => /\.pur$/i.test(f.name));
   if (pur) { importPureRef(pur); return; }
-  const imgs = files.filter(isImageFile), vids = files.filter(isVideoFile);
-  if (imgs.length) { addImageFiles(imgs, at); return; }
-  if (vids.length) { addVideoFiles(vids, at); return; }
-  const html = dt.getData('text/html'), m = html && html.match(/<img[^>]+src=["']([^"']+)["']/i);
-  const uri = (dt.getData('text/uri-list') || dt.getData('text/plain') || '').split(/\r?\n/).find(s => s && !s.startsWith('#'));
-  const emb = parseVideoURL(uri);
-  if (emb) { addEmbed(emb, at, uri); return; }
-  const src = m ? m[1].replace(/&amp;/g, '&') : uri;
-  if (src && /^(https?:|data:image\/)/i.test(src)) addImageURL(src.trim(), at);
+  const r = refsFrom(dt, false);  // a picture dragged from a web page remembers the page
+  if (r.imgs.length) { addImageFiles(r.imgs, at, {source: r.source}); return; }
+  if (r.vids.length) { addVideoFiles(r.vids, at); return; }
+  if (r.emb) { addEmbed(r.emb, at, r.embURL); return; }
+  if (r.url) addImageURL(r.url, at, {source: r.source});
 });
 const CLIP = 'venomboard:clip:';
 const isField = t => t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable);
@@ -4721,15 +4883,15 @@ document.addEventListener('paste', e => {
   const at = pasteAnchor();
   const files = [...dt.files].filter(isImageFile), videos = [...dt.files].filter(isVideoFile);
   if (files.length === 1 && picCopied) { e.preventDefault(); isOwnPicture(files[0]).then(own => (own ? pasteClip(clip, at) : addImageFiles(files, at))); return; }
-  if (files.length) { e.preventDefault(); addImageFiles(files, at); return; }
+  if (files.length) { e.preventDefault(); addImageFiles(files, at, {source: refsFrom(dt, true).source}); return; }
   if (videos.length) { e.preventDefault(); addVideoFiles(videos, at); return; }
   const text = (dt.getData('text/plain') || '').trim();
   const emb = parseVideoURL(text);
   if (emb) { e.preventDefault(); addEmbed(emb, at, text); return; }
   if (clip && (text.startsWith(CLIP) || !text)) { e.preventDefault(); pasteClip(clip, at); return; }
   const html = dt.getData('text/html'), m = html && html.match(/<img[^>]+src=["']([^"']+)["']/i);
-  if (m && /^(https?:|data:image\/)/i.test(m[1])) { e.preventDefault(); addImageURL(m[1].replace(/&amp;/g, '&'), at); return; }
-  if (/^data:image\//i.test(text) || /^https?:\/\/\S+\.(png|jpe?g|gif|webp|avif|bmp|svg)(\?\S*)?$/i.test(text)) { e.preventDefault(); addImageURL(text, at); return; }
+  if (m && /^(https?:|data:image\/)/i.test(m[1])) { e.preventDefault(); addImageURL(m[1].replace(/&amp;/g, '&'), at, {source: refsFrom(dt, true).source}); return; }
+  if (/^data:image\//i.test(text) || /^https?:\/\/\S+\.(png|jpe?g|gif|webp|avif|bmp|svg)(\?\S*)?$/i.test(text)) { e.preventDefault(); addImageURL(text, at, {source: text}); return; }
   if (text) {
     e.preventDefault();
     const lines = text.split(/\r?\n/);
@@ -5252,14 +5414,14 @@ function applyProp(prop, v, live) {
     if (!live) updateCtx(); else updateToolDots();
   }
 }
-function moreEntries() {
+function moreEntries(ownTags) {  // ownTags: the menu already has the item's own Tags entry
   const list = selObjs(), lockable = list.some(o => o.type !== 'link' && o.type !== 'stroke');
   return [
     {label: 'Bring to front', kb: 'Ctrl ]', icon: 'front', run: () => zorder(true)},
     {label: 'Send to back', kb: 'Ctrl [', icon: 'back', run: () => zorder(false)},
     ...(lockable ? [{label: list.every(o => o.locked) ? 'Unlock' : 'Lock in place', kb: 'Ctrl Shift L', icon: 'lock', run: toggleLock}] : []),
     {label: 'Zoom to selection', kb: 'Shift 2', icon: 'orig', run: () => fitTo(selObjs())},
-    ...(list.some(o => o.type === 'node') && !viewOnly() ? [{label: 'Tags…', icon: 'tag', run: () => tagMenu(list.filter(o => o.type === 'node').map(n => n.id), $('#ctx [data-act="more"]'))}] : []),
+    ...(list.some(taggable) && !viewOnly() && !ownTags ? [{label: 'Tags…', icon: 'tag', run: () => tagMenu(list.filter(taggable).map(n => n.id), $('#ctx [data-act="more"]'))}] : []),
     {label: 'Export selection as PNG', icon: 'image', run: exportPNG},
   ];
 }
@@ -5268,7 +5430,8 @@ function arrangeEntries() {
     {label: 'Left edges', run: () => arrange('left')}, {label: 'Centres (vertical line)', run: () => arrange('hcenter')}, {label: 'Right edges', run: () => arrange('right')},
     {label: 'Top edges', run: () => arrange('top')}, {label: 'Middles (horizontal line)', run: () => arrange('vcenter')}, {label: 'Bottom edges', run: () => arrange('bottom')},
     {head: 'Spread'}, {label: 'Distribute horizontally', run: () => arrange('hdist')}, {label: 'Distribute vertically', run: () => arrange('vdist')},
-    {head: 'Layout'}, {label: 'Pack into a grid', icon: 'arrange', run: () => arrange('grid')}, {label: 'Tidy layout', icon: 'trace', run: () => arrange('tidy')}];
+    {head: 'Layout'}, {label: 'Pack into a grid', icon: 'arrange', run: () => arrange('grid')}, {label: 'Tidy layout', icon: 'trace', run: () => arrange('tidy')},
+    ...(selObjs().filter(isMedia).length >= 2 ? [{label: 'Mood board rows', icon: 'image', run: () => arrangeMoodRows(selObjs())}] : [])];
 }
 function act(a, v, btn) {
   const list = tool === 'select' ? selObjs() : [], has = list.length > 0;
@@ -5409,9 +5572,9 @@ function contextEntries(hit, w) {
     } else if (hit.type === 'image') {
       if (board.team) E.push(...(team.user && !team.watch ? [{label: 'Add feedback pin here', icon: 'fbpin', run: () => dropFeedbackPin(hit, w)}] : []), {label: 'Comments', icon: 'label', kb: (commentCounts.get(hit.id) || '') + '', run: () => openPictureComments(hit.id)});
       E.push({label: hit.flip ? 'Unflip' : 'Flip horizontal', run: () => act('flip')}, {label: hit.gray ? 'Show in colour' : 'Show in greyscale', run: () => act('gray')}, {label: 'Original size', run: () => originalSize(hit)}, {label: 'Zoom to image', run: () => fitTo([hit])}, ...replaceEntries(hit), '-');
-      E.splice(E.findIndex(en => en.head), 0, ...picEntries(hit));  // crop, turn and colours, before Replace
+      E.splice(E.findIndex(en => en.head), 0, ...picEntries(hit), ...mediaEntries(hit), '-');  // crop, turn and colours, its tags and note, then Replace
     } else if (hit.type === 'video') {
-      E.push({label: 'Zoom to video', run: () => fitTo([hit])}, ...replaceEntries(hit), '-');
+      E.push({label: 'Zoom to video', run: () => fitTo([hit])}, ...mediaEntries(hit), ...replaceEntries(hit), '-');
     } else if (hit.type === 'link') {
       const near = (hit.via || []).findIndex(k => dist(k, w) <= 10 / cam.z);
       E.push({label: hit.label ? 'Edit label' : 'Add label', run: () => editLinkLabel(hit)}, {label: 'Reverse direction', run: () => reverseLink(hit)},
@@ -5419,12 +5582,13 @@ function contextEntries(hit, w) {
         ...(hit.via ? [{label: 'Straighten (remove reroute points)', run: () => clearKnots([hit])}] : []), {head: 'Style'},
         ...STYLE_OPTS.map(([v, t]) => ({label: t, cur: hit.style === v, run: () => { (sel.has(hit.id) ? selObjs().filter(o => o.type === 'link') : [hit]).forEach(o => { o.style = v; }); opts.link.style = v; refresh(); commit(); }})), '-');
     } else if (hit.type === 'text' || hit.type === 'frame') {
-      if (hit.type === 'frame') E.push(...sprintEntries(hit));
-      if (hit.type === 'frame') E.push(...phaseEntries(hit));
-      E.push({label: hit.type === 'frame' ? 'Rename phase' : 'Edit text', run: () => startEdit(hit.id, null, true)}, '-');
+      if (hit.type === 'frame') E.push(...(hit.mood ? moodFrameEntries(hit) : [...sprintEntries(hit), ...phaseEntries(hit)]));
+      E.push({label: hit.type === 'frame' ? (hit.mood ? 'Rename collection' : 'Rename phase') : 'Edit text', run: () => startEdit(hit.id, null, true)});
+      if (hit.type === 'frame' && !viewOnly()) { const frs = sel.has(hit.id) ? selObjs().filter(o => o.type === 'frame') : [hit]; E.push({label: hit.mood ? 'Turn into a phase' : 'Make it a mood board collection', icon: hit.mood ? 'frame' : 'image', run: () => setMoodFrame(frs, !hit.mood)}); }
+      E.push('-');
     }
     if (list.filter(o => o.type !== 'link' && o.type !== 'stroke').length >= 2) E.push({label: 'Arrange…', icon: 'arrange', run: () => showMenu(lastMenuPt.x, lastMenuPt.y, arrangeEntries())});
-    E.push({label: 'Duplicate', kb: 'Ctrl D', icon: 'dup', run: () => duplicateSelection()}, ...moreEntries(),
+    E.push({label: 'Duplicate', kb: 'Ctrl D', icon: 'dup', run: () => duplicateSelection()}, ...moreEntries(taggable(hit)),
       '-', {label: `Delete${list.length > 1 ? ' ' + list.length + ' items' : ''}`, kb: 'Del', danger: true, icon: 'trash', run: () => deleteSelection()});
   } else {
     if (clip) E.push({label: 'Paste here', kb: 'Ctrl V', run: () => pasteClip(clip, w)});
@@ -5479,6 +5643,7 @@ function viewMenu() {
   if (desk && desk.setUiScale) E.push({label: 'Interface size…', kb: Math.round((deskState.uiScale || 1) * 100) + '%', run: uiScaleMenu});
   E.push('-', {label: 'Timeline', kb: 'Shift G', icon: 'clock', run: openTimeline}, {label: 'Search everything', kb: 'Ctrl Shift F', run: openSearchAll},
     {label: 'Kanban', kb: 'Shift K', icon: 'arrange', run: () => openViews('kanban')}, {label: 'Calendar', kb: 'Shift C', icon: 'cal', run: () => openViews('calendar')},
+    {label: 'Mood board', kb: 'Shift M', icon: 'image', run: () => openMood()},
     '-', {label: 'Zoom to fit', kb: 'Shift 1', run: () => fitTo(allObjs())},
     {label: 'Next phase', kb: 'PgDn', run: () => flyPhase(1)}, {label: 'Previous phase', kb: 'PgUp', run: () => flyPhase(-1)});
   menuAt($('#viewBtn'), [...E, '-', ...windowEntries()]);
@@ -5597,7 +5762,7 @@ function setPlanner(open, focusSearch) {
   if (open && focusSearch) { const s = $('#plSearch'); s.focus(); s.select(); }
 }
 function boardGroups() {
-  const frames = sortFrames(doc.items.filter(i => i.type === 'frame'));
+  const frames = sortFrames(doc.items.filter(i => i.type === 'frame' && !i.mood));  // collections hold references, not work
   const used = new Set(), groups = [];
   const order = (a, b) => (a.y - b.y) || (a.x - b.x);
   for (const f of frames) {
@@ -5990,6 +6155,7 @@ const tsv = {week: 0, who: 'all'};
 function weekStart(back) { const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - (d.getDay() + 6) % 7 - 7 * back); return d; }
 function openTimesheet() {
   if (editing) finishEdit();
+  if (!moodEl.hidden) closeMood();
   tsv.week = 0; tsv.who = board.team ? (tr.who === 'me' ? 'me' : 'all') : 'all';
   $('#timesheet').hidden = false; renderTimesheet();
 }
@@ -6080,6 +6246,7 @@ function timeEntries(hit) {
 
 // Tags: up to 8 short labels per card, picked from the ones already on the board or typed new
 const normTag = s => String(s || '').trim().toLowerCase().replace(/^#+/, '').replace(/\s+/g, '-');
+const taggable = o => !!o && (o.type === 'node' || o.type === 'image' || o.type === 'video');  // cards, and references on the mood board
 function boardTags() {
   const c = new Map();
   for (const n of doc.items) if (n.type === 'node') for (const t of n.tags || []) c.set(t, (c.get(t) || 0) + 1);
@@ -6090,15 +6257,16 @@ function setTags(ids, tags, on) {
   if (blocked()) return;
   let full = 0;
   for (const id of ids) {
-    const n = doc.items.find(i => i.id === id && i.type === 'node'); if (!n) continue;
+    const n = doc.items.find(i => i.id === id && taggable(i)); if (!n) continue;
     let t = (n.tags || []).slice();
     if (!tags) t = [];
     else if (!on) t = t.filter(x => !tags.includes(x));
     else for (const x of tags) { if (t.includes(x)) continue; if (t.length >= 8) { full++; break; } t.push(x); }
-    if (t.length) n.tags = t; else delete n.tags;
+    if (t.length || n.type !== 'node') n.tags = t; else delete n.tags;  // a picture keeps [] so clearing its tags reaches everyone
   }
   refresh(); commit();
-  if (full) toast(`A card holds up to 8 tags, so ${full === 1 ? 'one card' : full + ' cards'} couldn't take them all.`, 3600);
+  const pic = ids.every(id => (idx.get(id) || {}).type !== 'node');
+  if (full) toast(pic ? `A picture holds up to 8 tags, so ${full === 1 ? 'one picture' : full + ' pictures'} couldn't take them all.` : `A card holds up to 8 tags, so ${full === 1 ? 'one card' : full + ' cards'} couldn't take them all.`, 3600);
 }
 // the tag menu stays open while you tick tags on and off
 function tagMenu(ids, btn) {
@@ -6109,8 +6277,8 @@ function tagMenu(ids, btn) {
   open();
 }
 function tagEntries(ids, reopen) {
-  const cards = ids.map(id => idx.get(id)).filter(n => n && n.type === 'node'), all = boardTags();
-  const E = [{head: cards.length > 1 ? `Tags · ${cards.length} cards` : 'Tags'}];
+  const cards = ids.map(id => idx.get(id)).filter(taggable), pics = cards.length > 0 && cards.every(n => n.type !== 'node'), all = pics ? picTags() : boardTags();
+  const E = [{head: cards.length > 1 ? `Tags · ${cards.length} ${pics ? 'references' : 'cards'}` : 'Tags'}];
   for (const t of all.slice(0, 40)) {
     const on = cards.length > 0 && cards.every(n => (n.tags || []).includes(t));
     E.push({label: t, icon: 'tag', cur: on, run: () => { setTags(ids, [t], !on); reopen(); }});
@@ -6122,8 +6290,9 @@ function tagEntries(ids, reopen) {
 }
 async function newTags(ids) {
   if (blocked()) return;
-  const p = askText('Add tags', 'Letters, numbers, - and _. Separate tags with commas. A card holds up to 8.', 'Add', {placeholder: 'e.g. combat, boss-fight', max: 240});
-  const inp = $('#pmField input'), have = boardTags();
+  const pics = ids.every(id => (idx.get(id) || {}).type !== 'node');
+  const p = askText('Add tags', `Letters, numbers, - and _. Separate tags with commas. A ${pics ? 'picture' : 'card'} holds up to 8.`, 'Add', {placeholder: pics ? 'e.g. forest, night, hero' : 'e.g. combat, boss-fight', max: 240});
+  const inp = $('#pmField input'), have = pics ? picTags() : boardTags();
   if (inp && have.length) { $('#pmField').append(mk('datalist', {id: 'tagSuggest'}, ...have.slice(0, 80).map(t => mk('option', {value: t})))); inp.setAttribute('list', 'tagSuggest'); }
   const v = await p; if (!v) return;
   const parts = v.split(/[,;]+/).map(normTag).filter(Boolean), good = [...new Set(parts.filter(t => TAG_RE.test(t)))], bad = parts.filter(t => !TAG_RE.test(t));
@@ -6401,6 +6570,15 @@ function toMarkdown() {
       if (c.body) md += c.body.split('\n').map(l => { const m = l.match(CHK_RE); return '  ' + (m ? `- [${m[2].toLowerCase() === 'x' ? 'x' : ' '}] ${m[3]}` : l); }).join('\n') + '\n';
     }
     md += '\n';
+  }
+  const refs = moodGroups().filter(g => g.pics.length);
+  if (refs.length) {
+    md += '## Mood board\n';
+    for (const g of refs) {
+      md += `### ${g.title}\n`;
+      for (const p of g.pics) md += `- ${p.name || (p.type === 'video' ? 'Video' : 'Picture')}${(p.tags || []).map(t => ' #' + t).join('')}${p.note ? ` — ${p.note}` : ''}${p.source ? ` (${p.source})` : ''}\n`;
+      md += '\n';
+    }
   }
   return md.trim() + '\n';
 }
@@ -6696,7 +6874,7 @@ const TEMPLATES = [
   ['jam', 'Game jam · 48 h', 'Day one prototype, day two content, then submit on time.'],
   ['steam', 'Steam launch', 'Store page, capsule, trailer, Next Fest, wishlists, release day.'],
   ['gdd', 'Design doc outline', 'Idea notes for pitch, pillars, core loop, scope and cuts.'],
-  ['moodboard', 'Art moodboard', 'Frames for character, environment, palette, UI and VFX references.'],
+  ['moodboard', 'Art moodboard', 'Mood board collections for character, environment, palette, UI and VFX references.'],
 ];
 function tplBuild(key) {
   const items = [], links = [];
@@ -6734,8 +6912,7 @@ function tplBuild(key) {
         ['UI + type', '#2fd6ff', 'Menus, HUD, fonts, icons'], ['VFX + animation', '#a66bff', 'Hits, magic, timing, camera']];
       areas.forEach(([title, color, hint], i) => {
         const x = (i % 3) * 600, y = Math.floor(i / 3) * 480;
-        frame(x, y, 560, 420, title, color);
-        items.push({id: uid(), type: 'text', x: x + 30, y: y + 340, w: 420, h: 40, text: 'Paste or drop references here', size: 18, color: '#9d99aa'});
+        frame(x, y, 560, 420, title, color).mood = true;  // a collection: kept out of the phases, shown in the mood board
         card(x + 30, y + 30, 'What we want', {kind: 'idea', body: hint, color});
       });
       break;
@@ -7027,15 +7204,18 @@ function keyLetter(e) {
   return k;
 }
 // Shift and a letter moves between the board's views and its time tools, from the board or from any of them:
-// G the Timeline, H its Hours, K Kanban, C Calendar, T Track time, W the Timesheet. The key of what's open goes back.
+// G the Timeline, H its Hours, K Kanban, C Calendar, T Track time, W the Timesheet, M the mood board. The key of
+// what's open goes back.
 function goLetter(e) { return e.shiftKey && !e.ctrlKey && !e.metaKey && !e.altKey && !isField(e.target) ? keyLetter(e) : ''; }
 function goKey(e) {
-  const to = {g: 'timeline', h: 'hours', k: 'kanban', c: 'calendar', t: 'track', w: 'sheet'}[goLetter(e)];
+  const to = {g: 'timeline', h: 'hours', k: 'kanban', c: 'calendar', t: 'track', w: 'sheet', m: 'mood'}[goLetter(e)];
   if (!to) return false;
   e.preventDefault();
-  const inTl = !$('#timeline').hidden, inVw = !vwEl.hidden;
+  const inTl = !$('#timeline').hidden, inVw = !vwEl.hidden, inMd = !moodEl.hidden;
+  if (to === 'mood') { if (inMd) closeMood(); else openMood(); return true; }
+  if (inMd) closeMood();
   if (to === 'sheet') openTimesheet();
-  else if (to === 'track') { if (inTl) closeTimeline(); if (inVw) closeViews(); setTrack(inTl || inVw || !tr.open); }
+  else if (to === 'track') { if (inTl) closeTimeline(); if (inVw) closeViews(); setTrack(inTl || inVw || inMd || !tr.open); }
   else if (to === 'timeline') { if (inTl && tl.scale !== 'hours') closeTimeline(); else tlSetScale(tl.scale === 'hours' ? 'days' : tl.scale); }
   else if (to === 'hours') { if (inTl && tl.scale === 'hours') closeTimeline(); else openHours(); }
   else if (inVw && vw.mode === to) closeViews();
@@ -7064,6 +7244,7 @@ window.addEventListener('keydown', e => {
   const ctrl = (e.ctrlKey || e.metaKey) && !altGr;
   if (!$('#confirm').hidden) { if (e.key === 'Escape' && $('#confirm')._done) $('#confirm')._done(false); return; }
   if (!$('#promptModal').hidden) { if (e.key === 'Escape' && $('#promptModal')._done) $('#promptModal')._done(null); return; }  // before Settings, which opens some
+  if (!$('#whatsNew').hidden) { if (e.key === 'Escape') { e.preventDefault(); closeWhatsNew(); } return; }
   if (!$('#help').hidden || !$('#tplModal').hidden) { if (e.key === 'Escape' || (e.key === '?' && !$('#help').hidden)) { $('#help').hidden = true; $('#tplModal').hidden = true; e.preventDefault(); } return; }
   if (!$('#settings').hidden) { if (e.key === 'Escape' || (ctrl && e.key === ',')) { e.preventDefault(); closeSettings(); } return; }
   if (!$('#versions').hidden) { if (e.key === 'Escape') closeVersions(); return; }
@@ -7072,6 +7253,7 @@ window.addEventListener('keydown', e => {
   if (!$('#sprintModal').hidden) { if (e.key === 'Escape') $('#sprintModal').hidden = true; return; }
   if (!$('#timesheet').hidden) { if (e.key === 'Escape' || goLetter(e) === 'w') { e.preventDefault(); closeTimesheet(); } return; }
   if (!$('#timeline').hidden) { if (!timelineKeys(e) && !goKey(e) && e.key === 'Escape') { e.preventDefault(); closeTimeline(); } return; }
+  if (!moodEl.hidden) { moodKeys(e); return; }
   if (!$('#views').hidden) { viewsKeys(e); return; }
   if (!$('#searchAll').hidden) { if (e.key === 'Escape') { e.preventDefault(); closeSearchAll(); } return; }
   if (ctrl && e.shiftKey && keyLetter(e) === 'f') { e.preventDefault(); openSearchAll(); return; }
@@ -7169,6 +7351,7 @@ $('#topbarBack').onclick = () => toggleTopbar();
 // the features row of the spine: views and tools that otherwise live in menus and shortcuts
 const FEATS = {
   snip: () => takeScreenshot(viewCenter()),
+  mood: () => openMood(),
   kanban: () => openViews('kanban'),
   calendar: () => openViews('calendar'),
   timeline: () => openTimeline(),
@@ -7181,7 +7364,7 @@ function moreFeatures() {
   const folded = matchMedia('(max-height:540px)').matches;  // the features row is folded in here on very short windows
   return [
     ...(folded ? [{head: 'Views'}, {label: 'Kanban', kb: 'Shift K', icon: 'arrange', run: FEATS.kanban}, {label: 'Calendar', kb: 'Shift C', icon: 'cal', run: FEATS.calendar},
-      {label: 'Timeline', kb: 'Shift G', icon: 'trace', run: FEATS.timeline}, {label: 'Search everything', kb: 'Ctrl Shift F', icon: 'notes', run: FEATS.search}] : []),
+      {label: 'Timeline', kb: 'Shift G', icon: 'trace', run: FEATS.timeline}, {label: 'Mood board', kb: 'Shift M', icon: 'image', run: FEATS.mood}, {label: 'Search everything', kb: 'Ctrl Shift F', icon: 'notes', run: FEATS.search}] : []),
     {head: 'Plan'},
     {label: plannerOpen ? 'Hide the Planner' : 'Planner', kb: 'Ctrl F', icon: 'notes', run: () => setPlanner(!plannerOpen)},
     {label: 'Templates', icon: 'plus', run: openTemplates},
@@ -7198,6 +7381,7 @@ function moreFeatures() {
     {head: 'History and help'},
     {label: 'Make a timelapse…', icon: 'play', run: openTimelapse},
     ...(board.team ? [{label: 'Version history…', icon: 'clock', run: openVersions}] : []),
+    {label: "What's new", kb: 'v' + APP_VERSION, icon: 'info', run: () => openWhatsNew()},
     {label: 'Keyboard shortcuts', kb: '?', icon: 'key', run: () => { $('#help').hidden = false; }},
     {label: 'Join the community on Discord', icon: 'user', run: () => openLink(DISCORD_URL)},
   ];
@@ -7216,6 +7400,7 @@ const TIPS = {
   frame: ['Phase', 'F', 'Drag out a phase to group cards. Drag the dots on its sides to connect it to the next phase.'],
   image: ['Picture or video', 'I', 'Add a picture or a video from a file. Pasting and dropping work too.'],
   snip: ['Screenshot', () => (desk ? deskState.snipLabel : 'Alt+Shift+S'), () => (desk ? 'Grab any part of any screen, mark it up, then put it on the board, copy it, save it or share a link.' : 'Grab part of a screen, a window or a tab and put it on the board.')],
+  mood: ['Mood board', 'Shift+M', 'Every picture, GIF and video on one wall, in collections kept out of the schedule. Drop or paste references straight in.'],
   kanban: ['Kanban', 'Shift+K', 'Your cards in To do, In progress, Blocked and Done columns. Drag them along.'],
   calendar: ['Calendar', 'Shift+C', 'Due dates and milestones on a month grid. Drag a card to another day.'],
   timeline: ['Timeline', 'Shift+G', 'The schedule in working days, from estimates and connections. Click a task to change it, drag a bar to move it. Shift+H shows the hours.'],
@@ -8368,6 +8553,7 @@ function aboutPane() {
     stGroup('Help',
       mk('div', {class: 'st-links'},
         mk('button', {class: 'tm-btn', type: 'button', onclick: () => { closeSettings(); $('#help').hidden = false; }}, 'Keyboard shortcuts'),
+        mk('button', {class: 'tm-btn', type: 'button', onclick: () => { closeSettings(); openWhatsNew(); }}, "What's new"),
         mk('button', {class: 'tm-btn', type: 'button', onclick: () => openLink(REPO_URL + '/issues/new')}, icon('arrow'), 'Report a bug'),
         mk('button', {class: 'tm-btn', type: 'button', onclick: () => openLink(HOSTED_SERVER)}, icon('arrow'), 'venomboard.com'),
         mk('button', {class: 'tm-btn', type: 'button', onclick: () => openLink(REPO_URL)}, icon('arrow'), 'Source code')),
@@ -9562,11 +9748,12 @@ function askText(title, msg, yes, o = {}) {
   return new Promise(res => {
     const m = $('#promptModal'), input = mk(o.multiline ? 'textarea' : 'input', {class: 'tm-in pm-in', rows: o.multiline ? 4 : null, type: o.type || null, placeholder: o.placeholder || '', autocomplete: o.autocomplete || 'off', maxlength: o.max || 1000, 'aria-label': title});
     $('#pmT').textContent = title; $('#pmM').textContent = msg; $('#pmYes').textContent = yes;
+    if (o.value) input.value = o.value;
     $('#pmField').replaceChildren(input);
     m.hidden = false; input.focus();
-    const done = v => { m.hidden = true; m._done = null; res(v); };
-    $('#pmYes').onclick = () => done(input.value.trim() || null); $('#pmNo').onclick = () => done(null);
-    input.onkeydown = e => { if (e.key === 'Enter' && (!o.multiline || e.ctrlKey || e.metaKey)) { e.preventDefault(); done(input.value.trim() || null); } if (e.key === 'Escape') { e.stopPropagation(); done(null); } };
+    const done = v => { m.hidden = true; m._done = null; res(v); }, value = () => input.value.trim() || (o.allowEmpty ? '' : null);
+    $('#pmYes').onclick = () => done(value()); $('#pmNo').onclick = () => done(null);
+    input.onkeydown = e => { if (e.key === 'Enter' && (!o.multiline || e.ctrlKey || e.metaKey)) { e.preventDefault(); done(value()); } if (e.key === 'Escape') { e.stopPropagation(); done(null); } };
     m.onclick = e => { if (e.target === m) done(null); };
     m._done = done;
   });
@@ -9859,6 +10046,7 @@ function schedule() {
 function openTimeline() {
   if (editing) finishEdit();
   if (!vwEl.hidden) closeViews();
+  if (!moodEl.hidden) closeMood();
   $('#timeline').hidden = false;
   renderTimeline();
 }
@@ -10524,6 +10712,7 @@ function openViews(mode) {
   if (editing) finishEdit();
   hideMenus();
   if (!$('#timeline').hidden) closeTimeline();
+  if (!moodEl.hidden) closeMood();
   vw.mode = mode === 'calendar' ? 'calendar' : 'kanban';
   if (!vw.month) vw.month = monthStart(new Date());
   vwEl.hidden = false;
@@ -10534,6 +10723,7 @@ function closeViews() { if (vw.drag) vwEnd(true); vwEl.hidden = true; }
 function scheduleViews() {
   if (!vwEl.hidden && !vw.drag && !vw.raf) vw.raf = requestAnimationFrame(() => { vw.raf = 0; if (!vwEl.hidden && !vw.drag) renderViews(); });
   if (!$('#timeline').hidden && !tlDrag) tlPaint();
+  scheduleMood();
 }
 function vwCards() {  // board order: phase by phase, top to bottom
   const out = [];
@@ -10699,6 +10889,677 @@ $('#planner .pl-head [data-pl="timeline"]').insertAdjacentHTML('beforebegin',
   '<button class="ib pl-tool" data-vw-open="kanban" title="Kanban: drag cards between statuses (Shift+K)" aria-label="Kanban"><svg viewBox="0 0 20 20"><rect x="3" y="3.5" width="4" height="13" rx="1.3"/><rect x="8.5" y="3.5" width="4" height="9" rx="1.3"/><rect x="14" y="3.5" width="3.5" height="6" rx="1.3"/></svg></button>'
   + `<button class="ib pl-tool" data-vw-open="calendar" title="Calendar: due dates and milestones by month (Shift+C)" aria-label="Calendar"><svg viewBox="0 0 20 20">${ICON.cal}</svg></button>`);
 planner.addEventListener('click', e => { const b = e.target.closest('[data-vw-open]'); if (b) openViews(b.dataset.vwOpen); });
+
+/* ---------- mood board ---------- */
+// A room for the look of the game: every picture, GIF and video on the board on one wall, grouped into collections.
+// A collection is a frame kept for references, so it stays out of the phases, the schedule and the public roadmap.
+// Pictures dropped, pasted or added here go on the board inside their collection, laid out in rows, so the wall
+// and the board always match, and a teammate's change shows up here as it happens.
+const mood = {q: '', tags: new Set(), size: 'm', into: null, drag: null, noClick: 0, raf: 0, lb: null, w: 0};
+const moodEl = $('#mood'), mdBody = $('#mdBody'), mdLight = $('#mdLight');
+const MOOD_ROW = {s: 130, m: 200, l: 300};
+const MOOD_COLORS = ['#ff2a4f', '#2fd6ff', '#ffd23d', '#3dff8b', '#a66bff', '#ff7a1a'];
+const isMedia = o => !!o && (o.type === 'image' || o.type === 'video');
+const isSwatch = o => o.type === 'image' && /^Palette · /.test(o.name || '');  // a palette strip made from pictures
+const mediaRatio = o => clamp(o.w / Math.max(1, o.h), 0.1, 10);
+const mediaSrc = o => (o.asset ? assets[o.asset] : o.src) || '';
+const mediaTip = o => [o.name || (o.type === 'video' ? 'Video' : 'Picture'), o.note, (o.tags || []).map(t => '#' + t).join(' ')].filter(Boolean).join(' · ');
+const siteOf = u => hostOf(u).replace(/^www\./, '');  // a source link's site, short
+try { const s = localStorage.getItem('venom-board-mood-size'); if (MOOD_ROW[s]) mood.size = s; } catch (e) {}
+
+// justified rows: pictures side by side at one height per row, each row just filling the width (the last one can
+// stop short), the way a mood board wall looks. Takes width/height ratios, gives each one's box.
+function justify(ratios, W, rowH, gap) {
+  const out = [], fill = (n, s) => (W - gap * (n - 1)) / s;  // the height at which n pictures fill the width
+  let y = 0, row = [], sum = 0;
+  const place = h => { let x = 0; for (const i of row) { out[i] = {x, y, w: ratios[i] * h, h}; x += ratios[i] * h + gap; } y += h + gap; row = []; sum = 0; };
+  ratios.forEach((r, i) => {
+    if (row.length && fill(row.length + 1, sum + r) < rowH) {
+      // closing the row here stretches it, taking this one too squeezes it: whichever stays nearer the height
+      const a = fill(row.length, sum), b = fill(row.length + 1, sum + r);
+      if (a <= rowH * 1.5 && a / rowH < rowH / b) place(a);
+      else { row.push(i); sum += r; place(b); return; }
+    }
+    row.push(i); sum += r;
+  });
+  if (row.length) place(Math.min(rowH, fill(row.length, sum)));
+  return {boxes: out, h: Math.max(0, y - gap)};
+}
+// the row height pictures already have: their middle height, within reason
+function moodRowH(pics) { const hs = pics.map(o => o.h).sort((a, b) => a - b); return clamp(hs.length ? hs[hs.length >> 1] : 240, 120, 420); }
+// a picture's crop, turn and flip as styles for an img in a W×H box: the board's own maths, for any size of box
+function picXf(it, W, H) {
+  const r = it.rot || 0, c = it.crop || (r ? FULL : null);
+  if (!c) return `width:100%;height:100%;object-fit:cover${it.flip ? ';transform:scaleX(-1)' : ''}`;
+  const s = sideways(it), IW = (s ? H : W) / c.w, IH = (s ? W : H) / c.h, cx = (c.x + c.w / 2) * IW, cy = (c.y + c.h / 2) * IH;
+  return `position:absolute;left:0;top:0;max-width:none;width:${IW}px;height:${IH}px;transform-origin:0 0;transform:translate(${W / 2}px,${H / 2}px)${it.flip ? ' scaleX(-1)' : ''} rotate(${r}deg) translate(${-cx}px,${-cy}px)`;
+}
+// a picture or video as it shows on the board, filling a W×H box; live ones play
+function mediaView(o, W, H, live) {
+  const src = mediaSrc(o), cors = teamAsset(src) ? 'anonymous' : null;
+  if (o.type === 'video' && o.embed) return live ? embedLight(o) : mk('span', {class: 'md-emb'}, mk('b', {}, o.embed.p === 'yt' ? 'YouTube' : 'Vimeo'));
+  if (o.type === 'video') {
+    const v = mk('video', {muted: true, playsinline: true, preload: 'metadata', crossorigin: cors, controls: live || null, autoplay: live || null, loop: (live && o.loop !== false) || null});
+    v.muted = true; if (src) v.src = src;
+    return v;
+  }
+  const img = mk('img', {alt: o.name || 'Reference picture', draggable: 'false', decoding: 'async', loading: live ? null : 'lazy', crossorigin: cors, style: picXf(o, W, H)});
+  if (src) img.src = src;
+  return img;
+}
+// a YouTube or Vimeo video in the closer look: their player only loads when it's clicked, as on the board
+function embedLight(o) {
+  const b = mk('button', {class: 'lb-emb', type: 'button', title: 'Play'}, icon('play'), mk('b', {}, o.embed.p === 'yt' ? 'YouTube' : 'Vimeo'), mk('span', {}, 'Click to play'));
+  b.onclick = () => { const f = document.createElement('iframe'); f.src = embedURL(o.embed); f.allow = 'autoplay; encrypted-media; picture-in-picture; fullscreen'; f.allowFullscreen = true; f.title = o.embed.p === 'yt' ? 'YouTube video' : 'Vimeo video'; b.replaceWith(f); };
+  return b;
+}
+
+// the frame a picture sits in: the smallest one that holds it
+function homeOf(o, frames) {
+  const b = bboxOf(o); let best = null;
+  for (const f of frames) if (containsBox(f, b) && (!best || f.w * f.h < best.w * best.h)) best = f;
+  return best;
+}
+// collections (and the other frames with pictures in them) in board order, then the pictures in none of them
+function moodGroups() {
+  const frames = doc.items.filter(i => i.type === 'frame'), by = new Map(), order = (a, b) => (a.y - b.y) || (a.x - b.x);
+  for (const o of doc.items) if (isMedia(o)) { const f = homeOf(o, frames); if (!by.has(f)) by.set(f, []); by.get(f).push(o); }
+  const groups = sortFrames(frames.filter(f => f.mood || by.has(f))).map(f => ({frame: f, title: f.title || 'Untitled', pics: (by.get(f) || []).sort(order)}));
+  if (by.has(null)) groups.push({frame: null, title: groups.length ? 'Not in a collection' : 'On the board', pics: by.get(null).sort(order)});
+  return groups;
+}
+// the tags on pictures and videos, the most used first
+function picTags() {
+  const c = new Map();
+  for (const o of doc.items) if (isMedia(o)) for (const t of o.tags || []) c.set(t, (c.get(t) || 0) + 1);
+  return [...c].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).map(e => e[0]);
+}
+function moodMatch(o) {
+  if (mood.tags.size && !(o.tags || []).some(t => mood.tags.has(t))) return false;
+  const q = mood.q.trim().toLowerCase();
+  return !q || [o.name, o.note, o.source, ...(o.tags || []).map(t => '#' + t)].some(s => s && String(s).toLowerCase().includes(q));
+}
+
+function openMood(focus) {
+  if (editing) finishEdit();
+  hideMenus(); closePicker(true);
+  if (!$('#timeline').hidden) closeTimeline();
+  if (!vwEl.hidden) closeViews();
+  if (!$('#timesheet').hidden) closeTimesheet();
+  moodEl.hidden = false;
+  renderMood();
+  const f = focus && idx.get(focus);
+  if (isMedia(f)) openLight(f.id);
+  else if (f && f.type === 'frame') { mood.into = f.id; renderMood(); const s = mdBody.querySelector(`[data-col="${CSS.escape(f.id)}"]`); if (s) s.scrollIntoView({block: 'start'}); }
+}
+function closeMood() { if (mood.lb) closeLight(); if (mood.drag) mdEnd(true); moodEl.hidden = true; }
+function scheduleMood() {
+  if (!moodEl.hidden && !mood.drag && !mood.raf) mood.raf = requestAnimationFrame(() => { mood.raf = 0; if (!moodEl.hidden && !mood.drag) renderMood(); });
+}
+function renderMood() {
+  if (moodEl.hidden) return;
+  const ro = viewOnly(), groups = moodGroups(), tags = picTags(), all = groups.reduce((t, g) => t + g.pics.length, 0);
+  for (const t of [...mood.tags]) if (!tags.includes(t)) mood.tags.delete(t);
+  const filtering = !!(mood.q.trim() || mood.tags.size), shown = groups.map(g => ({...g, list: g.pics.filter(moodMatch)}));
+  const n = shown.reduce((t, g) => t + g.list.length, 0), cols = groups.filter(g => g.frame && g.frame.mood).length;
+  $('#mdSum').textContent = all ? `${filtering ? n + ' of ' : ''}${all} reference${all === 1 ? '' : 's'}${cols ? ` · ${cols} collection${cols === 1 ? '' : 's'}` : ''}` : '';
+  const fl = $('#mdFilters');
+  fl.hidden = !tags.length;
+  fl.innerHTML = tags.length ? `<div class="fg"><span class="fl">Tags</span>${tags.slice(0, 40).map(t => pchip('mtag', esc(t), '#' + t, mood.tags.has(t))).join('')}</div>${mood.tags.size ? '<button class="pl-clear" type="button" data-md="clear">Clear</button>' : ''}` : '';
+  moodEl.classList.toggle('md-ro', ro);
+  $('#mdNew').hidden = $('#mdAdd').hidden = ro;
+  document.querySelectorAll('#mdSize button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.size === mood.size)));
+  const top = mdBody.scrollTop;
+  if (!groups.length) {
+    mdBody.replaceChildren(mk('div', {class: 'md-empty'}, icon('image'), mk('h3', {}, 'Collect the look of your game'),
+      mk('p', {}, 'Drop or paste pictures, GIFs and videos here, or a link to one. They go on the board in a collection that stays out of your schedule, and your team sees them as they land.'),
+      ro ? null : mk('div', {class: 'md-empty-acts'}, mk('button', {class: 'tm-btn ok', type: 'button', 'data-md': 'add'}, icon('plus'), 'Add pictures'), mk('button', {class: 'tm-btn', type: 'button', 'data-md': 'new'}, icon('frame'), 'New collection'))));
+    mood.w = mdBody.clientWidth;
+    if (mood.lb) closeLight();
+    return;
+  }
+  const W = Math.max(160, mdBody.clientWidth - 78), rowH = MOOD_ROW[mood.size] || 200, gap = 8;
+  const secs = shown.filter(g => g.list.length || (!filtering && g.frame)).map(g => {
+    const f = g.frame, btn = (a, label, ic_, tip) => mk('button', {class: 'tm-btn tm-sm', type: 'button', 'data-md': a, title: tip}, icon(ic_), label);
+    const acts = f ? [ro ? null : btn('add', 'Add', 'plus', `Add pictures or videos to ${g.title}`),
+      ro || !g.pics.length ? null : btn('arrange', 'Arrange', 'arrange', 'Lay its pictures out in tidy rows on the board'),
+      ro || !g.pics.some(o => o.type === 'image') ? null : btn('palette', 'Palette', 'palette', 'One palette from all of its pictures, on the board'),
+      btn('show', 'Show on board', 'eye', 'Go to it on the board')]
+      : [ro || !g.pics.length ? null : btn('collect', 'Collect them', 'frame', 'Move these into a new collection')];
+    const wall = mk('div', {class: 'md-wall'});
+    if (g.list.length) {
+      const {boxes, h} = justify(g.list.map(mediaRatio), W, rowH, gap);
+      wall.style.height = rd(h) + 'px';
+      g.list.forEach((o, i) => wall.append(mdTile(o, boxes[i])));
+    } else wall.append(mk('p', {class: 'md-drop'}, ro ? 'No pictures yet' : 'Drop or paste pictures here, or use Add'));
+    return mk('section', {class: 'md-col' + (f && mood.into === f.id ? ' into' : ''), 'data-col': f ? f.id : '', css: {'--c': col(f ? f.color : BONE)}},
+      mk('div', {class: 'md-head'}, mk('i'), mk('h3', {'data-md': f && !ro ? 'rename' : null, title: f && !ro ? 'Double-click to rename' : null}, g.title),
+        mk('em', {}, filtering ? `${g.list.length} of ${g.pics.length}` : String(g.pics.length)),
+        f && !f.mood ? mk('span', {class: 'md-kind', title: 'A phase with pictures in it. Right-click its frame on the board to make it a collection.'}, 'Phase') : null,
+        mk('span', {class: 'md-acts'}, ...acts)),
+      wall);
+  });
+  mdBody.replaceChildren(...secs, ...(filtering && !n ? [mk('p', {class: 'md-none'}, 'Nothing matches. Try another word or tag.')] : []));
+  mdBody.scrollTop = top;
+  mood.w = mdBody.clientWidth;
+  if (mood.lb && !(isField(document.activeElement) && mdLight.contains(document.activeElement))) renderLight();
+}
+function mdTile(o, b) {
+  const w = rd(b.w), h = rd(b.h);
+  const t = mk('button', {type: 'button', class: 'md-tile' + (o.type === 'video' ? ' vid' : '') + (o.gray ? ' gray' : ''), 'data-id': o.id, title: mediaTip(o),
+    css: {left: rd(b.x) + 'px', top: rd(b.y) + 'px', width: w + 'px', height: h + 'px'}}, mediaView(o, w, h, false));
+  if (o.type === 'video') t.append(mk('span', {class: 'md-play'}, icon('play')));
+  if ((o.tags || []).length || o.note) t.append(mk('span', {class: 'md-info'}, o.note ? icon('notes') : null, ...(o.tags || []).slice(0, 3).map(x => mk('i', {}, '#' + x))));
+  return t;
+}
+new ResizeObserver(() => { if (!moodEl.hidden && Math.abs(mdBody.clientWidth - mood.w) > 1) scheduleMood(); }).observe(mdBody);
+
+/* --- collections on the board --- */
+// a new collection goes beside the last one, or under everything on the board when it's the first
+function newCollection(title) {
+  const cols = sortFrames(doc.items.filter(o => o.type === 'frame' && o.mood)), w = 960, h = 600;
+  let x = 0, y = 0;
+  if (cols.length) { const last = cols[cols.length - 1]; x = last.x + last.w + 100; y = last.y; }
+  else { const b = unionBox([...doc.items.map(bboxOf), ...doc.strokes.map(strokeBox)].filter(Boolean)); if (b) { x = b.x; y = b.y + b.h + 200; } }
+  const box = {x, y: y - 70, w, h: h + 70};  // its title sits above it
+  for (let i = 0; i < 80 && doc.items.some(o => intersects(box, bboxOf(o))); i++) box.x += 240;
+  const f = {id: uid(), type: 'frame', x: rd(box.x), y: rd(box.y + 70), w, h, title: txt(title || `Collection ${pad2(cols.length + 1)}`, 200), color: MOOD_COLORS[cols.length % MOOD_COLORS.length], mood: true};
+  doc.items.push(f); reindex();
+  return f;
+}
+const mdBottom = list => Math.max(...list.map(o => { const b = bboxOf(o); return b.y + b.h; }));
+// What sits under a collection, taken before it grows: afterwards the frames below it move down by as much as it
+// grew, with everything in them, so nothing ends up underneath it (the way Tidy layout keeps phases apart).
+function roomBelow(f) {
+  const bottom = f.y + f.h, h0 = f.h;
+  const under = doc.items.filter(g => g.type === 'frame' && g !== f && g.y >= bottom - 1 && g.x < f.x + f.w && g.x + g.w > f.x && !containsBox(g, f));
+  const items = new Set(under), strokes = new Set();
+  for (const g of under) {
+    for (const o of doc.items) if (o !== f && containsBox(g, bboxOf(o))) items.add(o);
+    for (const k of doc.strokes) if (containsBox(g, strokeBox(k))) strokes.add(k);
+  }
+  return () => {
+    const dh = f.h - h0; if (dh < 0.5) return;
+    for (const o of items) o.y = rd(o.y + dh);
+    for (const k of strokes) k.pts = k.pts.map((v, i) => (i % 2 ? rd(v + dh) : v));
+  };
+}
+// new pictures go in under what the collection already holds, in rows across it, and the frame grows to fit
+function placeInCollection(fid, placed, msg) {
+  if (!placed.length) return;
+  let f = idx.get(fid);
+  if (!f || f.type !== 'frame') f = newCollection();  // it went while they were on their way
+  const inside = doc.items.filter(o => o !== f && o.type !== 'frame' && containsBox(f, bboxOf(o))), room = roomBelow(f);
+  const pad = 32, gap = 16, W = Math.max(240, f.w - pad * 2), top = inside.length ? mdBottom(inside) + gap : f.y + pad;
+  const {boxes, h} = justify(placed.map(mediaRatio), W, moodRowH(inside.filter(isMedia)), gap);
+  placed.forEach((p, i) => { const b = boxes[i]; Object.assign(p, {x: rd(f.x + pad + b.x), y: rd(top + b.y), w: rd(b.w), h: rd(b.h)}); });
+  doc.items.push(...placed);
+  f.h = Math.max(f.h, rd(top + h + pad - f.y));
+  room();
+  mood.into = f.id;
+  refresh(); commit();
+  const n = placed.length;
+  toast(msg || `${n === 1 ? 'Added' : n + ' references added'} to ${shortTitle(f.title || 'the collection')}`);
+}
+// what a drop, a paste or the file picker brings goes into a collection: the one asked for, the last one used,
+// the first one, or a new one when there are none
+function addRefs(r, colId) {
+  if (blocked()) return;
+  const frame = id => { const o = id && idx.get(id); return o && o.type === 'frame' ? o : null; };
+  let f = frame(colId) || frame(mood.into) || sortFrames(doc.items.filter(o => o.type === 'frame' && o.mood))[0];
+  if (!f) { f = newCollection('References'); refresh(); commit(); }
+  mood.into = f.id;
+  const fid = f.id, place = placed => placeInCollection(fid, placed);
+  if (r.imgs.length) addImageFiles(r.imgs, null, {place, source: r.imgs.length === 1 ? r.source : ''});
+  if (r.vids.length) addVideoFiles(r.vids, null, place);
+  if (!r.imgs.length && !r.vids.length) { if (r.emb) addEmbed(r.emb, null, r.embURL, place); else if (r.url) addImageURL(r.url, null, {place, source: r.source}); }
+}
+function moveToCollection(o, f) {
+  if (blocked() || !o || !f || !idx.has(o.id)) return;
+  doc.items.splice(doc.items.indexOf(o), 1);
+  placeInCollection(f.id, [o], `Moved to ${shortTitle(f.title || 'the collection')}`);
+}
+// the pictures in no frame, gathered into a new collection
+function collectLoose() {
+  if (blocked()) return;
+  const frames = doc.items.filter(i => i.type === 'frame'), loose = doc.items.filter(o => isMedia(o) && !o.locked && !homeOf(o, frames));
+  if (!loose.length) return;
+  const f = newCollection('References');
+  for (const o of loose) doc.items.splice(doc.items.indexOf(o), 1);
+  placeInCollection(f.id, loose);
+}
+// a collection's pictures in tidy rows across it, with its notes and cards kept above them and its palettes below
+function arrangeCollection(f) {
+  if (!f || blocked()) return;
+  const inside = doc.items.filter(o => o !== f && o.type !== 'frame' && !o.locked && containsBox(f, bboxOf(o)));
+  const pics = inside.filter(o => isMedia(o) && !isSwatch(o)).sort((a, b) => (a.y - b.y) || (a.x - b.x));
+  if (!pics.length) { toast('No pictures in it yet.'); return; }
+  const strips = inside.filter(isSwatch), hexes = inside.filter(o => o.type === 'text' && /^#[0-9a-f]{6}$/i.test(o.text || '') && strips.some(s => o.y >= s.y && o.y <= s.y + s.h + 80 && o.x >= s.x - 2 && o.x <= s.x + s.w));
+  const below = [...strips, ...hexes], fixed = inside.filter(o => !pics.includes(o) && !below.includes(o)), room = roomBelow(f);
+  const pad = 32, gap = 16, W = Math.max(240, f.w - pad * 2), top = fixed.length ? mdBottom(fixed) + gap : f.y + pad;
+  const {boxes, h} = justify(pics.map(mediaRatio), W, moodRowH(pics), gap);
+  pics.forEach((p, i) => { const b = boxes[i]; Object.assign(p, {x: rd(f.x + pad + b.x), y: rd(top + b.y), w: rd(b.w), h: rd(b.h)}); });
+  let bottom = top + h;
+  if (below.length) {
+    const bb = unionBox(below.map(bboxOf)), dx = f.x + pad - bb.x, dy = bottom + gap * 2 - bb.y;
+    below.forEach(o => { o.x = rd(o.x + dx); o.y = rd(o.y + dy); });
+    bottom += gap * 2 + bb.h;
+  }
+  f.h = rd(bottom + pad - f.y);
+  room();
+  refresh(); commit();
+  toast('Pictures arranged in rows. Ctrl+Z puts them back.');
+}
+// Arrange → Mood board rows, for any pictures that are selected
+function arrangeMoodRows(list) {
+  if (blocked()) return;
+  const pics = list.filter(o => isMedia(o) && !o.locked).sort((a, b) => (a.y - b.y) || (a.x - b.x));
+  if (pics.length < 2) return;
+  const b = unionBox(pics.map(bboxOf)), W = Math.max(600, Math.sqrt(pics.reduce((t, o) => t + o.w * o.h, 0)) * 1.6);
+  const {boxes} = justify(pics.map(mediaRatio), W, moodRowH(pics), 16);
+  pics.forEach((p, i) => { const k = boxes[i]; Object.assign(p, {x: rd(b.x + k.x), y: rd(b.y + k.y), w: rd(k.w), h: rd(k.h)}); });
+  refresh(); commit();
+}
+// the colours of a whole collection: every picture's pixels together, as one strip of swatches under them
+async function collectionPalette(f) {
+  if (!f || blocked()) return;
+  const pics = doc.items.filter(o => o.type === 'image' && !isSwatch(o) && containsBox(f, bboxOf(o)));
+  if (!pics.length) { toast('Add pictures to it first.'); return; }
+  let px = [], missed = 0;
+  const each = Math.max(24, Math.round(170 / Math.sqrt(pics.length)));  // about the same number of pixels whatever the count
+  for (const o of pics) {
+    const el = els.get(o.id), img = el && el.firstChild;
+    if (!img || !img.complete || !img.naturalWidth) { missed++; continue; }
+    try { px = px.concat(picPixels(o, img, each)); } catch (e) { missed++; }
+  }
+  if (!px.length) { toast(missed ? PICK_BLOCKED : 'Those pictures are see-through, so they have no colours to take.', 4500); return; }
+  const cols = paletteOf(px, 8), inside = doc.items.filter(o => o !== f && o.type !== 'frame' && containsBox(f, bboxOf(o))), room = roomBelow(f);
+  const made = await swatchStrip(cols, {x: f.x + 32, y: inside.length ? mdBottom(inside) : f.y, w: Math.min(f.w - 64, cols.length * 150)}, 'Palette · ' + (f.title || 'collection'), null, () => idx.has(f.id));
+  if (!made) return;
+  f.h = Math.max(f.h, rd(made.box.y + made.box.h + 32 - f.y));
+  room();
+  refresh(); commit();
+  toast(`Palette: ${cols.length} colour${cols.length === 1 ? '' : 's'} from ${pics.length - missed} picture${pics.length - missed === 1 ? '' : 's'}${missed ? `, ${missed} still loading or locked` : ''}. Ctrl+Z takes it away.`, 4200);
+}
+async function mdNewCollection() {
+  if (blocked()) return;
+  const name = await askText('New collection', 'Name it after what it gathers, like Characters, Environments or Lighting. It goes on the board, kept out of the schedule.', 'Create', {placeholder: 'e.g. Characters', max: 80});
+  if (!name || blocked()) return;
+  const f = newCollection(name); refresh(); commit();
+  mood.into = f.id;
+  if (moodEl.hidden) { fitTo([f]); return; }
+  renderMood();
+  const s = mdBody.querySelector(`[data-col="${CSS.escape(f.id)}"]`); if (s) s.scrollIntoView({block: 'nearest', behavior: 'smooth'});
+}
+async function renameCollection(f) {
+  if (!f || blocked()) return;
+  const v = await askText(f.mood ? 'Rename collection' : 'Rename phase', '', 'Rename', {value: f.title || '', max: 200});
+  if (!v || !idx.has(f.id) || blocked()) return;
+  f.title = v; refresh(); commit();
+}
+// a frame becomes a collection (out of the phases and the schedule) or a phase again
+function setMoodFrame(frs, on) {
+  if (blocked()) return;
+  frs.forEach(f => { f.mood = on; });  // off is kept as false, so a copy of the app that doesn't know collections can't undo it
+  refresh(); commit();
+  toast(on ? 'Now a mood board collection: kept out of the phases and the schedule. Shift+M shows them all.' : 'Now a phase again');
+}
+function moodFrameEntries(hit) {
+  const frs = sel.has(hit.id) ? selObjs().filter(o => o.type === 'frame') : [hit], shut = frs.every(f => f.collapsed), ro = viewOnly();
+  return [{label: 'Open in the mood board', kb: 'Shift M', icon: 'image', run: () => openMood(hit.id)},
+    ...(ro ? [] : [{label: 'Add pictures…', icon: 'plus', run: () => { if (!blocked()) { mood.into = hit.id; $('#mdFile').click(); } }},
+      {label: 'Arrange the pictures', icon: 'arrange', run: () => arrangeCollection(hit)},
+      {label: 'Palette of the collection', icon: 'palette', run: () => collectionPalette(hit)}]),
+    {label: shut ? 'Expand' : 'Collapse', icon: 'chev', run: () => setCollapsed(frs, !shut)}];
+}
+// a picture's or video's words: its tags, a note on why it's there, and the page it came from
+function mediaEntries(hit, inMood) {
+  const E = [];
+  if (!viewOnly()) {
+    const ids = (sel.has(hit.id) && !inMood ? selObjs() : [hit]).filter(isMedia).map(o => o.id);
+    E.push({label: 'Tags…', icon: 'tag', kb: (hit.tags || []).length ? String(hit.tags.length) : '', run: () => tagMenu(ids, null)},
+      {label: hit.note ? 'Edit note…' : 'Add a note…', icon: 'notes', run: () => editMediaNote(hit)},
+      {label: hit.source ? 'Edit source link…' : 'Add source link…', icon: 'link', run: () => editMediaSource(hit)});
+  }
+  if (hit.source) E.push({label: 'Open source', kb: siteOf(hit.source), icon: 'arrow', run: () => openLink(hit.source)});
+  if (!inMood) E.push({label: 'Open in the mood board', kb: 'Shift M', icon: 'image', run: () => openMood(hit.id)});
+  return E;
+}
+async function editMediaNote(o) {
+  if (blocked()) return;
+  const v = await askText(o.note ? 'Edit note' : 'Add a note', 'Why this reference is here: the mood, a shape, a colour, a detail to keep.', 'Save', {value: o.note || '', max: 500, multiline: true, allowEmpty: true, placeholder: 'e.g. The fog colour for the swamp level'});
+  if (v === null || !idx.has(o.id) || blocked()) return;
+  o.note = txt(v, 500); refresh(); commit();  // an empty note is kept as '', so clearing it reaches everyone
+}
+async function editMediaSource(o) {
+  if (blocked()) return;
+  const v = await askText('Source link', 'The page this reference came from, to credit it or find it again.', 'Save', {value: o.source || '', max: 600, allowEmpty: true, placeholder: 'https://…'});
+  if (v === null || !idx.has(o.id) || blocked()) return;
+  if (v && !cleanSource(v)) { toast("That isn't a web address. Paste the link of the page it came from.", 4200); return; }
+  o.source = v; refresh(); commit();
+}
+
+/* --- the wall: clicks, drops, pastes and dragging pictures between collections --- */
+moodEl.addEventListener('click', e => {
+  if (performance.now() - mood.noClick < 350 || mdLight.contains(e.target)) return;
+  if (e.target === moodEl) { closeMood(); return; }
+  const f = e.target.closest('[data-f="mtag"]');
+  if (f) { const v = f.dataset.v; if (mood.tags.has(v)) mood.tags.delete(v); else mood.tags.add(v); renderMood(); return; }
+  const z = e.target.closest('#mdSize [data-size]');
+  if (z) { mood.size = z.dataset.size; try { localStorage.setItem('venom-board-mood-size', mood.size); } catch (er) {} renderMood(); return; }
+  const t = e.target.closest('.md-tile');
+  if (t) { openLight(t.dataset.id); return; }
+  const b = e.target.closest('[data-md]'); if (!b) return;
+  const sec = b.closest('[data-col]'), fr = sec && sec.dataset.col ? idx.get(sec.dataset.col) : null;
+  switch (b.dataset.md) {
+    case 'clear': mood.tags.clear(); renderMood(); break;
+    case 'new': mdNewCollection(); break;
+    case 'add': if (!blocked()) { if (fr) mood.into = fr.id; $('#mdFile').click(); } break;
+    case 'arrange': arrangeCollection(fr); break;
+    case 'palette': collectionPalette(fr); break;
+    case 'show': if (fr) { closeMood(); fitTo([fr]); } break;
+    case 'collect': collectLoose(); break;
+  }
+});
+moodEl.addEventListener('dblclick', e => { const h = e.target.closest('h3[data-md="rename"]'); if (h) renameCollection(idx.get(h.closest('[data-col]').dataset.col)); });
+$('#mdClose').onclick = closeMood;
+$('#mdSearch').addEventListener('input', e => { mood.q = e.target.value; renderMood(); });
+$('#mdFile').addEventListener('change', e => {
+  const files = [...e.target.files]; e.target.value = '';
+  if (files.length) addRefs({imgs: files.filter(isImageFile), vids: files.filter(f => !isImageFile(f) && isVideoFile(f)), emb: null, url: '', source: ''}, mood.into);
+});
+mdBody.addEventListener('contextmenu', e => {
+  const t = e.target.closest('.md-tile'), o = t && idx.get(t.dataset.id);
+  if (!o) return;
+  e.preventDefault();
+  const frames = doc.items.filter(f => f.type === 'frame'), home = homeOf(o, frames), to = sortFrames(frames.filter(f => f.mood && f !== home));
+  const E = [{head: shortTitle(o.name || (o.type === 'video' ? 'Video' : 'Picture'))}, {label: 'Look closer', kb: 'Click', icon: 'orig', run: () => openLight(o.id)},
+    {label: 'Show on the board', icon: 'eye', run: () => { closeMood(); setTool('select'); sel.clear(); sel.add(o.id); fitTo([o]); refresh(); }}, ...mediaEntries(o, true)];
+  if (!viewOnly()) {
+    if (to.length) E.push({head: 'Move to'}, ...to.slice(0, 12).map(f => ({label: f.title || 'Untitled', icon: 'frame', run: () => moveToCollection(o, f)})));
+    E.push('-', {label: 'Delete', kb: 'Del', danger: true, icon: 'trash', run: () => { sel.clear(); sel.add(o.id); deleteSelection(); }});
+  }
+  showMenu(e.clientX, e.clientY, E);
+});
+// what a drop or a paste brings: picture and video files, a YouTube or Vimeo link, or a picture's address, and
+// the web page it came from when the browser says
+function refsFrom(dt, paste) {
+  const files = [...(dt.files || [])], imgs = files.filter(isImageFile), vids = files.filter(f => !isImageFile(f) && isVideoFile(f));
+  const html = dt.getData('text/html') || '', m = html.match(/<img[^>]+src=["']([^"']+)["']/i), a = html.match(/<a[^>]+href=["'](https?:[^"']+)["']/i);
+  const uri = ((paste ? dt.getData('text/plain') : dt.getData('text/uri-list') || dt.getData('text/plain')) || '').split(/\r?\n/).find(s => s && !s.startsWith('#')) || '';
+  const text = uri.trim(), emb = parseVideoURL(text), img = m ? m[1].replace(/&amp;/g, '&') : '';
+  // a pasted address only counts when it's plainly a picture; a dropped one is tried either way
+  const url = /^(https?:|data:image\/)/i.test(img) ? img : !paste || /^data:image\//i.test(text) || /^https?:\/\/\S+\.(png|jpe?g|gif|webp|avif|bmp|svg)(\?\S*)?$/i.test(text) ? text : '';
+  const source = cleanSource(a ? a[1].replace(/&amp;/g, '&') : '') || cleanSource(text !== img ? text : '') || cleanSource(img);
+  return {imgs, vids, emb, embURL: emb ? text : '', url: !emb && /^(https?:|data:image\/)/i.test(url) ? url : '', source};
+}
+const hasRefs = r => !!(r.imgs.length || r.vids.length || r.emb || r.url);
+let mdOverEl = null;
+const mdSetOver = s => { if (s !== mdOverEl) { if (mdOverEl) mdOverEl.classList.remove('over'); mdOverEl = s; if (s) s.classList.add('over'); } };
+moodEl.addEventListener('dragover', e => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; moodEl.classList.add('md-drop-on'); mdSetOver(e.target.closest && e.target.closest('#mdBody .md-col:not([data-col=""])')); });
+moodEl.addEventListener('dragleave', e => { if (!e.relatedTarget || !moodEl.contains(e.relatedTarget)) { moodEl.classList.remove('md-drop-on'); mdSetOver(null); } });
+moodEl.addEventListener('drop', e => {
+  e.preventDefault(); moodEl.classList.remove('md-drop-on');
+  const s = mdOverEl || (e.target.closest && e.target.closest('#mdBody .md-col:not([data-col=""])')); mdSetOver(null);
+  const r = refsFrom(e.dataTransfer, false);
+  if (hasRefs(r)) addRefs(r, s ? s.dataset.col : null);
+});
+document.addEventListener('paste', e => {
+  if (moodEl.hidden || isField(e.target) || !$('#promptModal').hidden || !$('#confirm').hidden || !e.clipboardData) return;
+  const r = refsFrom(e.clipboardData, true);
+  if (!hasRefs(r)) return;
+  e.preventDefault();
+  addRefs(r, mood.into);
+});
+mdBody.addEventListener('pointerdown', e => {
+  const t = e.target.closest('.md-tile');
+  if (!t || e.button !== 0 || viewOnly()) return;
+  mood.drag = {id: t.dataset.id, el: t, x: e.clientX, y: e.clientY, on: false, over: null};
+});
+window.addEventListener('pointermove', e => {
+  const d = mood.drag; if (!d) return;
+  if (!d.on) {
+    if (Math.hypot(e.clientX - d.x, e.clientY - d.y) < 6) return;
+    if (blocked()) { mood.drag = null; return; }
+    const r = d.el.getBoundingClientRect(), k = Math.min(1, 170 / Math.max(r.width, r.height));
+    d.on = true; d.dx = (d.x - r.left) * k; d.dy = (d.y - r.top) * k;
+    d.ghost = d.el.cloneNode(true); d.ghost.classList.add('md-ghost');
+    Object.assign(d.ghost.style, {width: r.width + 'px', height: r.height + 'px', transform: `scale(${k}) rotate(-2deg)`});
+    moodEl.append(d.ghost); d.el.classList.add('md-lift'); moodEl.classList.add('md-dragging');
+  }
+  d.ghost.style.left = (e.clientX - d.dx) + 'px'; d.ghost.style.top = (e.clientY - d.dy) + 'px';
+  const hit = document.elementFromPoint(e.clientX, e.clientY), over = hit && hit.closest('#mdBody .md-col:not([data-col=""])');
+  if (over !== d.over) { if (d.over) d.over.classList.remove('over'); d.over = over; if (over) over.classList.add('over'); }
+});
+window.addEventListener('pointerup', () => { if (mood.drag) mdEnd(false); });
+window.addEventListener('pointercancel', () => { if (mood.drag) mdEnd(true); });
+function mdEnd(cancel) {
+  const d = mood.drag; mood.drag = null;
+  if (!d || !d.on) return;
+  mood.noClick = performance.now();
+  d.ghost.remove(); d.el.classList.remove('md-lift'); moodEl.classList.remove('md-dragging');
+  if (d.over) d.over.classList.remove('over');
+  const o = idx.get(d.id), f = d.over && idx.get(d.over.dataset.col);
+  if (!cancel && o && f && f.type === 'frame' && homeOf(o, doc.items.filter(x => x.type === 'frame')) !== f) moveToCollection(o, f);
+  else renderMood();
+}
+function moodKeys(e) {
+  const lk = keyLetter(e);
+  if (mood.lb) {
+    if (e.key === 'Escape') { e.preventDefault(); closeLight(); return; }
+    if (isField(e.target) || e.ctrlKey || e.metaKey || e.altKey) return;
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') { e.preventDefault(); lightStep(e.key === 'ArrowLeft' ? -1 : 1); return; }
+    if (e.key === ' ' && !(e.target.closest && e.target.closest('button'))) { e.preventDefault(); toggleShow(); return; }
+    if (lk === 'f' && !e.shiftKey) { e.preventDefault(); toggleFull(); }
+    return;
+  }
+  if (e.key === 'Escape') {
+    e.preventDefault();
+    if (mood.drag && mood.drag.on) mdEnd(true);
+    else if (e.target.id === 'mdSearch' && e.target.value) { e.target.value = ''; mood.q = ''; renderMood(); }
+    else closeMood();
+    return;
+  }
+  if ((e.ctrlKey || e.metaKey) && !e.altKey && lk === 'f') { e.preventDefault(); $('#mdSearch').focus(); $('#mdSearch').select(); return; }
+  if (isField(e.target)) return;
+  if ((e.ctrlKey || e.metaKey) && (lk === 'z' || lk === 'y')) { e.preventDefault(); if (mood.drag) mdEnd(true); if (lk === 'y' || e.shiftKey) redo(); else undo(); return; }
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  goKey(e);  // Shift M again goes back to the board; Shift G H K C T W go to the others
+}
+
+/* --- a closer look: one reference big, with its words and colours, the others an arrow key away --- */
+function openLight(id) { mood.lb = {id, show: 0, ro: null}; mdLight.hidden = false; renderLight(); }
+function closeLight() {
+  const lb = mood.lb; if (!lb) return;
+  clearInterval(lb.show); if (lb.ro) lb.ro.disconnect();
+  mood.lb = null;
+  if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+  mdLight.hidden = true; mdLight.replaceChildren();
+}
+function lightList() { return moodGroups().flatMap(g => g.pics.filter(moodMatch).map(p => ({p, g}))); }
+function lightStep(d) {
+  const L = lightList(); if (!L.length) { closeLight(); return; }
+  const i = L.findIndex(x => x.p.id === mood.lb.id);
+  mood.lb.id = L[(((i < 0 ? 0 : i + d)) % L.length + L.length) % L.length].p.id;
+  renderLight();
+}
+function toggleShow(on) {
+  const lb = mood.lb; if (!lb) return;
+  if (on === undefined) on = !lb.show;
+  clearInterval(lb.show); lb.show = 0;
+  if (on) lb.show = setInterval(() => { if (mood.lb === lb) lightStep(1); }, 4000);
+  const b = mdLight.querySelector('[data-lb="show"]'); if (b) b.setAttribute('aria-pressed', String(!!lb.show));
+}
+function toggleFull() {
+  if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+  else if (mdLight.requestFullscreen) mdLight.requestFullscreen().catch(() => toast("Full screen isn't available here."));
+}
+const lbPalettes = new Map();
+const NAV_ARROW = d => `<svg viewBox="0 0 20 20" aria-hidden="true"><path d="${d < 0 ? 'M12 5l-5 5 5 5' : 'M8 5l5 5-5 5'}"/></svg>`;
+function renderLight() {
+  const lb = mood.lb; if (!lb) return;
+  const o = idx.get(lb.id);
+  if (!isMedia(o)) { closeLight(); return; }
+  const L = lightList(), at = L.findIndex(x => x.p.id === o.id), g = at >= 0 ? L[at].g : (moodGroups().find(x => x.pics.includes(o)) || {frame: null, title: ''});
+  const ro = viewOnly(), video = o.type === 'video', many = L.length > 1;
+  const top = mk('div', {class: 'lb-top'}, mk('span', {class: 'lb-count'}, at >= 0 ? `${at + 1} / ${L.length}` : ''),
+    mk('b', {class: 'lb-col', css: g.frame ? {'--c': col(g.frame.color)} : null}, g.title), mk('span', {class: 'lb-gap'}),
+    many ? mk('button', {class: 'tm-btn', type: 'button', 'data-lb': 'show', 'aria-pressed': String(!!lb.show), title: 'Play a slideshow, a new one every 4 seconds (Space)'}, icon('play'), 'Slideshow') : null,
+    mk('button', {class: 'tm-btn', type: 'button', 'data-lb': 'full', title: 'Full screen (F)'}, icon('orig'), 'Full screen'),
+    mk('button', {class: 'ib lbl', type: 'button', 'data-lb': 'close', title: 'Back to the mood board (Esc)'}, icon('close'), 'Close'));
+  const pic = mk('div', {class: 'lb-pic' + (o.gray ? ' gray' : '')}), stageEl = mk('div', {class: 'lb-stage'}, pic);
+  const nav = d => { const b = mk('button', {class: 'lb-nav', type: 'button', 'data-lb': d < 0 ? 'prev' : 'next', title: d < 0 ? 'Previous (←)' : 'Next (→)', 'aria-label': d < 0 ? 'Previous' : 'Next'}); b.innerHTML = NAV_ARROW(d); return b; };
+  const main = mk('div', {class: 'lb-main'}, many ? nav(-1) : null, stageEl, many ? nav(1) : null);
+  const field = (label, el) => mk('label', {class: 'lb-f'}, mk('span', {}, label), el);
+  const name = mk('input', {class: 'tm-in', maxlength: 200, 'data-lbf': 'name', spellcheck: 'false', disabled: ro, 'aria-label': 'Name'}); name.value = o.name || '';
+  const note = mk('textarea', {class: 'tm-in', rows: 3, maxlength: 500, 'data-lbf': 'note', disabled: ro, placeholder: ro ? '' : 'Why it’s here: the mood, a shape, a colour…', 'aria-label': 'Note'}); note.value = o.note || '';
+  const have = o.tags || [], sugg = picTags().filter(t => !have.includes(t));
+  const tagIn = ro || have.length >= 8 ? null : mk('input', {class: 'tm-in lb-tagin', 'data-lbf': 'tag', maxlength: 60, placeholder: '+ Add tag', list: 'lbTagList', autocomplete: 'off', 'aria-label': 'Add a tag'});
+  const tags = mk('div', {class: 'lb-tags'}, ...have.map(t => mk('span', {class: 'lb-tag'}, '#' + t, ro ? null : mk('button', {type: 'button', 'data-lbtag': t, title: `Remove #${t}`, 'aria-label': `Remove #${t}`}, '×'))),
+    tagIn, mk('datalist', {id: 'lbTagList'}, ...sugg.slice(0, 60).map(t => mk('option', {value: t}))), ro && !have.length ? mk('span', {class: 'tm-note'}, 'No tags') : null);
+  const src = mk('input', {class: 'tm-in', type: 'url', maxlength: 600, 'data-lbf': 'source', disabled: ro, placeholder: ro ? '' : 'https://… the page it came from', 'aria-label': 'Source link'}); src.value = o.source || '';
+  const pal = mk('div', {class: 'lb-pal'});
+  const btn = (a, label, ic_) => mk('button', {class: 'tm-btn', type: 'button', 'data-lb': a}, icon(ic_), label), n = commentCounts.get(o.id) || 0;
+  const side = mk('aside', {class: 'lb-side'}, field('Name', name), field('Note', note), field('Tags', tags),
+    mk('div', {class: 'lb-f'}, mk('span', {}, 'Source'), src, o.source ? mk('button', {class: 'tm-btn tm-sm lb-src', type: 'button', 'data-lb': 'source', title: o.source}, icon('arrow'), 'Open ' + siteOf(o.source)) : null),
+    video ? null : mk('div', {class: 'lb-f'}, mk('span', {}, 'Colours · click one to copy it'), pal),
+    mk('div', {class: 'lb-acts'}, btn('board', 'Show on the board', 'eye'), video ? null : btn('copy', 'Copy image', 'dup'),
+      video || ro ? null : btn('palette', 'Add its palette to the board', 'palette'), board.team && !video ? btn('comments', n ? `Comments (${n})` : 'Comments', 'label') : null));
+  mdLight.replaceChildren(top, mk('div', {class: 'lb-wrap'}, main, side));
+  const fit = () => {
+    const aw = stageEl.clientWidth - 8, ah = stageEl.clientHeight - 8; if (aw < 20 || ah < 20) return;
+    const r = mediaRatio(o), w = rd(Math.min(aw, ah * r)), h = rd(w / r);
+    if (pic._k === w + 'x' + h) return;
+    pic._k = w + 'x' + h; pic.style.width = w + 'px'; pic.style.height = h + 'px';
+    pic.replaceChildren(mediaView(o, w, h, true));
+  };
+  if (lb.ro) lb.ro.disconnect();
+  lb.ro = new ResizeObserver(fit); lb.ro.observe(stageEl);
+  fit();
+  if (!video) {
+    const key = [o.id, mediaSrc(o).length, mediaSrc(o).slice(-48), JSON.stringify(o.crop || 0), o.rot || 0, !!o.gray].join('|');
+    const show = cs => pal.replaceChildren(...cs.map(c => mk('button', {class: 'lb-sw', type: 'button', 'data-hex': c, title: `Copy ${c}`, css: {'--c': c}}, mk('i'), c)));
+    const go = img => {
+      try { const cs = paletteOf(picPixels(o, img, 96), 6); lbPalettes.set(key, cs); if (mood.lb === lb && lb.id === o.id) show(cs); }
+      catch (e) { pal.replaceChildren(mk('span', {class: 'tm-note'}, "That site doesn't let its pictures' colours be read.")); }
+    };
+    if (lbPalettes.has(key)) show(lbPalettes.get(key));
+    else { const img = pic.querySelector('img'); if (img) { if (img.complete && img.naturalWidth) go(img); else img.addEventListener('load', () => go(img), {once: true}); } }
+  }
+}
+function addLightTags(v) {
+  const o = mood.lb && idx.get(mood.lb.id); if (!o || blocked()) return;
+  const parts = String(v).split(/[,;]+/).map(normTag).filter(Boolean), good = [...new Set(parts.filter(t => TAG_RE.test(t)))], bad = parts.filter(t => !TAG_RE.test(t));
+  const t = (o.tags || []).slice(); let full = false;
+  for (const x of good) { if (t.includes(x)) continue; if (t.length >= 8) { full = true; break; } t.push(x); }
+  if (t.length !== (o.tags || []).length) { o.tags = t; refresh(); commit(); }
+  if (bad.length) toast(`Skipped “${shortTitle(bad[0])}”: a tag is up to 24 letters, numbers, - or _.`, 4200);
+  else if (full) toast('A picture holds up to 8 tags.', 3200);
+  renderLight();
+  const inp = mdLight.querySelector('[data-lbf="tag"]'); if (inp) inp.focus();
+}
+mdLight.addEventListener('click', e => {
+  const o = mood.lb && idx.get(mood.lb.id);
+  if (e.target === mdLight || e.target.classList.contains('lb-stage') || e.target.classList.contains('lb-main')) { closeLight(); return; }
+  const tg = e.target.closest('[data-lbtag]');
+  if (tg && o) { if (!blocked()) { o.tags = (o.tags || []).filter(t => t !== tg.dataset.lbtag); refresh(); commit(); renderLight(); } return; }
+  const sw = e.target.closest('[data-hex]');
+  if (sw) { const h = sw.dataset.hex; copyText(h).then(ok => toast(ok ? `Copied ${h}` : h)); return; }
+  const b = e.target.closest('[data-lb]'); if (!b || !o) return;
+  switch (b.dataset.lb) {
+    case 'close': closeLight(); break;
+    case 'prev': lightStep(-1); break;
+    case 'next': lightStep(1); break;
+    case 'show': toggleShow(); break;
+    case 'full': toggleFull(); break;
+    case 'source': openLink(o.source); break;
+    case 'board': closeMood(); setTool('select'); sel.clear(); sel.add(o.id); fitTo([o]); refresh(); break;
+    case 'copy': copyPicture(o); break;
+    case 'palette': extractPalette(o); break;
+    case 'comments': closeMood(); openPictureComments(o.id); break;
+  }
+});
+mdLight.addEventListener('change', e => {
+  const f = e.target.dataset && e.target.dataset.lbf, o = mood.lb && idx.get(mood.lb.id);
+  if (!f || !o) return;
+  if (f === 'tag') { if (e.target.value.trim()) addLightTags(e.target.value); return; }
+  if (blocked()) { renderLight(); return; }
+  const v = e.target.value.trim();
+  if (f === 'name') { if ((o.name || '') === v) return; o.name = txt(v, 200); }
+  else if (f === 'note') { if ((o.note || '') === v) return; o.note = txt(v, 500); }
+  else if (f === 'source') {
+    if ((o.source || '') === v) return;
+    if (v && !cleanSource(v)) { toast("That isn't a web address. Paste the link of the page it came from.", 4200); e.target.value = o.source || ''; return; }
+    o.source = v;
+  }
+  refresh(); commit();
+});
+mdLight.addEventListener('keydown', e => {
+  const f = e.target.dataset && e.target.dataset.lbf;
+  if (f === 'tag' && (e.key === 'Enter' || e.key === ',')) { e.preventDefault(); if (e.target.value.trim()) addLightTags(e.target.value); }
+  else if ((f === 'name' || f === 'source') && e.key === 'Enter') { e.preventDefault(); e.target.blur(); }
+  else if (f === 'note' && e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); e.target.blur(); }
+});
+
+/* ---------- what's new ----------
+   The first time the app starts after an update (the desktop app or the web app), a screen shows what changed
+   since the version you had, once. A brand new copy stays quiet; More features → What's new brings it back. */
+const WHATS_NEW = [
+  {v: '1.11.0', date: '2026-10-26', lead: 'Mood boards', items: [
+    ['Mood board.', 'Shift+M opens a wall of every picture, GIF and video on the board, grouped into collections, with room of its own away from your tasks.', 'mood'],
+    ['Collections.', 'Frames for references that stay out of your phases, the schedule and the public roadmap. Drop or paste pictures straight into one and they line up in neat rows on the board.'],
+    ['A closer look.', 'Click any reference to see it big, step through with the arrow keys, play a slideshow or go full screen, and copy its colours.'],
+    ['Tags, notes and sources.', 'Tag your references, note why each one is there and keep the page it came from. A picture dropped from a web page remembers it by itself.'],
+    ['Tidy rows and one palette.', 'Arrange a collection into rows in one click, and take one palette from all of its pictures.'],
+    ["What's new.", 'This screen, once after each update. More features → What’s new brings it back.'],
+  ]},
+  {v: '1.10.0', date: '2026-10-25', lead: 'Your own server', items: [
+    ['Run your own server.', 'The server behind accounts and teams is open source, with Docker and install instructions, for teams who want their projects on their own machine.'],
+    ['Use your own server.', 'The Team panel’s sign-in can connect the desktop app to your team’s server instead of venomboard.com.'],
+    ['The Venom Board Discord.', 'Show what you’re making, find a team and get help. Settings → About has the link.'],
+  ]},
+  {v: '1.9.0', date: '2026-10-15', lead: 'A better Timeline', items: [
+    ['Manage tasks on the Timeline.', 'Click a task to change its title, status, estimate, dates and people right there.'],
+    ['Start dates.', 'Give a task a day it can’t start before, and the schedule waits for it.'],
+    ['Plan and log by the hour.', 'Drag across the Hours view to plan time or log it, a day or a whole week at a time.'],
+  ]},
+  {v: '1.8.0', date: '2026-10-15', lead: 'Track time', items: [
+    ['Track time.', 'Log how long you worked on each task, or run a timer (Shift+T).'],
+    ['Timesheet.', 'A week of tracked time by task and person, with a CSV export (Shift+W).'],
+  ]},
+];
+const verNum = v => String(v || '').split('.').slice(0, 3).reduce((t, n) => t * 1000 + (parseInt(n, 10) || 0), 0);
+const WN_KEY = 'venom-board-seen-version';
+const WN_ACTS = {mood: ['Open the mood board', () => { closeWhatsNew(); openMood(); }]};
+const wnDate = d => new Date(d + 'T12:00:00').toLocaleDateString(undefined, {day: 'numeric', month: 'long', year: 'numeric'});
+// since: the version you had (only what came after it shows); none shows the latest few
+function openWhatsNew(since) {
+  const list = WHATS_NEW.filter(r => verNum(r.v) <= verNum(APP_VERSION) && (!since || verNum(r.v) > verNum(since))).slice(0, 4);
+  if (!list.length) return false;
+  if (editing) finishEdit();
+  hideMenus();
+  $('#wnSub').textContent = since ? `Venom Board ${APP_VERSION} is here. What's changed since ${since}:` : `The latest in Venom Board, up to ${APP_VERSION}.`;
+  $('#wnBody').replaceChildren(...list.map((r, i) => mk('section', {class: 'wn-ver' + (i ? '' : ' wn-first')},
+    mk('h3', {}, mk('b', {}, r.lead), mk('span', {}, `${r.v} · ${wnDate(r.date)}`)),
+    mk('ul', {}, ...r.items.map(([t, d, a]) => mk('li', {}, mk('b', {}, t), ' ', d, a && WN_ACTS[a] ? mk('button', {class: 'tm-btn tm-sm', type: 'button', onclick: WN_ACTS[a][1]}, WN_ACTS[a][0]) : null))))));
+  $('#whatsNew').hidden = false;
+  $('#wnBody').scrollTop = 0;
+  $('#wnOk').focus();
+  return true;
+}
+function closeWhatsNew() { $('#whatsNew').hidden = true; }
+// on start: an update since last time shows what's new, once; a first start only remembers this version
+function checkWhatsNew(hadBoards) {
+  let seen = null;
+  try { seen = localStorage.getItem(WN_KEY); localStorage.setItem(WN_KEY, APP_VERSION); } catch (e) { return; }
+  if (!seen && hadBoards) seen = '1.10.0';  // a copy from before this screen existed
+  if (seen && verNum(seen) < verNum(APP_VERSION)) openWhatsNew(seen);
+}
+$('#whatsNew').addEventListener('click', e => {
+  const b = e.target.closest('[data-wn]');
+  if (e.target.id === 'whatsNew' || (b && b.dataset.wn === 'ok')) closeWhatsNew();
+  else if (b && b.dataset.wn === 'log') openLink(REPO_URL + '/blob/main/CHANGELOG.md');
+});
 
 /* ---------- burndown ---------- */
 // How much work is left each day, against a straight line to the next milestone. Cards remember when they were
@@ -11394,7 +12255,7 @@ function videoMeta(src) {
     v.src = src;
   });
 }
-async function addVideoFiles(files, at) {
+async function addVideoFiles(files, at, place = placeImages) {
   if (blocked()) return;
   const placed = [];
   for (const f of files) {
@@ -11406,12 +12267,12 @@ async function addVideoFiles(files, at) {
       job.done();
     } catch (e) { const msg = board.team && e.message ? e.message : `Couldn't play ${f.name || 'that video'}. MP4 and WebM work best.`; job.fail(msg); toast(msg, 6000); }
   }
-  placeImages(placed, at);
+  place(placed, at);
 }
-function addEmbed(e, at, url) {
+function addEmbed(e, at, url, place = placeImages) {
   if (blocked()) return;
   const sz = fitSize(640, 360);
-  placeImages([{id: uid(), type: 'video', x: 0, y: 0, w: sz.w, h: sz.h, embed: e, name: txt(url, 200), loop: true, autoplay: false}], at);
+  place([{id: uid(), type: 'video', x: 0, y: 0, w: sz.w, h: sz.h, embed: e, name: txt(url, 200), loop: true, autoplay: false}], at);
 }
 function embedCover(it) {
   const box = document.createElement('div');
@@ -11679,6 +12540,7 @@ async function boot() {
   } else if (tpl) await newBoard(tpl[1], false);
   refresh();
   if (tpl) insertTemplate(tpl[0]);
+  setTimeout(() => checkWhatsNew(ok), 700);
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { render(); if (!ok) fitTo(allObjs(), false); });
   // signed-in accounts come back quietly; a #p=<project> link (with &c=<card> from an email) opens that project
   refreshMe(true).then(openHashLink);

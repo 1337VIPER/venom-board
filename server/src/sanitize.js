@@ -92,6 +92,20 @@ function cleanCrop(c) {
   out.w = Math.min(k(c.w), k(1 - out.x)); out.h = Math.min(k(c.h), k(1 - out.y));
   return out.w > 0.01 && out.h > 0.01 && (out.x > 0 || out.y > 0 || out.w < 1 || out.h < 1) ? out : null;
 }
+// Where a reference picture or video came from: a plain http or https address, only ever shown as a link people
+// click (the server never fetches it). No spaces, hidden characters, logins or other kinds of address.
+function okSource(u) {
+  if (typeof u !== 'string' || u.length > 600 || /[\s\p{Cc}]/u.test(u)) return false;
+  try { const a = new URL(u); return (a.protocol === 'http:' || a.protocol === 'https:') && !a.username && !a.password; } catch (e) { return false; }
+}
+// A reference's tags, note and where it came from, on pictures and videos. Each is kept even when empty: an edit
+// that clears one differs from an older app that never sent it (realtime.js keeps the stored one then).
+function cleanRef(o, i) {
+  if (Array.isArray(i.tags)) o.tags = cleanTags(i.tags);
+  if (typeof i.note === 'string') o.note = txt(i.note, 500).trim();
+  if (typeof i.source === 'string') { const s = i.source.trim(); if (!s || okSource(s)) o.source = s; }  // '' clears it; anything else odd is dropped
+  return o;
+}
 
 function cleanItem(i, opts = {}) {
   if (!i || typeof i !== 'object' || !okId(i.id)) return null;
@@ -123,6 +137,7 @@ function cleanItem(i, opts = {}) {
       const f = { ...base, title: txt(i.title, 200), color: colorOr(i.color, '#a66bff') }, sp = cleanSprint(i.sprint);
       if (sp) f.sprint = sp;  // a phase used as a sprint
       if (i.collapsed === true) f.collapsed = true;  // folded down to its title bar
+      if (i.mood === true || i.mood === false) f.mood = i.mood;  // a mood board collection of reference pictures, not a phase (false: made a phase again)
       return f;
     }
     case 'jam': {  // a game jam's clock: deadline, theme and a scope check
@@ -137,14 +152,14 @@ function cleanItem(i, opts = {}) {
       if (okImageSrc(i.src, opts.assetBase)) img.src = i.src;
       const crop = cleanCrop(i.crop); if (crop) img.crop = crop;  // the part of the picture that shows
       if (i.rot === 90 || i.rot === 180 || i.rot === 270) img.rot = i.rot;  // quarter turns, clockwise
-      return img;
+      return cleanRef(img, i);
     }
     case 'video': {
       // a YouTube or Vimeo video (played from their site, only when someone clicks it) or a file stored here
       const vid = { ...base, name: txt(i.name, 200), loop: i.loop !== false, autoplay: !!i.autoplay }, e = i.embed;
       if (e && typeof e === 'object' && ((e.p === 'yt' && /^[\w-]{11}$/.test(e.id)) || (e.p === 'vimeo' && /^\d{5,12}$/.test(e.id)))) vid.embed = { p: e.p, id: e.id };
       else if (okImageSrc(i.src, opts.assetBase)) vid.src = i.src;
-      return vid;
+      return cleanRef(vid, i);
     }
   }
   return null;
@@ -231,4 +246,4 @@ function cleanOp(op, opts = {}) {
   return null;
 }
 
-module.exports = { cleanDoc, cleanOp, okId, txt, COLLECTIONS, MAX_OBJECTS, REACTIONS, okGitLink, LOG_MAX };
+module.exports = { cleanDoc, cleanOp, okId, txt, COLLECTIONS, MAX_OBJECTS, REACTIONS, okGitLink, okSource, LOG_MAX };

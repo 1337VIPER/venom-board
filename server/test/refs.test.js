@@ -1,4 +1,5 @@
-// Reference board fields on pictures: crop (the part of the picture that shows, as fractions) and rot (quarter turns).
+// Reference board fields on pictures: crop (the part of the picture that shows, as fractions) and rot (quarter turns),
+// and on pictures and videos their tags, a note and the web address they came from (source).
 // They pass through the sanitizer whole when valid and are dropped when not, on new projects and on live edits.
 const test = require('node:test');
 const assert = require('node:assert/strict');
@@ -133,5 +134,65 @@ test('live edits: a crop and turn reach teammates and the saved board; bad value
   const again = await joined(S.vee, S.project);
   const saved = again.snapshot.doc.items.find(i => i.id === 'l1');
   assert.deepEqual([saved.crop, saved.rot], [{ x: 0, y: 0.5, w: 1, h: 0.5 }, 180]);
+  again.close();
+});
+
+test('sanitizer: tags, a note and where a reference came from, on pictures and videos', () => {
+  const opts = { assetBase: PUBLIC + '/assets/' };
+  const one = (extra, type = 'image') => cleanDoc({ items: [type === 'image' ? pic('t1', extra) : { id: 'v1', type: 'video', x: 0, y: 0, w: 480, h: 270, embed: { p: 'yt', id: 'dQw4w9WgXcQ' }, ...extra }] }, opts).items[0];
+  for (const type of ['image', 'video']) {
+    const r = one({ tags: ['Lighting', 'boss-fight', 'no spaces!', 7, 'lighting'], note: '  Rim light on the hero  ', source: ' https://www.artstation.com/artwork/abc?x=1#top ' }, type);
+    assert.deepEqual([r.tags, r.note, r.source], [['lighting', 'boss-fight'], 'Rim light on the hero', 'https://www.artstation.com/artwork/abc?x=1#top'], type);
+    // empty ones are kept, so an edit that clears one differs from an app that never sent it
+    const e = one({ tags: [], note: '', source: '   ' }, type);
+    assert.deepEqual([e.tags, e.note, e.source], [[], '', ''], type);
+    const none = one({}, type);
+    for (const k of ['tags', 'note', 'source']) assert.equal(k in none, false, `${type} without ${k}`);
+  }
+  assert.equal(one({ note: 'x'.repeat(900) }).note.length, 500);
+  assert.equal(one({ tags: Array.from({ length: 12 }, (_, k) => 't' + k) }).tags.length, 8);
+  // only plain http and https addresses up to 600 characters, with no spaces, control characters or logins
+  for (const source of ['javascript:alert(1)', 'data:text/html,<b>hi</b>', 'ftp://files.example.com/ref.png', 'https://user:pass@example.com/ref', 'https://user@example.com/',
+    'https://example.com/a b', 'https://example.com/\u0007bell', 'https://example.com/' + 'a'.repeat(600), 'not a link', '//example.com/ref', 'http://', 42, null, ['https://example.com/'], { href: 'https://example.com/' }])
+    assert.equal('source' in one({ source }), false, JSON.stringify(source));
+  assert.equal(one({ source: 'http://example.com/' + 'a'.repeat(581) }).source.length, 600, 'exactly 600 characters is fine');
+  for (const [k, v] of [['tags', 'lighting'], ['tags', null], ['note', 42], ['note', null]]) assert.equal(k in one({ [k]: v }), false, `${k}: ${JSON.stringify(v)}`);
+  // other kinds of object don't take a note or a source
+  const card = cleanDoc({ items: [{ id: 'c1', type: 'node', title: 'Card', note: 'hi', source: 'https://example.com/' }] }, opts).items[0];
+  assert.equal(card.note, undefined); assert.equal(card.source, undefined);
+  // a live put goes through the same cleaning
+  const op = cleanOp({ k: 'items', op: 'put', obj: pic('t2', { tags: ['UI'], note: 'Menu', source: 'javascript:alert(1)' }) }, opts);
+  assert.deepEqual([op.obj.tags, op.obj.note, op.obj.source], [['ui'], 'Menu', undefined]);
+});
+
+test('live edits: tags, notes and sources reach teammates; an older app leaves them as they were, and empty ones clear them', async () => {
+  const [v, n] = await Promise.all([joined(S.vee, S.project), joined(S.nyx, S.project)]);
+  const next = (c, id) => c.next(m => m.t === 'ops' && m.by && m.ops.some(o => o.obj && o.obj.id === id)).then(m => m.ops.find(o => o.obj && o.obj.id === id).obj);
+  const ref = { tags: ['lighting', 'hero'], note: 'Rim light', source: 'https://www.artstation.com/artwork/abc' };
+  n.send({ t: 'ops', batch: 1, ops: [{ k: 'items', op: 'put', obj: pic('m1', ref) }] });
+  let got = await next(v, 'm1');
+  assert.deepEqual([got.tags, got.note, got.source], [ref.tags, ref.note, ref.source]);
+  // an app from before these fields moves and resizes the picture: what it didn't send stays
+  v.send({ t: 'ops', batch: 1, ops: [{ k: 'items', op: 'put', obj: pic('m1', { x: 400, w: 150, h: 100 }) }] });
+  got = await next(n, 'm1');
+  assert.deepEqual([got.x, got.w, got.tags, got.note, got.source], [400, 150, ref.tags, ref.note, ref.source]);
+  // empty ones clear them
+  n.send({ t: 'ops', batch: 2, ops: [{ k: 'items', op: 'put', obj: pic('m1', { x: 400, w: 150, h: 100, tags: [], note: '', source: '' }) }] });
+  got = await next(v, 'm1');
+  assert.deepEqual([got.tags, got.note, got.source], [[], '', '']);
+  // videos the same way; a bad source never reaches anyone
+  const vid = extra => ({ id: 'm2', type: 'video', x: 0, y: 400, w: 480, h: 270, name: 'Walk cycle', embed: { p: 'yt', id: 'dQw4w9WgXcQ' }, ...extra });
+  n.send({ t: 'ops', batch: 3, ops: [{ k: 'items', op: 'put', obj: vid({ tags: ['anim'], note: 'Weight shift', source: 'https://vimeo.com/123456' }) }, { k: 'items', op: 'put', obj: pic('m3', { source: 'javascript:alert(1)' }) }] });
+  const both = (await v.next(m => m.t === 'ops' && m.by && m.ops.some(o => o.obj && o.obj.id === 'm2'))).ops;
+  assert.equal(both.find(o => o.obj.id === 'm2').obj.source, 'https://vimeo.com/123456');
+  assert.equal('source' in both.find(o => o.obj.id === 'm3').obj, false, 'the bad source is dropped');
+  v.send({ t: 'ops', batch: 2, ops: [{ k: 'items', op: 'put', obj: vid({ autoplay: true }) }] });
+  got = await next(n, 'm2');
+  assert.deepEqual([got.autoplay, got.tags, got.note, got.source], [true, ['anim'], 'Weight shift', 'https://vimeo.com/123456']);
+  for (const c of [v, n]) c.close();
+  await wait(300);
+  const again = await joined(S.vee, S.project), saved = id => again.snapshot.doc.items.find(i => i.id === id);
+  assert.deepEqual([saved('m1').tags, saved('m1').note, saved('m1').source], [[], '', ''], 'saved cleared');
+  assert.deepEqual([saved('m2').tags, saved('m2').note, saved('m2').source], [['anim'], 'Weight shift', 'https://vimeo.com/123456'], 'saved kept');
   again.close();
 });

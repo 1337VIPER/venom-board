@@ -16,7 +16,7 @@
 // before a burst of changes, so anything can be undone from there.
 const crypto = require('crypto');
 const { cardCodes } = require('./gitlink');
-const { okGitLink } = require('./sanitize');
+const { okGitLink, okSource } = require('./sanitize');
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
@@ -216,7 +216,7 @@ function mcp({ db, cfg, log, route, fail, H, A, limit, RANK, live, roleOf, proje
   const AUTHORS = { 'vb-github': 'GitHub', 'vb-gitlab': 'GitLab' };
   const nameOf = all => id => (all.find(m => m.id === id) || {}).name || AUTHORS[id] || (/^vb-play-/.test(id) ? 'Playtester' : /^vb-bugs-/.test(id) ? 'Bug reporter' : 'former member');
   function describe(doc, all, projectId) {
-    const frames = doc.items.filter(i => i.type === 'frame'), cards = doc.items.filter(i => i.type === 'node'), name = nameOf(all), ref = refsFor(projectId, doc);
+    const frames = doc.items.filter(i => i.type === 'frame' && !i.mood), cards = doc.items.filter(i => i.type === 'node'), name = nameOf(all), ref = refsFor(projectId, doc);
     const phaseOf = c => { const f = frames.find(fr => inside(c, fr)); return f ? f.id : null; };
     const incoming = new Map();
     for (const l of doc.links) if (l.from.id && l.to.id) { if (!incoming.has(l.to.id)) incoming.set(l.to.id, []); incoming.get(l.to.id).push(l.from.id); }
@@ -251,7 +251,7 @@ function mcp({ db, cfg, log, route, fail, H, A, limit, RANK, live, roleOf, proje
         cards: cards.filter(c => phaseOf(c) === f.id).map(card) })),
       unphased_cards: cards.filter(c => !phaseOf(c)).map(card),
       other: { text: doc.items.filter(i => i.type === 'text').length, images: doc.items.filter(i => i.type === 'image').length, videos: doc.items.filter(i => i.type === 'video').length,
-        jam_clocks: doc.items.filter(i => i.type === 'jam').length, connectors: doc.links.length, ink_strokes: doc.strokes.length, comments: doc.comments.length,
+        mood_boards: doc.items.filter(i => i.type === 'frame' && i.mood).length, jam_clocks: doc.items.filter(i => i.type === 'jam').length, connectors: doc.links.length, ink_strokes: doc.strokes.length, comments: doc.comments.length,
         note: 'get_items lists every object with its position and size.' },
     };
   }
@@ -290,6 +290,27 @@ function mcp({ db, cfg, log, route, fail, H, A, limit, RANK, live, roleOf, proje
     if (c1.x > 0 || c1.y > 0 || c1.w < 1 || c1.h < 1) o.crop = c1; else delete o.crop;
     if (r1) o.rot = r1; else delete o.rot;
   }
+  // tags as a tool writes them: lower case, spaces become -, up to 8
+  function tagsIn(v, what) {
+    const tags = [...new Set((Array.isArray(v) ? v : [v]).map(t => String(t).trim().toLowerCase().replace(/\s+/g, '-')).filter(Boolean))];
+    const bad = tags.find(t => !/^[\p{L}\p{N}_-]{1,24}$/u.test(t));
+    if (bad) oops(`Tags are 1-24 letters, digits, - or _, not "${bad}".`);
+    if (tags.length > 8) oops(`${what} can have up to 8 tags.`);
+    return tags;
+  }
+  // a reference picture's or video's tags, note and the address it came from, checked like the app does. An empty one
+  // is kept as empty (not left out), or the live path would keep the old one for an app that doesn't know them.
+  function refIn(o, u) {
+    if (u.tags !== undefined) o.tags = tagsIn(u.tags, 'A picture or video');
+    if (u.note !== undefined) o.note = str(u.note, 500);
+    if (u.source !== undefined) {
+      const s = str(u.source, 601);
+      if (s && !okSource(s)) oops(`A source is a plain http or https web address (up to 600 characters, no spaces or logins), not "${str(u.source, 80)}".`);
+      o.source = s;
+    }
+    return o;
+  }
+  const refOut = (o, i, src = 'source') => { if (i.tags && i.tags.length) o.tags = i.tags; if (i.note) o.note = i.note; if (i.source) o[src] = i.source; };
   // a card's reference for commits and pull requests (VB-…), when the project can have them
   function refsFor(projectId, doc) {
     if (!projectId) return () => null;
@@ -320,9 +341,10 @@ function mcp({ db, cfg, log, route, fail, H, A, limit, RANK, live, roleOf, proje
         if (ref(i.id)) o.reference = ref(i.id);
         break;
       case 'text': Object.assign(o, { text: i.text, size: i.size, color: i.color }); break;
-      case 'frame': Object.assign(o, { title: i.title, color: i.color }); if (i.collapsed) o.collapsed = true; if (i.sprint) o.sprint = sprintOut(i.sprint, name); break;
-      case 'image': Object.assign(o, { name: i.name, has_picture: !!i.src }); if (i.flip) o.flip = true; if (i.gray) o.gray = true; if (i.crop) o.crop = i.crop; if (i.rot) o.rotate = i.rot; break;
-      case 'video': Object.assign(o, { name: i.name, loop: i.loop, autoplay: i.autoplay }, i.embed ? { source: i.embed.p === 'yt' ? `https://www.youtube.com/watch?v=${i.embed.id}` : `https://vimeo.com/${i.embed.id}` } : { source: i.src ? 'file on this server' : 'missing' }); break;
+      case 'frame': Object.assign(o, { title: i.title, color: i.color }); if (i.collapsed) o.collapsed = true; if (i.sprint) o.sprint = sprintOut(i.sprint, name); if (i.mood) o.mood = true; break;
+      case 'image': Object.assign(o, { name: i.name, has_picture: !!i.src }); if (i.flip) o.flip = true; if (i.gray) o.gray = true; if (i.crop) o.crop = i.crop; if (i.rot) o.rotate = i.rot; refOut(o, i); break;
+      // a video's source is where it plays from, so the address it came from is its source_link
+      case 'video': Object.assign(o, { name: i.name, loop: i.loop, autoplay: i.autoplay }, i.embed ? { source: i.embed.p === 'yt' ? `https://www.youtube.com/watch?v=${i.embed.id}` : `https://vimeo.com/${i.embed.id}` } : { source: i.src ? 'file on this server' : 'missing' }); refOut(o, i, 'source_link'); break;
       case 'jam': Object.assign(o, { title: i.title, theme: i.theme, deadline: new Date(i.end).toISOString(), people: i.people, color: i.color }); if (i.reveal) o.theme_revealed_at = new Date(i.reveal).toISOString(); break;
     }
     return o;
@@ -334,9 +356,10 @@ function mcp({ db, cfg, log, route, fail, H, A, limit, RANK, live, roleOf, proje
     const nodes = doc.items.filter(n => n.type === 'node' && n.kind !== 'idea' && n.prio !== 'wont');
     const byId = new Map(nodes.map(n => [n.id, n])), preds = new Map(nodes.map(n => [n.id, []])), succs = new Map(nodes.map(n => [n.id, []]));
     // a wire's ends as cards: a phase stands for the cards in it, so a wire between phases makes the second wait on the first
+    // (a mood board collection isn't a phase, so a wire to one changes nothing)
     const all = new Map(doc.items.map(i => [i.id, i])), inPhase = new Map();
     const ends = e => { const o = e && e.id ? all.get(e.id) : null; if (!o) return []; if (o.type === 'node') return byId.has(o.id) ? [o] : [];
-      if (o.type !== 'frame') return []; if (!inPhase.has(o.id)) inPhase.set(o.id, nodes.filter(n => inside(n, o))); return inPhase.get(o.id); };
+      if (o.type !== 'frame' || o.mood) return []; if (!inPhase.has(o.id)) inPhase.set(o.id, nodes.filter(n => inside(n, o))); return inPhase.get(o.id); };
     for (const l of doc.links) {
       if (!l.from.id || !l.to.id || l.from.id === l.to.id) continue;
       for (const b of ends(l.to)) for (const a of ends(l.from)) if (a.id !== b.id && !preds.get(b.id).includes(a.id)) { preds.get(b.id).push(a.id); succs.get(a.id).push(b.id); }
@@ -392,13 +415,7 @@ function mcp({ db, cfg, log, route, fail, H, A, limit, RANK, live, roleOf, proje
     if (input.severity !== undefined && kind === 'bug') c.sev = ['crash', 'major', 'minor', 'polish'].includes(input.severity) ? input.severity : 'major';
     if (input.assignees !== undefined) { const who = input.assignees && input.assignees.length ? people(teamId, input.assignees) : []; if (who.length) c.assignees = who; else delete c.assignees; }
     if (input.hide_from_roadmap !== undefined) { if (input.hide_from_roadmap) c.nopub = true; else delete c.nopub; }
-    if (input.tags !== undefined) {
-      const tags = [...new Set((Array.isArray(input.tags) ? input.tags : [input.tags]).map(t => String(t).trim().toLowerCase().replace(/\s+/g, '-')).filter(Boolean))];
-      const bad = tags.find(t => !/^[\p{L}\p{N}_-]{1,24}$/u.test(t));
-      if (bad) oops(`Tags are 1-24 letters, digits, - or _, not "${bad}".`);
-      if (tags.length > 8) oops('A card can have up to 8 tags.');
-      if (tags.length) c.tags = tags; else delete c.tags;
-    }
+    if (input.tags !== undefined) { const tags = tagsIn(input.tags, 'A card'); if (tags.length) c.tags = tags; else delete c.tags; }
     if (input.tracked_minutes !== undefined) { const m = Math.round(Number(input.tracked_minutes)); if (!(m >= 0 && m <= 1e6)) oops('tracked_minutes is a whole number of minutes, 0 to 1,000,000.'); if (m) c.spent = m; else delete c.spent; }
     if (input.git_links !== undefined) {
       const links = [...new Set(Array.isArray(input.git_links) ? input.git_links : [input.git_links])];
@@ -578,7 +595,7 @@ function mcp({ db, cfg, log, route, fail, H, A, limit, RANK, live, roleOf, proje
       severity: c.kind === 'bug' ? c.sev || 'major' : '', phase: phase ? phase.title : '', color: (c.disc && DISC_COLOR[c.disc]) || c.color || BONE,
       assigned_to_you: who.includes(user.id), assignees: who.map(ctx.name), link: `${cfg.PUBLIC_URL}/app#p=${encodeURIComponent(ctx.p.id)}&c=${encodeURIComponent(c.id)}` };
   }
-  const projectCtx = (p, role, teamName, doc) => ({ p, role, team: teamName, doc, frames: doc.items.filter(i => i.type === 'frame'), name: nameOf(members(p.team_id)) });
+  const projectCtx = (p, role, teamName, doc) => ({ p, role, team: teamName, doc, frames: doc.items.filter(i => i.type === 'frame' && !i.mood), name: nameOf(members(p.team_id)) });  // phases, not mood board collections
   const rank = (table, v) => (table[v] === undefined ? 9 : table[v]);
   const taskOrder = (a, b) => (a.due ? 0 : 1) - (b.due ? 0 : 1) || a.due.localeCompare(b.due) || rank(PRIO_ORDER, a.priority) - rank(PRIO_ORDER, b.priority)
     || rank(STATUS_ORDER, a.status) - rank(STATUS_ORDER, b.status) || a.project.localeCompare(b.project) || a.title.localeCompare(b.title);
@@ -631,6 +648,10 @@ function mcp({ db, cfg, log, route, fail, H, A, limit, RANK, live, roleOf, proje
     tracked_minutes: N('Time tracked on the card, in minutes (the app\'s timer adds to it).'),
     git_links: { type: 'array', items: { type: 'string' }, maxItems: 10, description: 'Linked pull requests, merge requests or issues: https addresses on github.com or gitlab.com.' },
   };
+  // what a reference picture or video can carry
+  const refProps = { tags: { type: 'array', items: { type: 'string' }, maxItems: 8, description: 'Tags like "lighting" or "boss-fight" (1-24 letters, digits, - or _). An empty list removes them.' },
+    note: S('A short note about the reference, up to 500 characters.'), source: S('Where it came from: a plain http or https web address, shown as a link people click (never fetched). An empty string clears it.') };
+  const MOOD = 'true makes it a mood board collection for reference pictures instead of a project phase (kept out of the schedule)';
   const linkProps = { style: { type: 'string', enum: ['curved', 'straight', 'elbow', 'circuit'], description: 'curved (the default tendril), straight, elbow (right angles) or circuit (straight runs with 45° bends, like Electric Nodes in Unreal).' },
     via: { type: 'array', items: POINT, maxItems: 24, description: 'Reroute points the wire runs through, in order, to route it tidily. An empty list removes them.' }, arrowheads: { type: 'string', enum: ['end', 'both', 'none'] }, dashed: B('Dashed line.'),
     flow: B('Animated flow along the line.'), label: S('Short label on the line.'), color: COLOR, width: N('Line width, 1 to 12 (default 2.5).') };
@@ -648,10 +669,10 @@ function mcp({ db, cfg, log, route, fail, H, A, limit, RANK, live, roleOf, proje
           }) }));
         return teams.length ? { teams } : { teams, note: 'You are not in a team yet, and tools work on team boards. Create a team in the Venom Board app (the Team panel) or accept an invite, then call list_projects again.' };
       } },
-    { name: 'get_board', title: 'Read a board (planning)', description: 'Reads a project board for planning: phases (frames) in order with the cards inside each, cards outside any phase, and progress: percent done, what is ready to start, overdue cards and milestones. Cards list kind, status, priority, discipline, estimate, due date, notes, assignees and the ids of cards they wait on. Use get_items for positions, sizes and every other kind of object.',
+    { name: 'get_board', title: 'Read a board (planning)', description: 'Reads a project board for planning: phases (frames, not mood board collections) in order with the cards inside each, cards outside any phase, and progress: percent done, what is ready to start, overdue cards and milestones. Cards list kind, status, priority, discipline, estimate, due date, notes, assignees and the ids of cards they wait on. Use get_items for positions, sizes and every other kind of object.',
       inputSchema: obj({ project_id: PID }, ['project_id']), annotations: { readOnlyHint: true },
       run: (user, a) => { const { p, role, doc } = project(user, a.project_id, 'viewer'); return { project_id: p.id, name: p.name, your_role: role, ...describe(doc, members(p.team_id), p.id) }; } },
-    { name: 'get_items', title: 'Read every object (layout)', description: 'Lists the objects on a board with their positions and sizes: cards, text, frames, pictures, GIFs, videos, jam clocks, connectors and ink strokes, plus the area the board covers. Filter by type, by ids or by an area. Board units: x grows right, y grows down; a card is about 240×100.',
+    { name: 'get_items', title: 'Read every object (layout)', description: 'Lists the objects on a board with their positions and sizes: cards, text, frames, pictures, GIFs, videos, jam clocks, connectors and ink strokes, plus the area the board covers. Filter by type, by ids or by an area. Board units: x grows right, y grows down; a card is about 240×100. A frame with mood: true is a mood board collection; pictures and videos show their tags, note and the address they came from (source, or source_link on a video, whose source is where it plays from).',
       inputSchema: obj({ project_id: PID, types: { type: 'array', items: { type: 'string', enum: ['card', 'text', 'frame', 'image', 'video', 'jam', 'connector', 'stroke'] } },
         ids: { type: 'array', items: { type: 'string' }, maxItems: 500 }, area: { type: 'object', properties: { x: { type: 'number' }, y: { type: 'number' }, w: { type: 'number' }, h: { type: 'number' } }, required: ['x', 'y', 'w', 'h'], additionalProperties: false, description: 'Only objects that overlap this area.' },
         include_points: B('Include every ink stroke\'s points (big).'), limit: N('Up to this many objects (default 500, at most 2000).') }, ['project_id']), annotations: { readOnlyHint: true },
@@ -745,14 +766,15 @@ function mcp({ db, cfg, log, route, fail, H, A, limit, RANK, live, roleOf, proje
     { name: 'add_phase', title: 'Add a phase', description: 'Adds a phase (a frame that holds cards, like "Pre-production" or "Alpha") to the right of the existing phases. Cards added to it go inside it.',
       inputSchema: obj({ project_id: PID, title: S('Phase name, e.g. "02 · Prototype".'), color: COLOR }, ['project_id', 'title']),
       run: (user, a) => {
-        const { p, role, doc } = project(user, a.project_id, 'editor'), frames = doc.items.filter(i => i.type === 'frame');
-        const right = frames.length ? Math.max(...frames.map(f => f.x + f.w)) + 80 : 0, top = frames.length ? Math.min(...frames.map(f => f.y)) : 0;
-        const fr = { id: newId(), type: 'frame', x: right, y: top, w: 600, h: 760, title: str(a.title, 200) || 'New phase', color: colorArg(a.color, PHASE_COLORS[frames.length % PHASE_COLORS.length]) };
+        const { p, role, doc } = project(user, a.project_id, 'editor'), frames = doc.items.filter(i => i.type === 'frame'), phases = frames.filter(f => !f.mood), row = phases.length ? phases : frames;
+        // in line with the phases and to the right of every frame, so it never lands on a mood board collection
+        const right = frames.length ? Math.max(...frames.map(f => f.x + f.w)) + 80 : 0, top = row.length ? Math.min(...row.map(f => f.y)) : 0;
+        const fr = { id: newId(), type: 'frame', x: right, y: top, w: 600, h: 760, title: str(a.title, 200) || 'New phase', color: colorArg(a.color, PHASE_COLORS[phases.length % PHASE_COLORS.length]) };
         apply(user, role, p.id, [put('items', fr)]);
         return { phase_id: fr.id, title: fr.title };
       } },
     { name: 'add_cards', title: 'Add cards', description: 'Adds up to 100 cards: inside a phase if you give phase_id (the phase grows to fit), at x, y if you give them, otherwise in free space. Each card can wait on other cards: give their ids, or the titles of cards on the board or in this same call, and arrows are drawn so the Timeline knows the order.',
-      inputSchema: obj({ project_id: PID, phase_id: S('Optional: the phase to put the cards in (from get_board or add_phase).'),
+      inputSchema: obj({ project_id: PID, phase_id: S('Optional: the phase to put the cards in (from get_board or add_phase), or a mood board collection\'s id from get_items.'),
         cards: { type: 'array', minItems: 1, maxItems: 100, items: obj({ ...cardProps, ...geo, waits_on: { type: 'array', items: { type: 'string' }, description: 'Ids or titles of cards this one waits on.' } }, ['title']) } }, ['project_id', 'cards']),
       run: (user, a) => {
         const { p, role, doc } = project(user, a.project_id, 'editor');
@@ -810,9 +832,9 @@ function mcp({ db, cfg, log, route, fail, H, A, limit, RANK, live, roleOf, proje
         apply(user, role, p.id, made.map(o => put('items', o)));
         return { added: made.map(o => ({ id: o.id, text: o.text.slice(0, 60), x: o.x, y: o.y })) };
       } },
-    { name: 'add_frames', title: 'Add frames', description: 'Adds frames: titled areas that group things and carry them when moved (phases are frames). Give x, y, w, h, or "around" a list of object ids to wrap them with some room.',
+    { name: 'add_frames', title: 'Add frames', description: 'Adds frames: titled areas that group things and carry them when moved (phases are frames; mood: true makes a mood board collection instead). Give x, y, w, h, or "around" a list of object ids to wrap them with some room.',
       inputSchema: obj({ project_id: PID, frames: { type: 'array', minItems: 1, maxItems: 50, items: obj({ title: S('Frame title.'), color: COLOR, ...geo, w: N('Width.'), h: N('Height.'),
-        around: { type: 'array', items: { type: 'string' }, description: 'Ids of objects to wrap.' }, padding: N('Room around wrapped objects (default 40).') }, ['title']) } }, ['project_id', 'frames']),
+        around: { type: 'array', items: { type: 'string' }, description: 'Ids of objects to wrap.' }, padding: N('Room around wrapped objects (default 40).'), mood: B(MOOD + '.') }, ['title']) } }, ['project_id', 'frames']),
       run: (user, a) => {
         const { p, role, doc } = project(user, a.project_id, 'editor'), next = placer(doc), count = doc.items.filter(i => i.type === 'frame').length;
         const made = a.frames.slice(0, 50).map((f, n) => {
@@ -826,10 +848,10 @@ function mcp({ db, cfg, log, route, fail, H, A, limit, RANK, live, roleOf, proje
             box = { ...(fin(f.x) && fin(f.y) ? { x: f.x, y: f.y } : next(w, h + 40)), w, h };
             if (!(fin(f.x) && fin(f.y))) box.y += 40;  // room for the title above it
           }
-          return { id: newId(), type: 'frame', x: rd(box.x), y: rd(box.y), w: rd(box.w), h: rd(box.h), title: str(f.title, 200), color: colorArg(f.color, PHASE_COLORS[(count + n) % PHASE_COLORS.length]) };
+          return { id: newId(), type: 'frame', x: rd(box.x), y: rd(box.y), w: rd(box.w), h: rd(box.h), title: str(f.title, 200), color: colorArg(f.color, PHASE_COLORS[(count + n) % PHASE_COLORS.length]), ...(f.mood === true ? { mood: true } : {}) };
         });
         apply(user, role, p.id, made.map(o => put('items', o)));
-        return { added: made.map(o => ({ id: o.id, title: o.title, x: o.x, y: o.y, w: o.w, h: o.h })) };
+        return { added: made.map(o => ({ id: o.id, title: o.title, x: o.x, y: o.y, w: o.w, h: o.h, ...(o.mood ? { mood: true } : {}) })) };
       } },
     { name: 'get_upload_url', title: 'Upload a local file', description: 'For pictures or videos on the user\'s computer: returns a one-time address (valid 10 minutes) to send the file to with curl, then an upload_id for add_image or add_video. PNG, JPEG, GIF or WebP up to 15 MB; MP4 or WebM if this server takes video files.',
       inputSchema: obj({ project_id: PID }, ['project_id']),
@@ -843,25 +865,26 @@ function mcp({ db, cfg, log, route, fail, H, A, limit, RANK, live, roleOf, proje
       } },
     { name: 'add_image', title: 'Add pictures', description: 'Adds pictures or GIFs (GIFs animate on the board) from a web address, base64 data, or an upload_id from get_upload_url. They keep their shape; give width to size them (default: natural size up to 640 on the longest side).',
       inputSchema: obj({ project_id: PID, images: { type: 'array', minItems: 1, maxItems: 20, items: obj({ url: S('A public web address of a PNG, JPEG, GIF or WebP.'), data: S('Base64 picture data (small pictures only).'), upload_id: S('From get_upload_url.'),
-        name: S('A name for it.'), width: N('Width on the board.'), height: N('Height (normally left out to keep its shape).'), flip: B('Mirror it.'), gray: B('Show it in greyscale.'), ...geo }) } }, ['project_id', 'images']),
+        name: S('A name for it.'), width: N('Width on the board.'), height: N('Height (normally left out to keep its shape).'), flip: B('Mirror it.'), gray: B('Show it in greyscale.'), ...refProps, ...geo }) } }, ['project_id', 'images']),
       run: async (user, a) => {
         const { p, role, doc } = project(user, a.project_id, 'editor'), next = placer(doc), made = [];
         for (const m of a.images.slice(0, 20)) {
+          const ref = refIn({}, m);  // checked before anything is downloaded
           const { asset, buf } = await mediaBytes(user, p, m);
           if (!asset.mime.startsWith('image/')) oops('That file is a video. Use add_video for it.');
           const size = sized(m, imageSize(buf), 640), at = fin(m.x) && fin(m.y) ? { x: rd(m.x), y: rd(m.y) } : next(size.w, size.h);
-          made.push({ id: newId(), type: 'image', ...at, ...size, src: `${cfg.PUBLIC_URL}/assets/${asset.id}`, name: str(m.name || (m.url ? String(m.url).split('/').pop().split('?')[0] : '') || 'Picture', 200), flip: !!m.flip, gray: !!m.gray });
+          made.push({ id: newId(), type: 'image', ...at, ...size, src: `${cfg.PUBLIC_URL}/assets/${asset.id}`, name: str(m.name || (m.url ? String(m.url).split('/').pop().split('?')[0] : '') || 'Picture', 200), flip: !!m.flip, gray: !!m.gray, ...ref });
         }
         apply(user, role, p.id, made.map(o => put('items', o)));
         return { added: made.map(o => ({ id: o.id, name: o.name, x: o.x, y: o.y, w: o.w, h: o.h })) };
       } },
     { name: 'add_video', title: 'Add videos', description: 'Adds videos: YouTube or Vimeo links (they play from there when someone clicks them), or video files (url or upload_id) if this server takes them. Default size 480 wide, 16:9.',
       inputSchema: obj({ project_id: PID, videos: { type: 'array', minItems: 1, maxItems: 20, items: obj({ url: S('A YouTube or Vimeo link, or a public address of an MP4 or WebM file.'), upload_id: S('From get_upload_url.'),
-        name: S('A name for it.'), width: N('Width on the board (default 480).'), height: N('Height (default keeps 16:9).'), loop: B('Loop it (default true).'), autoplay: B('Play when shown (default false).'), ...geo }) } }, ['project_id', 'videos']),
+        name: S('A name for it.'), width: N('Width on the board (default 480).'), height: N('Height (default keeps 16:9).'), loop: B('Loop it (default true).'), autoplay: B('Play when shown (default false).'), ...refProps, ...geo }) } }, ['project_id', 'videos']),
       run: async (user, a) => {
         const { p, role, doc } = project(user, a.project_id, 'editor'), next = placer(doc), made = [];
         for (const v of a.videos.slice(0, 20)) {
-          const embed = v.url && !v.upload_id ? parseVideoLink(v.url) : null, base = { name: str(v.name || v.url || 'Video', 200), loop: v.loop !== false, autoplay: !!v.autoplay };
+          const embed = v.url && !v.upload_id ? parseVideoLink(v.url) : null, base = refIn({ name: str(v.name || v.url || 'Video', 200), loop: v.loop !== false, autoplay: !!v.autoplay }, v);
           let src = null;
           if (!embed) {
             if (!cfg.VIDEO_UPLOADS && !v.upload_id) oops('This server doesn\'t keep video files for team boards. Use a YouTube or Vimeo link instead.');
@@ -875,7 +898,7 @@ function mcp({ db, cfg, log, route, fail, H, A, limit, RANK, live, roleOf, proje
         apply(user, role, p.id, made.map(o => put('items', o)));
         return { added: made.map(o => ({ id: o.id, name: o.name, x: o.x, y: o.y, w: o.w, h: o.h, ...(o.embed ? { plays_from: o.embed.p === 'yt' ? 'YouTube' : 'Vimeo' } : {}) })) };
       } },
-    { name: 'replace_media', title: 'Replace a picture or video', description: 'Swaps what a picture or video shows for another one, like Replace in the app: a picture (web address, base64 data or upload_id), a YouTube or Vimeo link, or a video file. It keeps its place, width, connectors and settings (flip, greyscale, loop) and takes the new shape. A picture can become a video and back.',
+    { name: 'replace_media', title: 'Replace a picture or video', description: 'Swaps what a picture or video shows for another one, like Replace in the app: a picture (web address, base64 data or upload_id), a YouTube or Vimeo link, or a video file. It keeps its place, width, connectors, settings (flip, greyscale, loop), tags, note and source, and takes the new shape. A picture can become a video and back.',
       inputSchema: obj({ project_id: PID, id: S('The picture or video to replace, from get_items.'), url: S('A picture\'s web address, a YouTube or Vimeo link, or a video file\'s address.'), data: S('Base64 picture data (small pictures only).'),
         upload_id: S('From get_upload_url.'), name: S('A new name (default: from the source).'), keep_size: B('Keep its exact width and height instead of taking the new shape.') }, ['project_id', 'id']),
       run: async (user, a) => {
@@ -897,6 +920,7 @@ function mcp({ db, cfg, log, route, fail, H, A, limit, RANK, live, roleOf, proje
         const next = { id: type === it.type ? it.id : newId(), type, x: it.x, y: rd(it.y + it.h / 2 - h / 2), w, h, ...ref,
           name: str(a.name || (embed ? a.url : a.url ? String(a.url).split('/').pop().split('?')[0] : '') || it.name || (video ? 'Video' : 'Picture'), 200) };
         if (it.locked) next.locked = true;
+        for (const k of ['tags', 'note', 'source']) if (it[k] !== undefined) next[k] = it[k];  // what the team wrote about the reference stays with it
         if (type === 'image') Object.assign(next, { flip: it.type === 'image' && !!it.flip, gray: it.type === 'image' && !!it.gray }, turn ? { rot: turn } : {});
         else Object.assign(next, { loop: it.type === 'video' ? it.loop !== false : true, autoplay: it.type === 'video' && !!it.autoplay });
         const ops = [put('items', next)];
@@ -957,7 +981,7 @@ function mcp({ db, cfg, log, route, fail, H, A, limit, RANK, live, roleOf, proje
       } },
 
     /* changing anything */
-    { name: 'update_items', title: 'Change objects', description: 'Changes any objects by id: position, size, lock, and what each kind has: text (text, size, color), frames (title, color, collapsed, sprint), pictures (name, flip, gray, crop, rotate), videos (name, loop, autoplay), jam clocks (title, theme, deadline, people, color), cards (same fields as update_cards). Only the fields you give change.',
+    { name: 'update_items', title: 'Change objects', description: 'Changes any objects by id: position, size, lock, and what each kind has: text (text, size, color), frames (title, color, collapsed, sprint, mood), pictures (name, flip, gray, crop, rotate, tags, note, source), videos (name, loop, autoplay, tags, note, source), jam clocks (title, theme, deadline, people, color), cards (same fields as update_cards). Only the fields you give change.',
       inputSchema: obj({ project_id: PID, updates: { type: 'array', minItems: 1, maxItems: 300, items: { type: 'object', properties: { id: S('Object id.'), ...geo, w: N('Width.'), h: N('Height.'), locked: B('Lock it in place.'),
         text: S('Text: the words.'), size: N('Text: font size.'), color: COLOR, title: S('Frame, card or jam clock title.'), name: S('Picture or video name.'), flip: B('Picture: mirrored.'), gray: B('Picture: greyscale.'),
         crop: { anyOf: [{ type: 'object', properties: { x: { type: 'number' }, y: { type: 'number' }, w: { type: 'number' }, h: { type: 'number' } }, required: ['x', 'y', 'w', 'h'], additionalProperties: false }, { type: 'null' }], description: 'Picture: the part to show, as fractions of the whole picture (x, y from its top left; w, h > 0.01). null shows it all.' },
@@ -965,6 +989,9 @@ function mcp({ db, cfg, log, route, fail, H, A, limit, RANK, live, roleOf, proje
         collapsed: B('Phase: folded down to its title bar, hiding what\'s inside.'),
         sprint: { anyOf: [{ type: 'object', properties: { start: { type: 'string' }, end: { type: 'string' }, capacity_days: { type: 'object', additionalProperties: { type: 'number' } } }, required: ['start', 'end'], additionalProperties: false }, { type: 'null' }],
           description: 'Phase: make it a sprint from start to end (YYYY-MM-DD), with optional capacity in days per teammate username (or "everyone"). null turns it back into a plain phase.' },
+        mood: B(`Frame: ${MOOD}; false makes it a phase again.`),
+        tags: { ...refProps.tags, description: 'Picture, video or card: tags like "lighting" or "boss-fight" (1-24 letters, digits, - or _). An empty list removes them.' },
+        note: S('Picture or video: a short note about the reference, up to 500 characters.'), source: S('Picture or video: where it came from, a plain http or https web address shown as a link people click (never fetched). An empty string clears it.'),
         loop: B('Video: loop.'), autoplay: B('Video: play when shown.'), theme: S('Jam clock: theme.'), deadline: S('Jam clock: deadline.'), people: N('Jam clock: people.') }, required: ['id'], additionalProperties: true } } }, ['project_id', 'updates']),
       run: (user, a) => {
         const { p, role, doc } = project(user, a.project_id, 'editor');
@@ -982,12 +1009,14 @@ function mcp({ db, cfg, log, route, fail, H, A, limit, RANK, live, roleOf, proje
             if (u.collapsed !== undefined) { if (u.collapsed) o.collapsed = true; else delete o.collapsed; }
             if (u.sprint !== undefined) o.sprint = sprintIn(u.sprint, p.team_id);
             if (!o.sprint) delete o.sprint;
+            if (u.mood !== undefined) o.mood = !!u.mood;  // false, not left out, or the live path would keep it a collection
           }
           if (o.type === 'image') {
             if (u.name !== undefined) o.name = str(u.name, 200); if (u.flip !== undefined) o.flip = !!u.flip; if (u.gray !== undefined) o.gray = !!u.gray;
             if (u.crop !== undefined || u.rotate !== undefined) turnAndCrop(o, u);
           }
           if (o.type === 'video') { if (u.name !== undefined) o.name = str(u.name, 200); if (u.loop !== undefined) o.loop = !!u.loop; if (u.autoplay !== undefined) o.autoplay = !!u.autoplay; }
+          if (o.type === 'image' || o.type === 'video') refIn(o, u);
           if (o.type === 'jam') { if (u.title !== undefined) o.title = str(u.title, 80); if (u.theme !== undefined) o.theme = str(u.theme, 120); if (u.deadline !== undefined) o.end = when(u.deadline, 'deadline'); if (fin(u.people)) o.people = clamp(Math.round(u.people), 1, 50); }
           return put('items', o);
         });
@@ -1146,7 +1175,7 @@ function mcp({ db, cfg, log, route, fail, H, A, limit, RANK, live, roleOf, proje
   const listed = TOOLS.map(({ run, ...t }) => t);
 
   /* ---------- the endpoint ---------- */
-  const INSTRUCTIONS = 'Venom Board is a planning board and reference board for game development, on an infinite canvas. A team has projects; a project board holds cards (tasks, bugs, milestones, ideas with status, MoSCoW priority, discipline, estimate, due date, assignees), phases (frames, ordered left to right, that hold cards), text, pictures and GIFs, YouTube/Vimeo videos, ink (marker and highlighter), connectors and a game jam clock. Arrows between cards mean "waits on" and drive the schedule and critical path. Board units: x grows right, y grows down; a card is about 240×100 and a phase 600 wide. Start with list_projects. Use get_board to plan and get_items to see the layout before placing things; new things without a position go in free space to the right. For pictures on the user\'s computer, use get_upload_url and send the file with curl; replace_media swaps a picture or video for another. Templates (list_templates) give a quick start. Cards can carry tags, tracked time and linked pull requests (their reference, VB-…, in a commit message links them); phases can be sprints or collapsed; pictures can be cropped and turned; comments have replies, reactions, resolved threads and feedback pins on pictures; my_tasks lists what is assigned to you everywhere. Everything you change appears live to the team, and the board is kept in version history before a burst of changes, so save_version before big changes and restore_version undoes them.';
+  const INSTRUCTIONS = 'Venom Board is a planning board and reference board for game development, on an infinite canvas. A team has projects; a project board holds cards (tasks, bugs, milestones, ideas with status, MoSCoW priority, discipline, estimate, due date, assignees), phases (frames, ordered left to right, that hold cards), text, pictures and GIFs, YouTube/Vimeo videos, ink (marker and highlighter), connectors and a game jam clock. Arrows between cards mean "waits on" and drive the schedule and critical path. Board units: x grows right, y grows down; a card is about 240×100 and a phase 600 wide. Start with list_projects. Use get_board to plan and get_items to see the layout before placing things; new things without a position go in free space to the right. For pictures on the user\'s computer, use get_upload_url and send the file with curl; replace_media swaps a picture or video for another. Templates (list_templates) give a quick start. Cards can carry tags, tracked time and linked pull requests (their reference, VB-…, in a commit message links them); phases can be sprints or collapsed; a frame can instead be a mood board collection of references, kept out of the phases and schedule; pictures can be cropped and turned, and pictures and videos can carry tags, a note and the web address they came from; comments have replies, reactions, resolved threads and feedback pins on pictures; my_tasks lists what is assigned to you everywhere. Everything you change appears live to the team, and the board is kept in version history before a burst of changes, so save_version before big changes and restore_version undoes them.';
   function userFor(req) {
     const h = String(req.headers.authorization || ''), token = h.startsWith('Bearer ') ? h.slice(7).trim() : '';
     if (!/^vbt_[\w-]{20,80}$/.test(token)) return null;

@@ -8,6 +8,7 @@ const path = require('path');
 const WebSocket = require('ws');
 const { start } = require('../src/index');
 const T = require('../src/totp');
+const roadmap = require('../src/roadmap');
 
 const DATA = fs.mkdtempSync(path.join(os.tmpdir(), 'venom-board-collab-'));
 const APPDIR = fs.mkdtempSync(path.join(os.tmpdir(), 'venom-board-app-'));
@@ -475,6 +476,21 @@ test('public roadmaps: only what players should see, votes, feed, embed, reports
   assert.equal((await api('GET', `/api/projects/${pid}/roadmap`, undefined, S.vee)).data.roadmap, null);
   assert.equal((await fetch(`${base}/r/${id}/preview`)).status, 404, 'its picture went with it');
   await api('DELETE', `/api/projects/${pid}`, undefined, S.vee);
+});
+
+test('public roadmaps: a mood board collection is not a phase', () => {
+  const doc = { items: [
+    { id: 'f1', type: 'frame', x: 1000, y: 0, w: 600, h: 600, title: 'Alpha', color: '#ff2a4f' },
+    { id: 'f2', type: 'frame', x: 0, y: 0, w: 600, h: 600, title: 'Characters', color: '#3dff8b', mood: true },
+    { id: 'f3', type: 'frame', x: 2000, y: 0, w: 600, h: 600, title: 'Beta', color: '#2fd6ff', mood: false },
+    card('a', { x: 1040, y: 40, h: 100, title: 'Boss fight', status: 'todo' }), card('b', { x: 40, y: 40, h: 100, title: 'Hero silhouettes', status: 'todo' }),
+    card('c', { x: 2040, y: 40, h: 100, title: 'Polish', status: 'todo' }),
+  ] };
+  const planned = roadmap.view(doc, { show_bugs: 0, show_ideas: 0, show_details: 0 }, new Map()).columns.find(c => c.key === 'planned').cards;
+  const phase = id => planned.find(c => c.id === id).phase;
+  assert.deepEqual([phase('a').title, phase('a').n], ['Alpha', 0], 'the first phase: the collection to its left doesn\'t count');
+  assert.equal(phase('b'), null, 'a card in a collection is in no phase');
+  assert.deepEqual([phase('c').title, phase('c').n], ['Beta', 1], 'a collection made a phase again (mood: false) is one');
 });
 
 test('public roadmaps need a confirmed email', async () => {

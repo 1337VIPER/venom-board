@@ -2,6 +2,23 @@
 
 All notable changes to Venom Board are listed here. The project follows [Semantic Versioning](https://semver.org).
 
+## [Unreleased]
+
+### Added
+- **Mood board** (`Shift+M`, or the new button beside Screenshot): every picture, GIF and video on the board on one wall, grouped into collections, with room of its own away from your tasks. Pictures in other frames show under their frame, and loose ones can be gathered into a collection in one click
+- **Collections**: frames for references that stay out of your phases, the Timeline, Kanban, the Planner, the public roadmap and calendar feeds. Make one from the mood board (*New collection*), or right-click any frame → *Make it a mood board collection* (and back with *Turn into a phase*). On the board they have a dashed border, a picture mark on their title and a count of their references
+- **Add references straight into a collection**: drop, paste or *Add* pictures, GIFs, videos, YouTube and Vimeo links on the mood board, or right-click a collection → *Add pictures…*. They line up in rows under what's already there, the frame grows to fit, and frames below it move down so nothing ends up underneath. Drag a picture onto another collection to move it there
+- **A closer look**: click a reference to see it big, with its name, note, tags, source and colours (click one to copy its hex code). Step through with `←` and `→`, play a slideshow with `Space`, go full screen with `F`. YouTube and Vimeo only load when you click play
+- **Tags, notes and source links on pictures and videos**: right-click a picture (or use the closer look) to tag it, write why it's there and keep the page it came from. A picture dropped or pasted from a web page remembers where it came from by itself. Filter the mood board by tag, or search names, notes and tags
+- **Arrange the pictures**: lay a collection's pictures out in tidy rows that fill its width (its notes stay above, its palettes below), or select any pictures → Arrange → *Mood board rows*
+- **Palette of a collection**: one strip of the main colours of all of its pictures, with their hex codes
+- **What's new**: the first time the app starts after an update, a screen shows what changed since the version you had, once. More features → *What's new* and Settings → About bring it back
+- **MCP**: pictures and videos have `tags`, `note` and `source`, frames have `mood` (a collection), and collections aren't phases for the schedule, my_tasks or get_board
+- Copy as Markdown lists the mood board's collections with each reference's tags, note and source
+
+### Changed
+- The **Art moodboard** template is made of collections, ready for the mood board
+
 ## [1.10.0] - 2026-10-25
 
 ### Added

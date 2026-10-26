@@ -80,7 +80,7 @@ function ical(app) {
     for (const p of q.projects.all(row.user_id)) {
       const doc = live().currentDoc(p.id);
       if (!doc) continue;
-      const frames = doc.items.filter(o => o.type === 'frame');
+      const frames = doc.items.filter(o => o.type === 'frame' && !o.mood);  // phases, not mood board collections
       for (const c of doc.items) {
         if (c.type !== 'node' || !isDate(c.due) || c.due < since || c.kind === 'idea' || c.prio === 'wont') continue;
         // your own cards, and the team's milestones (the dates everyone works toward)

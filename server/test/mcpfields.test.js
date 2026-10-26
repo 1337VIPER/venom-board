@@ -1,5 +1,6 @@
 // MCP tools and the newer board features: tags, tracked time, linked pull requests and references on cards, sprints
-// and collapsed phases, cropped and turned pictures, and comment threads with replies, feedback pins and resolving.
+// and collapsed phases, cropped and turned pictures, comment threads with replies, feedback pins and resolving, and
+// mood boards: collections that aren't phases, and pictures and videos with tags, a note and a source.
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('fs');
@@ -133,7 +134,9 @@ test('MCP schedule: a start date holds a card back, and an arrow between phases 
   assert.ok(row(s, 'Boss fight').start > row(s, 'Combat').finish, 'Boss fight waits for Combat: ' + JSON.stringify(s.tasks));
   assert.deepEqual(s.critical_path, ['Combat', 'Boss fight']);
   // a start date holds Combat back, and what waits on it moves too; clearing it brings it back
-  const later = new Date(Date.now() + 40 * 864e5).toISOString().slice(0, 10);
+  // a working day: like the app's Timeline, the schedule starts a card dated for a weekend on the Friday before
+  const day40 = new Date(Date.now() + 40 * 864e5); while ([0, 6].includes(day40.getUTCDay())) day40.setUTCDate(day40.getUTCDate() + 1);
+  const later = day40.toISOString().slice(0, 10);
   await fails('update_cards', { project_id: proj, updates: [{ card_id: a, starts: 'next week' }] }, /Start dates look like/);
   await ok('update_cards', { project_id: proj, updates: [{ card_id: a, starts: later }] });
   assert.equal((await ok('get_items', { project_id: proj, types: ['card'] })).items.find(i => i.id === a).starts, later);
@@ -144,4 +147,80 @@ test('MCP schedule: a start date holds a card back, and an arrow between phases 
   s = await ok('get_schedule', { project_id: proj });
   assert.ok(row(s, 'Combat').start < later, 'an empty start date clears it');
   assert.ok(!(await ok('get_items', { project_id: proj, types: ['card'] })).items.find(i => i.id === a).starts);
+});
+
+test('MCP mood boards: a collection is not a phase, and pictures and videos carry tags, a note and a source', async () => {
+  const signup = async u => {
+    const r = await api('POST', '/api/auth/signup', { email: u + '@studio.test', username: u, password: 'correct horse', displayName: u[0].toUpperCase() + u.slice(1) });
+    await api('POST', '/api/auth/verify', { token: linkToken(u + '@studio.test', 'verify') });
+    return r.data;
+  };
+  const lead = await signup('leadmood');
+  const token = (await api('POST', '/api/me/tokens', { name: 'Desk', password: 'correct horse' }, lead.token)).data.token;
+  const call = async (tok, name, args) => {
+    const r = await fetch(base + '/mcp', { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json, text/event-stream', Authorization: 'Bearer ' + tok }, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name, arguments: args } }) });
+    return (await r.json()).result;
+  };
+  const ok = async (name, args, tok = token) => { const r = await call(tok, name, args); assert.ok(!r.isError, `${name}: ${r.isError && r.content[0].text}`); return r.structuredContent; };
+  const fails = async (name, args, re, tok = token) => { const r = await call(tok, name, args); assert.equal(r.isError, true, name + ' should fail'); assert.match(r.content[0].text, re); };
+
+  const team = (await api('POST', '/api/teams', { name: 'Mood Studio' }, lead.token)).data.team.id;
+  const proj = (await ok('create_project', { team_id: team, name: 'Mood' })).project_id;
+  const stored = async id => (await api('GET', `/api/projects/${proj}`, undefined, lead.token)).data.doc.items.find(i => i.id === id);
+  const phase = (await ok('add_phase', { project_id: proj, title: 'Prototype' })).phase_id;
+  const coll = (await ok('add_frames', { project_id: proj, frames: [{ title: 'Characters', mood: true, x: 1000, y: 0, w: 600, h: 400 }] })).added[0];
+  assert.equal(coll.mood, true);
+  assert.equal((await ok('get_items', { project_id: proj, ids: [coll.id] })).items[0].mood, true);
+  // a new phase goes in line with the phases but never on top of a collection
+  const second = (await ok('add_phase', { project_id: proj, title: 'Production' })).phase_id;
+  assert.ok((await ok('get_items', { project_id: proj, ids: [second] })).items[0].x >= coll.x + coll.w, 'to the right of the collection');
+  await ok('add_cards', { project_id: proj, phase_id: phase, cards: [{ title: 'Combat', estimate: '2d', assignees: ['leadmood'] }] });
+  await ok('add_cards', { project_id: proj, phase_id: coll.id, cards: [{ title: 'Reference pass', estimate: '1d', assignees: ['leadmood'] }] });
+  // a wire from the collection to the phase makes nothing wait
+  await ok('add_connectors', { project_id: proj, connectors: [{ from: coll.id, to: phase }] });
+
+  let board = await ok('get_board', { project_id: proj });
+  assert.deepEqual(board.phases.map(p => p.title), ['Prototype', 'Production'], 'the collection is not a phase');
+  assert.deepEqual(board.phases[0].cards.map(c => c.title), ['Combat']);
+  assert.deepEqual(board.unphased_cards.map(c => c.title), ['Reference pass']);
+  assert.equal(board.other.mood_boards, 1);
+  const s = await ok('get_schedule', { project_id: proj }), row = t => s.tasks.find(x => x.title === t);
+  assert.equal(row('Combat').start, row('Reference pass').start, 'both start today: ' + JSON.stringify(s.tasks));
+  const mine = (await ok('my_tasks', { project_id: proj })).tasks, phaseOf = t => mine.find(x => x.title === t).phase;
+  assert.deepEqual([phaseOf('Combat'), phaseOf('Reference pass')], ['Prototype', '']);
+
+  // pictures: tags, a note and a source, checked like the app does
+  const ref = { tags: ['Rim Light', 'hero'], note: '  Silhouette against the sky  ', source: 'https://www.artstation.com/artwork/abc' };
+  await fails('add_image', { project_id: proj, images: [{ data: PNG.toString('base64'), source: 'javascript:alert(1)' }] }, /plain http or https/);
+  await fails('add_image', { project_id: proj, images: [{ data: PNG.toString('base64'), source: 'https://user:pass@example.com/ref' }] }, /plain http or https/);
+  await fails('add_image', { project_id: proj, images: [{ data: PNG.toString('base64'), tags: Array.from({ length: 9 }, (_, k) => 't' + k) }] }, /up to 8 tags/);
+  const pic = (await ok('add_image', { project_id: proj, images: [{ data: PNG.toString('base64'), x: 1040, y: 60, ...ref }] })).added[0];
+  let got = (await ok('get_items', { project_id: proj, ids: [pic.id] })).items[0];
+  assert.deepEqual([got.tags, got.note, got.source], [['rim-light', 'hero'], 'Silhouette against the sky', ref.source]);
+  // update_items changes them; empty ones are stored empty (so the live path doesn't bring the old ones back)
+  await ok('update_items', { project_id: proj, updates: [{ id: pic.id, tags: ['mood'], note: 'Darker', source: '' }] });
+  got = (await ok('get_items', { project_id: proj, ids: [pic.id] })).items[0];
+  assert.deepEqual([got.tags, got.note, got.source], [['mood'], 'Darker', undefined]);
+  assert.equal((await stored(pic.id)).source, '');
+  await fails('update_items', { project_id: proj, updates: [{ id: pic.id, source: 'data:image/png;base64,AAAA' }] }, /plain http or https/);
+  // replacing the picture keeps what the team wrote about it
+  await ok('replace_media', { project_id: proj, id: pic.id, data: PNG.toString('base64') });
+  got = (await ok('get_items', { project_id: proj, ids: [pic.id] })).items[0];
+  assert.deepEqual([got.tags, got.note], [['mood'], 'Darker']);
+
+  // videos too; a video's own source is where it plays from, so the address it came from is source_link
+  const vid = (await ok('add_video', { project_id: proj, videos: [{ url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', tags: ['anim'], note: 'Weight shift', source: 'https://example.com/walk-cycles' }] })).added[0];
+  got = (await ok('get_items', { project_id: proj, ids: [vid.id] })).items[0];
+  assert.deepEqual([got.source, got.source_link, got.tags, got.note], ['https://www.youtube.com/watch?v=dQw4w9WgXcQ', 'https://example.com/walk-cycles', ['anim'], 'Weight shift']);
+  await ok('update_items', { project_id: proj, updates: [{ id: vid.id, tags: [], note: '' }] });
+  const v2 = await stored(vid.id);
+  assert.deepEqual([v2.tags, v2.note, v2.source], [[], '', 'https://example.com/walk-cycles']);
+
+  // update_items makes the collection a phase again (stored as false), and back
+  await ok('update_items', { project_id: proj, updates: [{ id: coll.id, mood: false }] });
+  assert.equal((await stored(coll.id)).mood, false);
+  board = await ok('get_board', { project_id: proj });
+  assert.deepEqual(board.phases.map(p => p.title), ['Prototype', 'Characters', 'Production']);
+  await ok('update_items', { project_id: proj, updates: [{ id: coll.id, mood: true }] });
+  assert.deepEqual((await ok('get_board', { project_id: proj })).phases.map(p => p.title), ['Prototype', 'Production']);
 });
