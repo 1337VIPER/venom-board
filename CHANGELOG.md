@@ -2,7 +2,7 @@
 
 All notable changes to Venom Board are listed here. The project follows [Semantic Versioning](https://semver.org).
 
-## [Unreleased]
+## [1.11.0] - 2026-10-26
 
 ### Added
 - **Mood board** (`Shift+M`, or the new button beside Screenshot): every picture, GIF and video on the board on one wall, grouped into collections, with room of its own away from your tasks. Pictures in other frames show under their frame, and loose ones can be gathered into a collection in one click
