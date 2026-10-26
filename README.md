@@ -108,7 +108,8 @@ Solo boards need no account, no subscription and no telemetry. They work offline
 ### Teams and live collaboration
 - **Free accounts** at [venomboard.com](https://venomboard.com). Sign in from the **Team** panel in the desktop app or the web app
 - **Teams** with a leader, team admins, editors and viewers. Invite people by username or email; they accept from the app or the website. Admins can give someone a different role in one project
-- **Shared projects**: each team has a project list. **Share this board** turns any board into a team project
+- **Shared projects**: each team has a project list. **Share this board** turns any board into a team project, or adds it to a project as one of its boards
+- **Boards in a project**: a project can hold several boards, shown as tabs over the canvas (add one with **+**, or from the Team panel). Each board has its own live editing, history, share link and roadmap, and follows the project's people settings
 - **Live editing**: every card, connector, frame, image, ink stroke and text appears for everyone as it happens, including drags, resizes and typing in progress
 - **Always up to date**: the Team panel shows new, renamed and deleted projects, answered invites and people joining, leaving or changing role the moment it happens, and notifications arrive straight away, even between projects. An invite that arrives while you work says so
 - **Presence**: teammates' avatars in the top bar, their cursors and selections on the canvas, and *is typing…* labels

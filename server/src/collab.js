@@ -26,8 +26,8 @@ function collab(app) {
     userById: db.prepare('SELECT * FROM users WHERE id = ?'),
     team: db.prepare('SELECT * FROM teams WHERE id = ?'),
     addNote: db.prepare('INSERT INTO notifications (id, user_id, kind, project_id, card_id, from_id, text, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'),
-    notes: db.prepare(`SELECT n.*, p.name AS project_name, u.display_name AS from_name, u.username AS from_username, u.color AS from_color FROM notifications n
-      LEFT JOIN projects p ON p.id = n.project_id LEFT JOIN users u ON u.id = n.from_id WHERE n.user_id = ? ORDER BY n.created_at DESC LIMIT 50`),
+    notes: db.prepare(`SELECT n.*, COALESCE(r.name || ' · ' || p.name, p.name) AS project_name, u.display_name AS from_name, u.username AS from_username, u.color AS from_color FROM notifications n
+      LEFT JOIN projects p ON p.id = n.project_id LEFT JOIN projects r ON r.id = p.parent_id LEFT JOIN users u ON u.id = n.from_id WHERE n.user_id = ? ORDER BY n.created_at DESC LIMIT 50`),
     unread: db.prepare('SELECT COUNT(*) AS n FROM notifications WHERE user_id = ? AND read = 0'),
     readNote: db.prepare('UPDATE notifications SET read = 1 WHERE user_id = ? AND id = ?'),
     readAll: db.prepare('UPDATE notifications SET read = 1 WHERE user_id = ?'),
@@ -76,20 +76,22 @@ function collab(app) {
     delVotes: db.prepare('DELETE FROM roadmap_votes WHERE project_id = ?'),
     feedActivity: db.prepare("SELECT id, kind, text, card_id, count, at FROM activity WHERE project_id = ? AND kind IN ('done', 'milestone') ORDER BY id DESC LIMIT 200"),
     project: db.prepare('SELECT * FROM projects WHERE id = ?'),
+    rootName: db.prepare('SELECT r.name FROM projects b JOIN projects r ON r.id = b.parent_id WHERE b.id = ?'),
     addReport: db.prepare('INSERT INTO reports (project_id, reason, created_at) VALUES (?, ?, ?)'),
     unindex: db.prepare('DELETE FROM card_search WHERE project_id = ?'),
     index: db.prepare('INSERT INTO card_search (project_id, card_id, title, body) VALUES (?, ?, ?, ?)'),
     indexedCount: db.prepare('SELECT COUNT(*) AS n FROM card_search'),
     allProjects: db.prepare('SELECT id, doc FROM projects'),
-    search: db.prepare(`SELECT s.project_id, s.card_id, s.title, snippet(card_search, -1, char(1), char(2), '…', 12) AS snip, p.name AS project_name, t.name AS team_name
-      FROM card_search s JOIN projects p ON p.id = s.project_id JOIN teams t ON t.id = p.team_id
+    search: db.prepare(`SELECT s.project_id, s.card_id, s.title, snippet(card_search, -1, char(1), char(2), '…', 12) AS snip, COALESCE(r.name || ' · ' || p.name, p.name) AS project_name, t.name AS team_name
+      FROM card_search s JOIN projects p ON p.id = s.project_id LEFT JOIN projects r ON r.id = p.parent_id JOIN teams t ON t.id = p.team_id
       WHERE card_search MATCH ? AND s.project_id IN (SELECT p2.id FROM projects p2 JOIN members m ON m.team_id = p2.team_id WHERE m.user_id = ?)
       ORDER BY rank LIMIT 50`),
     setDiscord: db.prepare('UPDATE teams SET discord_webhook = ?, discord_events = ? WHERE id = ?'),
     setSlack: db.prepare('UPDATE teams SET slack_webhook = ?, slack_events = ? WHERE id = ?'),
     dueUsers: db.prepare("SELECT id, email, display_name, timezone, due_mail_day FROM users WHERE notify_due = 1 AND email_verified = 1"),
     setDueDay: db.prepare('UPDATE users SET due_mail_day = ? WHERE id = ?'),
-    userProjects: db.prepare('SELECT p.id, p.name FROM projects p JOIN members m ON m.team_id = p.team_id WHERE m.user_id = ?'),
+    userProjects: db.prepare(`SELECT p.id, COALESCE(r.name || ' · ' || p.name, p.name) AS name FROM projects p LEFT JOIN projects r ON r.id = p.parent_id
+      JOIN members m ON m.team_id = p.team_id WHERE m.user_id = ?`),
     setNotify: db.prepare('UPDATE users SET notify_mentions = ?, notify_due = ? WHERE id = ?'),
   };
   const live = () => getLive();
@@ -100,6 +102,9 @@ function collab(app) {
   const appLink = (projectId, cardId) => `${cfg.PUBLIC_URL}/app#p=${projectId}${cardId ? '&c=' + cardId : ''}`;
   const cardTitle = c => plain((c && c.title) || 'Untitled card', 80);
   const findCard = (doc, id) => (doc && doc.items.find(o => o.id === id)) || null;
+  // what messages call a board: a project's extra boards go by the project's name too, "Steam launch · Store page"
+  // (the queries that name projects for the app do the same)
+  const where = room => { const r = q.rootName.get(room.id); return r ? `${r.name} · ${room.name}` : room.name; };
 
   /* ---------- who's on the board ---------- */
   const members = teamId => q.members.all(teamId).map(m => ({ id: m.id, name: m.display_name, username: m.username, color: m.color, role: m.role }));
@@ -122,7 +127,7 @@ function collab(app) {
     projectName: n.project_name || '', fromName: n.from_name || '', fromUsername: n.from_username || '', fromColor: n.from_color || '' });
   function notify(userId, kind, room, cardId, from, text) {
     const n = { id: A.newId(), kind, project_id: room.id, card_id: cardId || null, text: txt(text, 300), created_at: Date.now(), read: 0,
-      project_name: room.name, from_name: from.displayName, from_username: from.username, from_color: from.color };
+      project_name: where(room), from_name: from.displayName, from_username: from.username, from_color: from.color };
     q.addNote.run(n.id, userId, kind, room.id, n.card_id, from.id, n.text, n.created_at);
     q.trimNotes.run(userId, userId);
     live().notify(userId, noteOut(n));
@@ -146,9 +151,9 @@ function collab(app) {
       told.add(m.id);
       notify(m.id, 'mention', room, comment.card, user, comment.text);
       if (!m.notify_mentions || !m.email_verified || !limit('mention-mail:' + m.id, 12, DAY) || !limit('mention-mail-from:' + user.id + ':' + m.id, 3, HOUR)) continue;
-      const from = plain(user.displayName, 40);
-      mail('mention', { to: m.email, subject: `${from} mentioned you in ${plain(room.name)}`,
-        text: `${from} mentioned you on “${itemTitle(card)}” in ${plain(room.name)}:\n\n${plain(comment.text, 500)}\n\nOpen it: ${appLink(room.id, comment.card)}`
+      const from = plain(user.displayName, 40), place = plain(where(room));
+      mail('mention', { to: m.email, subject: `${from} mentioned you in ${place}`,
+        text: `${from} mentioned you on “${itemTitle(card)}” in ${place}:\n\n${plain(comment.text, 500)}\n\nOpen it: ${appLink(room.id, comment.card)}`
           + footer(m.id, 'mentions', 'a teammate mentions you in a comment') });
     }
     return told;
@@ -166,9 +171,9 @@ function collab(app) {
     if (!m) return;
     notify(m.id, 'reply', room, comment.card, user, comment.text);
     if (!m.notify_mentions || !m.email_verified || !limit('mention-mail:' + m.id, 12, DAY) || !limit('mention-mail-from:' + user.id + ':' + m.id, 3, HOUR)) return;
-    const from = plain(user.displayName, 40);
-    mail('mention', { to: m.email, subject: `${from} replied to your comment in ${plain(room.name)}`,
-      text: `${from} replied to your comment on “${itemTitle(card)}” in ${plain(room.name)}:\n\n${plain(comment.text, 500)}\n\nOpen it: ${appLink(room.id, comment.card)}`
+    const from = plain(user.displayName, 40), place = plain(where(room));
+    mail('mention', { to: m.email, subject: `${from} replied to your comment in ${place}`,
+      text: `${from} replied to your comment on “${itemTitle(card)}” in ${place}:\n\n${plain(comment.text, 500)}\n\nOpen it: ${appLink(room.id, comment.card)}`
         + footer(m.id, 'mentions', 'a teammate mentions you in a comment or replies to yours') });
   }
 
@@ -197,8 +202,9 @@ function collab(app) {
     const entry = activityOut(q.activityById.get(id));
     live().activity(room.id, entry);
     const ev = { done: 'done', milestone: 'milestone', comment: 'comment', restore: 'restore' }[kind];
-    if (ev) toDiscord(room.teamId, ev, `**${md(user.displayName)}** ${md(describe(kind, text, 1))} in *${md(room.name)}*`);
-    if (ev) toSlack(room.teamId, ev, `*${sk(user.displayName)}* ${sk(describe(kind, text, 1))} in _${sk(room.name)}_`);
+    const place = ev ? where(room) : '';
+    if (ev) toDiscord(room.teamId, ev, `**${md(user.displayName)}** ${md(describe(kind, text, 1))} in *${md(place)}*`);
+    if (ev) toSlack(room.teamId, ev, `*${sk(user.displayName)}* ${sk(describe(kind, text, 1))} in _${sk(place)}_`);
   }
   route('GET', '/api/projects/:id/activity', ctx => {
     const { p } = needProject(ctx.params.id, ctx.user, 'viewer');

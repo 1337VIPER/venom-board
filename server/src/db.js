@@ -278,7 +278,8 @@ const ADDED = {
   },
   teams: { discord_webhook: "TEXT NOT NULL DEFAULT ''", discord_events: "TEXT NOT NULL DEFAULT ''",
     slack_webhook: "TEXT NOT NULL DEFAULT ''", slack_events: "TEXT NOT NULL DEFAULT ''" },
-  projects: { doc_bytes: 'INTEGER NOT NULL DEFAULT 0' },  // the stored board's size, counted toward storage
+  projects: { doc_bytes: 'INTEGER NOT NULL DEFAULT 0',  // the stored board's size, counted toward storage
+    parent_id: 'TEXT' },  // set on a project's extra boards (tabs in the app): the project they belong to, never a board itself
   activity: { by_name: "TEXT NOT NULL DEFAULT ''" },  // who did it when that's a player without an account (feedback, bug reports)
 };
 
@@ -295,6 +296,7 @@ function openDb(dataDir) {
   }
   db.exec('UPDATE projects SET doc_bytes = LENGTH(CAST(doc AS BLOB)) WHERE doc_bytes = 0');
   db.exec('CREATE INDEX IF NOT EXISTS users_inbox ON users(inbox)');  // inbox is filled in by the server on start
+  db.exec('CREATE INDEX IF NOT EXISTS projects_parent ON projects(parent_id)');  // a project's boards
   return db;
 }
 

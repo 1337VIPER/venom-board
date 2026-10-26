@@ -48,8 +48,9 @@ function ical(app) {
       ON CONFLICT(user_id) DO UPDATE SET nonce = excluded.nonce, token_hash = excluded.token_hash, created_at = excluded.created_at, last_used = 0`),
     drop: db.prepare('DELETE FROM calendar_feeds WHERE user_id = ?'),
     used: db.prepare('UPDATE calendar_feeds SET last_used = ? WHERE user_id = ?'),
-    projects: db.prepare(`SELECT p.id, p.name, p.updated_at FROM projects p JOIN members m ON m.team_id = p.team_id
-      WHERE m.user_id = ? ORDER BY p.name COLLATE NOCASE`),
+    // a project's extra boards go by the project's name too, "Steam launch · Store page"
+    projects: db.prepare(`SELECT p.id, COALESCE(r.name || ' · ' || p.name, p.name) AS name, p.updated_at FROM projects p LEFT JOIN projects r ON r.id = p.parent_id
+      JOIN members m ON m.team_id = p.team_id WHERE m.user_id = ? ORDER BY name COLLATE NOCASE`),
   };
   const host = new URL(cfg.PUBLIC_URL).hostname;
   const tokenFor = (userId, nonce) => crypto.createHmac('sha256', secret).update(`calendar-feed\n${userId}\n${nonce}`).digest('base64url').slice(0, 32);

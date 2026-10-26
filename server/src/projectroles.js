@@ -2,6 +2,8 @@
 // view "Steam launch", or a viewer who may edit "Moodboard". Only editors and viewers can be given one; team leaders
 // and admins always have their team role. Every check of what someone may do in a project goes through effective()
 // (the REST API, live rooms, MCP tools and the integrations), so the override counts everywhere at once.
+// A project's extra boards follow its people settings: roles are kept against the project (its first board), and
+// effective() looks a board's up there, so one setting covers every tab.
 // Removing someone from the team removes theirs (the table's foreign key does it), and so does deleting the project.
 const { okId, txt } = require('./sanitize');
 
@@ -11,6 +13,7 @@ function projectRoles({ db, route, fail, H, limit, needProject, getLive }) {
   const q = {
     team: db.prepare('SELECT role FROM members WHERE team_id = ? AND user_id = ?'),
     get: db.prepare('SELECT role FROM project_roles WHERE project_id = ? AND user_id = ?'),
+    parent: db.prepare('SELECT parent_id FROM projects WHERE id = ?'),
     forTeam: db.prepare('SELECT project_id, user_id, role FROM project_roles WHERE team_id = ?'),
     forUser: db.prepare('SELECT project_id, role FROM project_roles WHERE team_id = ? AND user_id = ?'),
     set: db.prepare(`INSERT INTO project_roles (project_id, team_id, user_id, role, set_by, set_at) VALUES (?, ?, ?, ?, ?, ?)
@@ -19,16 +22,19 @@ function projectRoles({ db, route, fail, H, limit, needProject, getLive }) {
     clearMember: db.prepare('DELETE FROM project_roles WHERE team_id = ? AND user_id = ?'),
   };
   const HOUR = 3600000;
+  // the project a board belongs to (a project is its own)
+  const rootOf = projectId => (q.parent.get(projectId) || {}).parent_id || projectId;
 
   // someone's role in a project: their team role, unless an admin gave them another one there (null if not in the team)
   function effective(projectId, teamId, userId, teamRole) {
     const role = teamRole === undefined ? (q.team.get(teamId, userId) || {}).role || null : teamRole;
     if (!OVERRIDABLE.includes(role)) return role;
-    const o = q.get.get(projectId, userId);
+    const o = q.get.get(rootOf(projectId), userId);
     return o && OVERRIDABLE.includes(o.role) ? o.role : role;
   }
 
-  // what the Team panel shows: each person's own role where an admin set one (for admins), and yours (for everyone)
+  // what the Team panel shows: each person's own role where an admin set one (for admins), and yours (for everyone).
+  // Ask it with the project's id for any of its boards.
   function teamInfo(teamId, userId, teamRole) {
     const admin = teamRole === 'admin' || teamRole === 'leader';
     const people = new Map(), mine = new Map();
@@ -47,15 +53,16 @@ function projectRoles({ db, route, fail, H, limit, needProject, getLive }) {
 
   route('PUT', '/api/projects/:id/people/:userId', async ctx => {
     const { p } = needProject(ctx.params.id, ctx.user, 'admin');
+    const rootId = p.parent_id || p.id;  // set from one of its boards, it's the project's setting
     const userId = ctx.params.userId, b = await H.readJson(ctx.req), role = b.role === null ? '' : txt(b.role, 10);
     const target = okId(userId) ? (q.team.get(p.team_id, userId) || {}).role : null;
     if (!target) fail(404, 'not_found', 'That person isn’t in this team.');
     if (!OVERRIDABLE.includes(target)) fail(400, 'admin', 'Team admins and the team leader can always edit every project.');
     if (role && !OVERRIDABLE.includes(role)) fail(400, 'role', 'Choose editor or viewer, or their team role.');
     if (!limit('project-role:' + ctx.user.id, 120, HOUR)) fail(429, 'rate', 'That’s a lot of changes. Try again in a while.');
-    if (role) q.set.run(p.id, p.team_id, userId, role, ctx.user.id, Date.now()); else q.clear.run(p.id, userId);
-    const now = effective(p.id, p.team_id, userId);
-    getLive().projectRoleChanged(p.id, userId);  // their open copy of the board changes straight away
+    if (role) q.set.run(rootId, p.team_id, userId, role, ctx.user.id, Date.now()); else q.clear.run(rootId, userId);
+    const now = effective(rootId, p.team_id, userId);
+    getLive().projectRoleChanged(rootId, userId);  // their open copies of the project's boards change straight away
     getLive().teamChanged(p.team_id);
     return { role: role || null, effective: now };
   });

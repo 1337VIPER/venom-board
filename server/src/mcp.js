@@ -136,8 +136,8 @@ function mcp({ db, cfg, log, route, fail, H, A, limit, RANK, live, roleOf, proje
       FROM api_tokens t JOIN users u ON u.id = t.user_id WHERE t.token_hash = ?`),
     used: db.prepare('UPDATE api_tokens SET last_used = ? WHERE id = ?'),
     teams: db.prepare('SELECT t.id, t.name, m.role FROM members m JOIN teams t ON t.id = m.team_id WHERE m.user_id = ? ORDER BY t.name COLLATE NOCASE'),
-    projects: db.prepare('SELECT id, name, updated_at FROM projects WHERE team_id = ? ORDER BY updated_at DESC'),
-    project: db.prepare('SELECT id, team_id, name FROM projects WHERE id = ?'),
+    projects: db.prepare('SELECT id, name, parent_id, created_at, updated_at FROM projects WHERE team_id = ? ORDER BY updated_at DESC'),
+    project: db.prepare('SELECT id, team_id, parent_id, name FROM projects WHERE id = ?'),
     team: db.prepare('SELECT name FROM teams WHERE id = ?'),
     timezone: db.prepare('SELECT timezone FROM users WHERE id = ?'),
   };
@@ -595,6 +595,8 @@ function mcp({ db, cfg, log, route, fail, H, A, limit, RANK, live, roleOf, proje
       severity: c.kind === 'bug' ? c.sev || 'major' : '', phase: phase ? phase.title : '', color: (c.disc && DISC_COLOR[c.disc]) || c.color || BONE,
       assigned_to_you: who.includes(user.id), assignees: who.map(ctx.name), link: `${cfg.PUBLIC_URL}/app#p=${encodeURIComponent(ctx.p.id)}&c=${encodeURIComponent(c.id)}` };
   }
+  // a team's projects with each one's boards right after it, oldest first, as the app's tabs show them
+  const withBoards = list => list.filter(p => !p.parent_id).flatMap(r => [r, ...list.filter(b => b.parent_id === r.id).sort((x, y) => x.created_at - y.created_at)]);
   const projectCtx = (p, role, teamName, doc) => ({ p, role, team: teamName, doc, frames: doc.items.filter(i => i.type === 'frame' && !i.mood), name: nameOf(members(p.team_id)) });  // phases, not mood board collections
   const rank = (table, v) => (table[v] === undefined ? 9 : table[v]);
   const taskOrder = (a, b) => (a.due ? 0 : 1) - (b.due ? 0 : 1) || a.due.localeCompare(b.due) || rank(PRIO_ORDER, a.priority) - rank(PRIO_ORDER, b.priority)
@@ -658,14 +660,14 @@ function mcp({ db, cfg, log, route, fail, H, A, limit, RANK, live, roleOf, proje
   const geo = { x: N('Left edge on the board (x grows to the right).'), y: N('Top edge on the board (y grows downward).') };
   const TOOLS = [
     /* reading */
-    { name: 'list_projects', title: 'List projects', description: 'Lists the teams you are in, your role in each, and their projects (ids, names, last edited, and your role and whether you can edit in each, since a team admin can give you a different role in one project). Start here to find a project_id.',
+    { name: 'list_projects', title: 'List projects', description: 'Lists the teams you are in, your role in each, and their projects (ids, names, last edited, and your role and whether you can edit in each, since a team admin can give you a different role in one project). A project can have several boards (tabs in the app); each board is listed as its own project, right after it, with board_of naming the project it belongs to. Start here to find a project_id.',
       inputSchema: obj({}), annotations: { readOnlyHint: true },
       run: user => {
         const teams = q.teams.all(user.id).map(t => ({ team_id: t.id, team: t.name, your_role: t.role, can_edit: RANK[t.role] >= RANK.editor,
-          projects: q.projects.all(t.id).map(p => {
-            // a team admin may have given you a different role in one project
+          projects: withBoards(q.projects.all(t.id)).map(p => {
+            // a team admin may have given you a different role in one project (and so in all its boards)
             const role = projectRole ? projectRole({ id: p.id, team_id: t.id }, user.id) : t.role;
-            return { project_id: p.id, name: p.name, last_edited: new Date(p.updated_at).toISOString(), your_role: role, can_edit: RANK[role] >= RANK.editor };
+            return { project_id: p.id, ...(p.parent_id ? { board_of: p.parent_id } : {}), name: p.name, last_edited: new Date(p.updated_at).toISOString(), your_role: role, can_edit: RANK[role] >= RANK.editor };
           }) }));
         return teams.length ? { teams } : { teams, note: 'You are not in a team yet, and tools work on team boards. Create a team in the Venom Board app (the Team panel) or accept an invite, then call list_projects again.' };
       } },
@@ -742,12 +744,13 @@ function mcp({ db, cfg, log, route, fail, H, A, limit, RANK, live, roleOf, proje
       } },
 
     /* projects */
-    { name: 'create_project', title: 'Create a project', description: 'Creates a new project board in one of your teams (you need to be an editor or above), empty or from a template (list_templates).',
-      inputSchema: obj({ team_id: S('From list_projects.'), name: S('Project name, e.g. "Night Keep: vertical slice".'), template: S('Optional template key, e.g. roadmap, sprint, bugs, jam.') }, ['team_id', 'name']),
+    { name: 'create_project', title: 'Create a project', description: 'Creates a new project board in one of your teams (you need to be an editor or above), empty or from a template (list_templates). With board_of it makes another board (a tab in the app) in that project instead, which needs you to be an editor there.',
+      inputSchema: obj({ team_id: S('From list_projects.'), name: S('Project name, e.g. "Night Keep: vertical slice".'), template: S('Optional template key, e.g. roadmap, sprint, bugs, jam.'),
+        board_of: S('Optional: a project_id in that team (or one of its boards, from list_projects) to add this as a new board of that project.') }, ['team_id', 'name']),
       run: async (user, a) => {
         const t = a.template ? templateDoc(a.template) : null;
-        const r = await makeProject(user, str(a.team_id, 64), str(a.name, 80), t ? { items: t.items, links: t.links, strokes: t.strokes, comments: [] } : {});
-        return { project_id: r.id, name: r.name, team_id: r.teamId, ...(t ? { template: t.name, objects: t.items.length + t.links.length } : {}), next: t ? 'Read it with get_board, then change it.' : 'Add phases with add_phase, then cards with add_cards.' };
+        const r = await makeProject(user, str(a.team_id, 64), str(a.name, 80), t ? { items: t.items, links: t.links, strokes: t.strokes, comments: [] } : {}, a.board_of ? str(a.board_of, 64) : undefined);
+        return { project_id: r.id, name: r.name, team_id: r.teamId, ...(r.parentId ? { board_of: r.parentId } : {}), ...(t ? { template: t.name, objects: t.items.length + t.links.length } : {}), next: t ? 'Read it with get_board, then change it.' : 'Add phases with add_phase, then cards with add_cards.' };
       } },
     { name: 'rename_project', title: 'Rename a project', description: 'Renames a project.',
       inputSchema: obj({ project_id: PID, name: S('The new name.') }, ['project_id', 'name']),
@@ -1175,7 +1178,7 @@ function mcp({ db, cfg, log, route, fail, H, A, limit, RANK, live, roleOf, proje
   const listed = TOOLS.map(({ run, ...t }) => t);
 
   /* ---------- the endpoint ---------- */
-  const INSTRUCTIONS = 'Venom Board is a planning board and reference board for game development, on an infinite canvas. A team has projects; a project board holds cards (tasks, bugs, milestones, ideas with status, MoSCoW priority, discipline, estimate, due date, assignees), phases (frames, ordered left to right, that hold cards), text, pictures and GIFs, YouTube/Vimeo videos, ink (marker and highlighter), connectors and a game jam clock. Arrows between cards mean "waits on" and drive the schedule and critical path. Board units: x grows right, y grows down; a card is about 240×100 and a phase 600 wide. Start with list_projects. Use get_board to plan and get_items to see the layout before placing things; new things without a position go in free space to the right. For pictures on the user\'s computer, use get_upload_url and send the file with curl; replace_media swaps a picture or video for another. Templates (list_templates) give a quick start. Cards can carry tags, tracked time and linked pull requests (their reference, VB-…, in a commit message links them); phases can be sprints or collapsed; a frame can instead be a mood board collection of references, kept out of the phases and schedule; pictures can be cropped and turned, and pictures and videos can carry tags, a note and the web address they came from; comments have replies, reactions, resolved threads and feedback pins on pictures; my_tasks lists what is assigned to you everywhere. Everything you change appears live to the team, and the board is kept in version history before a burst of changes, so save_version before big changes and restore_version undoes them.';
+  const INSTRUCTIONS = 'Venom Board is a planning board and reference board for game development, on an infinite canvas. A team has projects; a project board holds cards (tasks, bugs, milestones, ideas with status, MoSCoW priority, discipline, estimate, due date, assignees), phases (frames, ordered left to right, that hold cards), text, pictures and GIFs, YouTube/Vimeo videos, ink (marker and highlighter), connectors and a game jam clock. Arrows between cards mean "waits on" and drive the schedule and critical path. Board units: x grows right, y grows down; a card is about 240×100 and a phase 600 wide. Start with list_projects. A project can have several boards (tabs in the app); each board is listed as its own project, with board_of naming the project it belongs to. Use get_board to plan and get_items to see the layout before placing things; new things without a position go in free space to the right. For pictures on the user\'s computer, use get_upload_url and send the file with curl; replace_media swaps a picture or video for another. Templates (list_templates) give a quick start. Cards can carry tags, tracked time and linked pull requests (their reference, VB-…, in a commit message links them); phases can be sprints or collapsed; a frame can instead be a mood board collection of references, kept out of the phases and schedule; pictures can be cropped and turned, and pictures and videos can carry tags, a note and the web address they came from; comments have replies, reactions, resolved threads and feedback pins on pictures; my_tasks lists what is assigned to you everywhere. Everything you change appears live to the team, and the board is kept in version history before a burst of changes, so save_version before big changes and restore_version undoes them.';
   function userFor(req) {
     const h = String(req.headers.authorization || ''), token = h.startsWith('Bearer ') ? h.slice(7).trim() : '';
     if (!/^vbt_[\w-]{20,80}$/.test(token)) return null;

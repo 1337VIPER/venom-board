@@ -2,6 +2,15 @@
 
 All notable changes to Venom Board are listed here. The project follows [Semantic Versioning](https://semver.org).
 
+## [Unreleased]
+
+### Added
+- **Boards in a team project**: a project can now hold several boards, shown as tabs at the top of the canvas. Click a tab to switch boards; the app comes back to where you were on each one. **+** adds a board (editors), and right-clicking a tab renames it or deletes it (admins). The Boards menu lists the project's boards too
+- Each board has its own live editing, version history, share link, public roadmap and playtest forms, and follows the project's people settings, so whoever can edit the project can edit all its boards
+- **The Team panel** shows each project's boards under it, with **+** to add one. Deleting a project deletes its boards too
+- **Share this board** can add a board from your computer to a project as one of its boards, instead of making it a project of its own
+- **MCP**: each board is listed as its own project with `board_of` naming its project, and `create_project` with `board_of` adds a board to a project
+
 ## [1.11.0] - 2026-10-26
 
 ### Added

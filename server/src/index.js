@@ -205,11 +205,15 @@ async function start(overrides = {}, hooks = {}) {
     dropInvitesBy: db.prepare('DELETE FROM invites WHERE team_id = ? AND invited_by = ?'),
     invite: db.prepare('SELECT * FROM invites WHERE id = ?'),
     deleteInvite: db.prepare('DELETE FROM invites WHERE id = ?'),
-    projects: db.prepare(`SELECT p.id, p.name, p.updated_at, u.display_name AS updated_by FROM projects p
+    projects: db.prepare(`SELECT p.id, p.name, p.parent_id, p.created_at, p.updated_at, u.display_name AS updated_by FROM projects p
       LEFT JOIN users u ON u.id = p.updated_by WHERE p.team_id = ? ORDER BY p.updated_at DESC`),
-    teamProjectIds: db.prepare('SELECT id FROM projects WHERE team_id = ?'),
+    teamProjectIds: db.prepare('SELECT id FROM projects WHERE team_id = ?'),  // boards too: they're in the team as well
     project: db.prepare('SELECT * FROM projects WHERE id = ?'),
-    insertProject: db.prepare('INSERT INTO projects (id, team_id, name, doc, version, created_by, created_at, updated_at, updated_by, doc_bytes) VALUES (?, ?, ?, ?, 0, ?, ?, ?, ?, ?)'),
+    // a project's boards: the project itself first, then the others oldest first, as the app's tabs show them
+    boards: db.prepare(`SELECT p.id, p.name, p.created_at, p.updated_at, u.display_name AS updated_by FROM projects p
+      LEFT JOIN users u ON u.id = p.updated_by WHERE p.id = @root OR p.parent_id = @root ORDER BY p.parent_id IS NOT NULL, p.created_at, p.rowid`),
+    boardIds: db.prepare('SELECT id FROM projects WHERE parent_id = ?'),
+    insertProject: db.prepare('INSERT INTO projects (id, team_id, name, doc, version, created_by, created_at, updated_at, updated_by, doc_bytes, parent_id) VALUES (?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?)'),
     renameProject: db.prepare('UPDATE projects SET name = ? WHERE id = ?'),
     deleteProject: db.prepare('DELETE FROM projects WHERE id = ?'),
     insertAsset: db.prepare('INSERT INTO assets (id, project_id, mime, size, created_by, created_at) VALUES (?, ?, ?, ?, ?, ?)'),
@@ -299,6 +303,8 @@ async function start(overrides = {}, hooks = {}) {
     if (RANK[role] < RANK[min]) fail(403, 'forbidden', `Only a ${ROLE_LABEL[min]} or higher can do that${role !== teamRole ? ' in this project' : ''}.`);
     return { p, role };
   }
+  // the project a board belongs to (a project is its own first board)
+  const rootOf = p => (p.parent_id && q.project.get(p.parent_id)) || p;
   // leaders grant admin and below; admins grant editor and viewer
   const canGrant = (actor, role) => (actor === 'leader' ? ['admin', 'editor', 'viewer'] : actor === 'admin' ? ['editor', 'viewer'] : []).includes(role);
   const canManage = (actor, target) => (actor === 'leader' ? target !== 'leader' : actor === 'admin' ? RANK[target] < RANK.admin : false);
@@ -667,7 +673,9 @@ async function start(overrides = {}, hooks = {}) {
       team: { id: t.id, name: t.name, createdAt: t.created_at }, role,
       members: q.members.all(t.id).map(m => ({ id: m.id, username: m.username, displayName: m.display_name, color: m.color, role: m.role, joinedAt: m.joined_at })),
       invites: RANK[role] >= RANK.admin ? q.teamInvites.all(t.id).map(i => ({ id: i.id, role: i.role, email: i.email, username: i.username, displayName: i.display_name, createdAt: i.created_at })) : [],
-      projects: q.projects.all(t.id).map((roles => p => ({ id: p.id, name: p.name, updatedAt: p.updated_at, updatedBy: p.updated_by, ...roles(p.id) }))(PR.teamInfo(t.id, ctx.user.id, role))),
+      // boards carry the project they belong to (parentId) and its people settings
+      projects: q.projects.all(t.id).map((roles => p => ({ id: p.id, name: p.name, parentId: p.parent_id || null, createdAt: p.created_at, updatedAt: p.updated_at, updatedBy: p.updated_by,
+        ...roles(p.parent_id || p.id) }))(PR.teamInfo(t.id, ctx.user.id, role))),
       usage: { storageBytes: storage(t.id, true).team, waitingInvites: q.inviteCount.get(t.id).n },
       integrations: RANK[role] >= RANK.admin ? { discord: C.discordInfo(t), slack: C.slackInfo(t), git: G.info(t.id) } : undefined,
       limits: { projects: cfg.LIMIT_TEAM_PROJECTS, members: cfg.LIMIT_TEAM_MEMBERS, storageMB: Math.round(storage(t.id).teamMax / MB * 10) / 10 },
@@ -805,16 +813,20 @@ async function start(overrides = {}, hooks = {}) {
 
   route('GET', '/api/teams/:id/projects', ctx => {
     needRole(ctx.params.id, ctx.user, 'viewer');
-    return { projects: q.projects.all(ctx.params.id).map(p => ({ id: p.id, name: p.name, updatedAt: p.updated_at, updatedBy: p.updated_by })) };
+    return { projects: q.projects.all(ctx.params.id).map(p => ({ id: p.id, name: p.name, parentId: p.parent_id || null, createdAt: p.created_at, updatedAt: p.updated_at, updatedBy: p.updated_by })) };
   });
 
-  // a new team project, from the app or an MCP tool, within the team's and its maker's allowances
-  async function makeProject(user, teamId, rawName, rawDoc) {
-    needRole(teamId, user, 'editor');
-    const name = txt(rawName, 80).trim() || 'Untitled project';
-    if (q.projectCount.get(teamId).n >= cfg.LIMIT_TEAM_PROJECTS) fail(403, 'limit', `Teams can have up to ${cfg.LIMIT_TEAM_PROJECTS} projects. Delete one you’ve finished with first.`);
+  // A new team project, from the app or an MCP tool, within the team's and its maker's allowances. With `boardOf` (a
+  // project, or any board of it) it's another board in that project instead: that takes an editor there, and boards
+  // count toward the same allowances as projects.
+  async function makeProject(user, teamId, rawName, rawDoc, boardOf) {
+    const root = boardOf ? rootOf(needProject(boardOf, user, 'editor').p) : null;  // a board's role is its project's
+    if (root && root.team_id !== teamId) fail(404, 'not_found', 'Project not found.');
+    if (!root) needRole(teamId, user, 'editor');
+    const name = txt(rawName, 80).trim() || (root ? 'Untitled board' : 'Untitled project');
+    if (q.projectCount.get(teamId).n >= cfg.LIMIT_TEAM_PROJECTS) fail(403, 'limit', `Teams can have up to ${cfg.LIMIT_TEAM_PROJECTS} projects and boards. Delete one you’ve finished with first.`);
     if (!user.emailVerified && q.projectsMadeBy.get(user.id).n >= cfg.LIMIT_UNVERIFIED_PROJECTS) {
-      fail(403, 'verify_first', `Confirm your email address to make more than ${cfg.LIMIT_UNVERIFIED_PROJECTS} projects. We sent you a link when you signed up.`);
+      fail(403, 'verify_first', `Confirm your email address to make more than ${cfg.LIMIT_UNVERIFIED_PROJECTS} projects and boards. We sent you a link when you signed up.`);
     }
     const clean = cleanDoc(rawDoc, SAN);
     for (const c of clean.comments) { c.by = user.id; delete c.react; if (c.resolved) c.resolvedBy = user.id; }
@@ -823,46 +835,62 @@ async function start(overrides = {}, hooks = {}) {
     if (doc.length > cfg.PROJECT_MAX_MB * MB) fail(413, 'too_big', `That board is too big to share. Boards can be up to ${cfg.PROJECT_MAX_MB} MB, not counting images.`);
     const s = storage(teamId, true);
     if (Buffer.byteLength(doc) > s.left) fail(413, 'quota', `${s.why} Delete old projects or versions to make room.`);
-    if (!limit('project-create:' + user.id, 30, HOUR)) fail(429, 'rate', 'You’ve made a lot of projects in the last hour. Try again later.');
-    const id = A.newId(), now = Date.now();
-    q.insertProject.run(id, teamId, name, doc, user.id, now, now, user.id, Buffer.byteLength(doc));
+    if (!limit('project-create:' + user.id, 30, HOUR)) fail(429, 'rate', 'You’ve made a lot of projects and boards in the last hour. Try again later.');
+    const id = A.newId(), now = Date.now(), parentId = root ? root.id : null;
+    q.insertProject.run(id, teamId, name, doc, user.id, now, now, user.id, Buffer.byteLength(doc), parentId);
     C.indexProject(id, clean);
-    live.teamChanged(teamId);
-    return { id, name, teamId };
+    live.teamChanged(teamId);  // everyone's Team panel and board tabs keep up
+    return { id, name, teamId, parentId };
   }
-  const sendingBoard = new Set();  // people whose board is being read: one at a time, so a few can't use up the memory
-  route('POST', '/api/teams/:id/projects', async ctx => {
-    needRole(ctx.params.id, ctx.user, 'editor');
+  // a board someone sends to make a project or board from: one at a time per person, so a few can't use up the memory
+  const sendingBoard = new Set();
+  async function readBoard(ctx) {
     if (Number(ctx.req.headers['content-length'] || 0) > 16e6) fail(413, 'too_big', `That board is too big to share. Boards can be up to ${cfg.PROJECT_MAX_MB} MB, not counting images.`);
     if (sendingBoard.has(ctx.user.id)) fail(429, 'busy', 'Another board is still being sent. Try again in a moment.');
     sendingBoard.add(ctx.user.id);
-    let b;
-    try { b = await H.readJson(ctx.req, 16e6); } finally { sendingBoard.delete(ctx.user.id); }
+    try { return await H.readJson(ctx.req, 16e6); } finally { sendingBoard.delete(ctx.user.id); }
+  }
+  route('POST', '/api/teams/:id/projects', async ctx => {
+    needRole(ctx.params.id, ctx.user, 'editor');
+    const b = await readBoard(ctx);
     return { project: await makeProject(ctx.user, ctx.params.id, b.name, b.doc) };
+  });
+
+  // A project's boards (tabs in the app): the project itself is the first, and each of the others is a project of its
+  // own (live room, history, pictures, links) that follows the project's people settings.
+  route('GET', '/api/projects/:id/boards', ctx => {
+    const root = rootOf(needProject(ctx.params.id, ctx.user, 'viewer').p);
+    return { root: root.id, boards: q.boards.all({ root: root.id }).map(b => ({ id: b.id, name: b.name, createdAt: b.created_at, updatedAt: b.updated_at, updatedBy: b.updated_by })) };
+  });
+  route('POST', '/api/projects/:id/boards', async ctx => {
+    const { p } = needProject(ctx.params.id, ctx.user, 'editor');  // the project's id or any of its boards': the role is the same
+    const b = await readBoard(ctx);
+    return { project: await makeProject(ctx.user, p.team_id, b.name, b.doc, p.id) };
   });
 
   route('GET', '/api/projects/:id', ctx => {
     const { p, role } = needProject(ctx.params.id, ctx.user, 'viewer');
     const state = live.roomState(p.id);
-    return { project: { id: p.id, name: p.name, teamId: p.team_id }, role, doc: state ? state.doc : JSON.parse(p.doc), version: state ? state.version : p.version };
+    return { project: { id: p.id, name: p.name, teamId: p.team_id, parentId: p.parent_id || null }, role, doc: state ? state.doc : JSON.parse(p.doc), version: state ? state.version : p.version };
   });
 
   route('PATCH', '/api/projects/:id', async ctx => {
     const { p } = needProject(ctx.params.id, ctx.user, 'editor');
     const name = txt((await H.readJson(ctx.req)).name, 80).trim();
-    if (!name) fail(400, 'name', 'Give the project a name.');
+    if (!name) fail(400, 'name', p.parent_id ? 'Give the board a name.' : 'Give the project a name.');
     q.renameProject.run(name, p.id);
     live.renamed(p.id, name);
     live.teamChanged(p.team_id);
     return { ok: true };
   });
 
+  // a project goes with all its boards; a board goes on its own
   route('DELETE', '/api/projects/:id', ctx => {
     const { p } = needProject(ctx.params.id, ctx.user, 'admin');
-    live.deleted(p.id);
-    removeAssetFiles(p.id);
-    q.deleteProject.run(p.id);
-    C.forgetProject(p.id);
+    const ids = [p.id, ...(p.parent_id ? [] : q.boardIds.all(p.id).map(b => b.id))];
+    for (const id of ids) { live.deleted(id); removeAssetFiles(id); }
+    db.transaction(() => { for (const id of ids) q.deleteProject.run(id); })();
+    for (const id of ids) C.forgetProject(id);
     live.teamChanged(p.team_id);
     return { ok: true };
   });

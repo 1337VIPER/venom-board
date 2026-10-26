@@ -25,7 +25,8 @@ const KEEP = { image: ['tags', 'note', 'source'], video: ['tags', 'note', 'sourc
 //   flushed(room)                    -> called after a room is saved
 //   commentAllowed(user)             -> false when someone is posting comments too fast
 //   beforeEdit(room)                 -> called before a batch changes the board (automatic versions)
-//   projectRole(projectId, teamId, userId, teamRole) -> their role in that project (a team admin may set one per project)
+//   projectRole(projectId, teamId, userId, teamRole) -> their role in that project (a team admin may set one per project;
+//                                       a project's extra boards have the project's)
 function realtime({ server, db, sessions, cfg, log, hooks = {} }) {
   const wss = new WebSocketServer({ noServer: true, maxPayload: 4 * 1024 * 1024 });
   const perIp = new Map();  // open connections from each address: a few dozen is a studio, hundreds is someone else
@@ -33,7 +34,7 @@ function realtime({ server, db, sessions, cfg, log, hooks = {} }) {
   const rooms = new Map();
   const sockets = new Set();
   const q = {
-    project: db.prepare('SELECT id, team_id, name, doc, version FROM projects WHERE id = ?'),
+    project: db.prepare('SELECT id, team_id, parent_id, name, doc, version FROM projects WHERE id = ?'),
     role: db.prepare('SELECT role FROM members WHERE team_id = ? AND user_id = ?'),
     save: db.prepare('UPDATE projects SET doc = ?, version = ?, updated_at = ?, updated_by = ?, doc_bytes = ? WHERE id = ?'),
   };
@@ -65,7 +66,7 @@ function realtime({ server, db, sessions, cfg, log, hooks = {} }) {
     if (!p) return null;
     let doc;
     try { doc = cleanDoc(JSON.parse(p.doc), SAN); } catch (e) { doc = cleanDoc({}, SAN); }
-    room = { id, teamId: p.team_id, name: p.name, doc, index: {}, holes: new Set(), version: p.version, clients: new Set(), watchers: new Set(), dirty: false, lastBy: null, unloadT: null };
+    room = { id, teamId: p.team_id, parentId: p.parent_id || null, name: p.name, doc, index: {}, holes: new Set(), version: p.version, clients: new Set(), watchers: new Set(), dirty: false, lastBy: null, unloadT: null };
     measureRoom(room);
     rooms.set(id, room);
     return room;
@@ -262,7 +263,8 @@ function realtime({ server, db, sessions, cfg, log, hooks = {} }) {
   function sendSnapshot(ws) {
     const r = ws.room;
     for (const k of [...r.holes]) compact(r, k);
-    send(ws, { t: 'snapshot', project: { id: r.id, name: r.name, teamId: ws.watching ? '' : r.teamId }, role: ws.role, doc: r.doc, version: r.version,
+    // a board says which project it belongs to (parentId, null for the project's first board); share-link watchers see neither
+    send(ws, { t: 'snapshot', project: { id: r.id, name: r.name, teamId: ws.watching ? '' : r.teamId, parentId: ws.watching ? null : r.parentId }, role: ws.role, doc: r.doc, version: r.version,
       peers: ws.watching ? [] : [...r.clients].filter(c => c !== ws).map(peerInfo),
       members: members(r.teamId).map(m => (ws.watching ? { id: m.id, name: m.name, color: m.color } : m)) });
   }
@@ -520,11 +522,12 @@ function realtime({ server, db, sessions, cfg, log, hooks = {} }) {
         if (now === role || now !== ws.role) changeRole(ws, now, now === role ? '' : 'project');
       }
     },
-    // a team admin gave someone their own role in a project, or took it away: their open copies change straight away
+    // a team admin gave someone their own role in a project, or took it away: their open copies change straight away,
+    // on the project's first board and every other board of it
     projectRoleChanged(projectId, userId) {
-      const r = rooms.get(projectId);
-      if (!r) return;
-      for (const ws of [...r.clients]) if (ws.user.id === userId) freshRole(ws, 'project');
+      for (const r of [...rooms.values()]) if (r.id === projectId || r.parentId === projectId) {
+        for (const ws of [...r.clients]) if (ws.user.id === userId) freshRole(ws, 'project');
+      }
     },
     removeMember(teamId, userId) {
       for (const ws of userSockets(teamId, userId)) { send(ws, { t: 'kicked', message: 'You were removed from this team.' }); leaveRoom(ws); }
@@ -543,7 +546,7 @@ function realtime({ server, db, sessions, cfg, log, hooks = {} }) {
       const r = rooms.get(projectId);
       if (!r) return;
       r.dirty = false;
-      for (const ws of [...r.clients, ...r.watchers]) { send(ws, { t: 'deleted', message: 'This project was deleted.' }); r.clients.delete(ws); r.watchers.delete(ws); ws.room = null; }
+      for (const ws of [...r.clients, ...r.watchers]) { send(ws, { t: 'deleted', message: r.parentId ? 'This board was deleted.' : 'This project was deleted.' }); r.clients.delete(ws); r.watchers.delete(ws); ws.room = null; }
       clearTimeout(r.unloadT);
       rooms.delete(projectId);
     },

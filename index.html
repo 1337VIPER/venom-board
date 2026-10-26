@@ -1418,6 +1418,19 @@ body:has(#mood:not([hidden])) .menu{z-index:97}
 .wn-ver li b{color:var(--bone)}
 .wn-ver li .tm-btn{margin-left:8px;vertical-align:middle}
 .wn-foot{display:flex;justify-content:space-between;gap:10px;padding:14px 30px 20px;border-top:1px solid var(--line)}
+/* boards in a team project: tabs over the canvas */
+.btabs{position:absolute;top:10px;left:76px;z-index:34;display:flex;align-items:center;gap:2px;padding:3px;max-width:calc(100% - 560px);overflow-x:auto;scrollbar-width:none;border-radius:12px;background:color-mix(in srgb,var(--hide-2) 94%,transparent);border:1px solid var(--line);box-shadow:0 12px 28px -16px var(--shadow)}
+.btabs::-webkit-scrollbar{display:none}
+.btabs[hidden],html.ui-off .btabs{display:none}
+.btab{flex:none;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;height:28px;padding:0 12px;border:0;border-radius:9px;background:none;color:var(--bone-dim);font:700 12px var(--font-ui);cursor:pointer}
+.btab:hover{color:var(--bone);background:var(--hide-3)}
+.btab[aria-current]{color:var(--bone);background:var(--hide-3);box-shadow:inset 0 -2px 0 var(--fang)}
+.btab-add{flex:none;width:28px;height:28px;border:0;border-radius:9px;background:none;color:var(--bone-dim);cursor:pointer;display:grid;place-items:center}
+.btab-add:hover{color:var(--bone);background:var(--hide-3)}
+.btab-add .tm-ico svg{width:15px;height:15px}
+@media (max-width:900px){.btabs{max-width:calc(100% - 100px)}}
+.tm-row.tm-sub{margin-left:20px}
+.tm-row.tm-sub .tm-row-main b::before{content:"";display:inline-block;width:8px;height:8px;margin-right:7px;border-left:1.5px solid var(--bone-faint);border-bottom:1.5px solid var(--bone-faint);border-radius:0 0 0 3px;vertical-align:2px}
 </style>
 
 <div id="app">
@@ -5616,7 +5629,11 @@ function ago(t) {
 }
 function boardsMenu() {
   const E = [{head: board.team ? 'Team project' : 'Boards'}];
-  if (board.team) E.push({label: board.name, kb: 'live', cur: true, run: () => setTeamPanel(true)}, {label: 'Version history…', icon: 'clock', run: openVersions}, {label: 'Make a timelapse…', icon: 'image', run: openTimelapse}, {label: 'Leave and go back to my boards', icon: 'arrow', run: () => leaveProject()}, {head: 'My boards'});
+  const B = board.team && team.boards;
+  if (B && B.list.length > 1) { E[0] = {head: 'Boards in ' + B.list[0].name}; E.push(...B.list.map(b => ({label: b.name, kb: b.id === team.project.id ? 'live' : '', cur: b.id === team.project.id, run: () => (b.id === team.project.id ? setTeamPanel(true) : openTeamBoard(b.id))}))); }
+  else if (board.team) E.push({label: board.name, kb: 'live', cur: true, run: () => setTeamPanel(true)});
+  if (B && canEditProject()) E.push({label: 'New board in this project…', icon: 'plus', run: () => newTeamBoard()});
+  if (board.team) E.push({label: 'Version history…', icon: 'clock', run: openVersions}, {label: 'Make a timelapse…', icon: 'image', run: openTimelapse}, {label: 'Leave and go back to my boards', icon: 'arrow', run: () => leaveProject()}, {head: 'My boards'});
   const list = boards.slice(); if (!board.team && !list.find(b => b.id === board.id)) list.push({id: board.id, name: board.name, updated: Date.now()});
   list.sort((a, b) => b.updated - a.updated).forEach(b => E.push({label: b.id === board.id ? board.name : b.name, kb: b.id === board.id ? 'open' : ago(b.updated), cur: b.id === board.id, run: () => switchBoard(b.id)}));
   E.push('-', {label: 'New empty board', icon: 'plus', run: () => newBoard('Untitled board', false)}, {label: 'New sample roadmap', icon: 'card', run: () => newBoard('Game Roadmap', true)},
@@ -5664,6 +5681,7 @@ function toggleBoardLock() {
 }
 function applyBoardLock() {
   const on = !!board.locked, b = $('#boardLockBtn');
+  if (typeof renderBoardTabs === 'function') renderBoardTabs();  // the board's tabs show for team boards only
   document.documentElement.classList.toggle('board-locked', viewOnly());
   $('#boardName').readOnly = teamReadOnly();
   b.setAttribute('aria-pressed', String(on));
@@ -7788,7 +7806,7 @@ function liveCard() {
   const status = team.status === 'live' ? (people.length ? `Live with ${people.length} other${people.length === 1 ? '' : 's'}` : 'Live · nobody else is here yet')
     : team.status === 'connecting' ? 'Connecting…' : 'Reconnecting… changes pause until the connection is back';
   return mk('div', {class: 'tm-live ' + team.status},
-    mk('div', {class: 'tm-live-top'}, mk('i', {class: 'dot'}), mk('b', {}, team.project.name || 'Team project'), mk('span', {class: 'tm-role'}, ROLE_NAME[team.role] || '')),
+    mk('div', {class: 'tm-live-top'}, mk('i', {class: 'dot'}), mk('b', {}, projectLabel()), mk('span', {class: 'tm-role'}, ROLE_NAME[team.role] || '')),
     mk('p', {}, status),
     people.length ? mk('div', {class: 'tm-people'}, ...people.map(p => mk('button', {class: 'tm-person', type: 'button', title: follow.cid === p.cid ? 'Stop following' : 'Follow their view', onclick: () => follow.cid === p.cid ? stopFollowing(true) : startFollowing(p.cid)}, avatar(p), p.name, follow.cid === p.cid ? mk('em', {}, 'following') : null))) : null,
     mk('div', {class: 'tm-actions'}, presentRow(), mk('button', {class: 'tm-btn', type: 'button', onclick: openVersions}, icon('clock'), 'Version history')),
@@ -7820,13 +7838,19 @@ function teamPicker() {
 const fmtMB = b => (b / 1048576).toFixed(b < 10485760 ? 1 : 0) + ' MB';
 function projectsSection() {
   const d = team.detail, canEdit = ROLE_RANK[d.role] >= ROLE_RANK.editor, canDelete = ROLE_RANK[d.role] >= ROLE_RANK.admin;
-  const rows = d.projects.map(p => [mk('div', {class: 'tm-row' + (team.project && team.project.id === p.id ? ' on' : '')},
+  // each project with its boards under it, oldest first; a board follows its project's people
+  const roots = d.projects.filter(p => !p.parentId), boardsOf = id => d.projects.filter(p => p.parentId === id).sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+  const rowOf = (p, sub) => [mk('div', {class: 'tm-row' + (sub ? ' tm-sub' : '') + (team.project && team.project.id === p.id ? ' on' : '')},
     mk('button', {class: 'tm-row-main tm-open', type: 'button', title: 'Open and edit live', onclick: () => teamOpen(p.id)},
       mk('b', {}, p.name), mk('span', {}, `Updated ${ago(p.updatedAt)}${p.updatedBy ? ' by ' + p.updatedBy : ''}`)),
-    projectRoleTag(d, p), peopleButton(d, p),
-    canDelete ? mk('button', {class: 'tm-icon', type: 'button', title: 'Delete project', 'aria-label': 'Delete ' + p.name, onclick: async () => {
-      if (await ask('Delete this project?', `“${p.name}” will be deleted for everyone in ${d.team.name}. This can't be undone.`, 'Delete project')) teamAction(() => api('/api/projects/' + p.id, 'DELETE'), 'Project deleted');
-    }}, icon('trash')) : null), peoplePanel(d, p)]);
+    sub ? null : projectRoleTag(d, p), sub ? null : peopleButton(d, p),
+    !sub && canEdit ? mk('button', {class: 'tm-icon', type: 'button', title: 'Add a board to this project', 'aria-label': 'Add a board to ' + p.name, onclick: () => newTeamBoard(p.id, p.name)}, icon('plus')) : null,
+    canDelete ? mk('button', {class: 'tm-icon', type: 'button', title: sub ? 'Delete board' : 'Delete project', 'aria-label': 'Delete ' + p.name, onclick: async () => {
+      const n = sub ? 0 : boardsOf(p.id).length, what = sub ? 'board' : 'project';
+      const msg = sub ? `“${p.name}” and its history will be deleted for everyone in the project. This can't be undone.` : `“${p.name}”${n ? ` and its ${n} other board${n === 1 ? '' : 's'}` : ''} will be deleted for everyone in ${d.team.name}. This can't be undone.`;
+      if (await ask(`Delete this ${what}?`, msg, `Delete ${what}`)) teamAction(() => api('/api/projects/' + p.id, 'DELETE'), sub ? 'Board deleted' : 'Project deleted');
+    }}, icon('trash')) : null), sub ? null : peoplePanel(d, p)];
+  const rows = roots.flatMap(p => [...rowOf(p, false), ...boardsOf(p.id).flatMap(c => rowOf(c, true))]);
   const nameIn = mk('input', {class: 'tm-in', placeholder: 'Project name', maxlength: 80, 'aria-label': 'New project name'});
   const newForm = mk('form', {class: 'tm-inline', hidden: !team.ui.newProject, onsubmit: e => {
     e.preventDefault();
@@ -7842,7 +7866,7 @@ function projectsSection() {
     rows.length ? mk('div', {class: 'tm-list'}, ...rows) : mk('p', {class: 'tm-note'}, canEdit ? 'No projects yet. Start one, or share the board you have open.' : 'No projects yet.'),
     canEdit ? mk('div', {class: 'tm-actions'},
       mk('button', {class: 'tm-btn', type: 'button', disabled: full, title: fullTip, onclick: () => { team.ui.newProject = !team.ui.newProject; renderTeam(); }}, icon('plus'), 'New project'),
-      board.team ? null : mk('button', {class: 'tm-btn', type: 'button', disabled: full, title: fullTip || 'Copy the board you have open into this team', onclick: () => teamShareBoard(d.team.id)}, icon('arrow'), 'Share this board')) : null,
+      board.team ? null : mk('button', {class: 'tm-btn', type: 'button', disabled: full, title: fullTip || 'Copy the board you have open into this team, as a project or as a board in one', onclick: e => shareBoardMenu(e.currentTarget, d, roots)}, icon('arrow'), 'Share this board')) : null,
     full && canEdit ? mk('p', {class: 'tm-note'}, fullTip) : null,
     newForm, space);
 }
@@ -7981,6 +8005,8 @@ async function teamOpen(projectId, takeover = false) {
   if (!team.user) { setTeamPanel(true); return; }
   if (team.project && team.project.id === projectId && board.team) return;
   if (editing) finishEdit();
+  if (team.project && board.team) team.cams.set(team.project.id, {...cam});
+  if (!(team.boards && team.boards.list.some(b => b.id === projectId))) team.boards = null;  // another project's tabs come with it
   if (team.project) leaveProject(false); else await persistNow();
   Object.assign(team, {project: {id: projectId, name: ''}, role: 'viewer', retry: 0, unacked: [], selSig: '', takeover});
   team.peers.clear(); team.pending.clear();
@@ -8030,7 +8056,7 @@ async function openLastLocalBoard() {
 function onLive(m) {
   switch (m.t) {
     case 'ready': if (team.retry) teamChangedSoon(); team.retry = 0; if (team.project) wsSend({t: 'join', project: team.project.id, ...(team.takeover ? {takeover: true} : {})}); break;
-    case 'team': teamChangedSoon(); break;
+    case 'team': teamChangedSoon(); if (board.team) loadBoardsSoon(); break;
     case 'invites': teamChangedSoon(true); break;
     case 'shared': loadShare(); loadRoadmap(); loadIntake(); break;
     case 'snapshot': team.takeover = false; applySnapshot(m); break;
@@ -8049,9 +8075,14 @@ function onLive(m) {
       if (team.presenting && ROLE_RANK[m.role] < ROLE_RANK.editor) { team.presenting = false; renderFollowBar(); renderTeam(); }
       toast(`Your role in this ${m.scope === 'project' ? 'project' : 'team'} is now ${ROLE_NAME[m.role].toLowerCase()}`, 3600);
       break;
-    case 'renamed': if (board.team && typeof m.name === 'string') { team.project.name = board.name = txt(m.name, 80); $('#boardName').value = board.name; renderTeam(); } break;
+    case 'renamed': if (board.team && typeof m.name === 'string') { team.project.name = board.name = txt(m.name, 80); $('#boardName').value = board.name; renderTeam(); loadBoardsSoon(); } break;
     case 'kicked': case 'deleted':
       if (m.elsewhere) { boardElsewhere(m, true); break; }
+      // a board deleted from under you: back to the project's own board
+      if (m.t === 'deleted' && team.project && team.project.parentId && team.boards && team.boards.root === team.project.parentId) {
+        toast("This board was deleted, so here's the project's own board.", 4000);
+        team.boards.list = team.boards.list.filter(b => b.id !== team.project.id); teamOpen(team.boards.root); break;
+      }
       toast(txt(m.message, 200) || 'You left the project.', 4000); leaveProject(); refreshMe(true); break;
     case 'error':
       if (m.elsewhere) { boardElsewhere(m, false); break; }
@@ -8129,11 +8160,11 @@ window.addEventListener('focus', () => { if (team.panelOpen && team.user && Date
 function applySnapshot(m) {
   const id = 'team-' + m.project.id, first = board.id !== id;
   team.role = ROLE_RANK[m.role] ? m.role : 'viewer';
-  team.project = {id: m.project.id, name: txt(m.project.name, 80), teamId: m.project.teamId};
+  team.project = {id: m.project.id, name: txt(m.project.name, 80), teamId: m.project.teamId, parentId: okId(m.project.parentId) ? m.project.parentId : null};
   team.peers = new Map((Array.isArray(m.peers) ? m.peers : []).filter(p => p && p.cid).map(p => [p.cid, p]));
   setMembers(m.members);
   if (first) { cp.open = false; $('#cardPanel').hidden = true; cp.card = null; }
-  setBoard({id, name: team.project.name, team: true, locked: !first && board.locked}, m.doc, {}, first ? null : {...cam});
+  setBoard({id, name: team.project.name, team: true, locked: !first && board.locked}, m.doc, {}, first ? team.cams.get(m.project.id) || null : {...cam});
   $('#saveState').hidden = true;
   if (team.unacked.length) {  // our unconfirmed edits go back on top of the server's copy and are sent again
     const again = team.unacked.flatMap(b => b.ops);
@@ -8144,7 +8175,7 @@ function applySnapshot(m) {
   if (team.afterJoin) { const ops = team.afterJoin; team.afterJoin = null; applyOps(ops); captureBase(); teamSend(ops); }
   setLiveStatus('live'); refresh(); syncPanels();
   if (team.watch) { $('#wbText').textContent = `${team.project.name} · view only, live`; document.title = team.project.name + ' · Venom Board'; }
-  else if (first) { toast(`Joined ${team.project.name} as ${ROLE_NAME[team.role].toLowerCase()}`); loadFeed(); loadShare(); loadRoadmap(); loadIntake(); }
+  else if (first) { toast(`Joined ${team.project.name} as ${ROLE_NAME[team.role].toLowerCase()}`); loadFeed(); loadShare(); loadRoadmap(); loadIntake(); loadBoards(); }
   if (team.presenting || team.user) sendView();
   if (team.focusAfterJoin) { const f = team.focusAfterJoin; team.focusAfterJoin = null; setTimeout(() => focusCard(f.cardId, f.comments), 80); }
 }
@@ -8215,6 +8246,8 @@ function teamPreviewEdit() {
   if (it) queuePreview({k: 'items', op: 'put', obj: {...it, [editing.key]: editing.key === 'title' ? editing.el.textContent : editing.el.innerText}});
 }
 function renameProjectSoon(name) {
+  const b = team.boards && team.project && team.boards.list.find(x => x.id === team.project.id);
+  if (b) { b.name = name; renderBoardTabs(); }
   clearTimeout(team.renameT);
   team.renameT = setTimeout(() => { if (board.team && team.project) api('/api/projects/' + team.project.id, 'PATCH', {name}).catch(e => toast(e.message)); }, 700);
 }
@@ -8245,7 +8278,15 @@ async function uploadImage(blob, onProgress) {
   });
   return data.url;
 }
-async function teamShareBoard(teamId) {
+// Share this board: a new project, or a new board in a project you can edit
+function shareBoardMenu(btn, d, roots) {
+  const mine = roots.filter(p => ROLE_RANK[p.myRole || d.role] >= ROLE_RANK.editor);
+  if (!mine.length) { teamShareBoard(d.team.id); return; }
+  menuAt(btn, [{head: 'Share this board'}, {label: 'As a new project', icon: 'plus', run: () => teamShareBoard(d.team.id)},
+    {head: 'As a board in'}, ...mine.slice(0, 20).map(p => ({label: p.name, icon: 'frame', run: () => teamShareBoard(d.team.id, p.id)}))]);
+}
+// parentId: share it as a board in that project rather than as a project of its own
+async function teamShareBoard(teamId, parentId) {
   if (board.team) return;
   if (editing) finishEdit();
   const name = board.name, d = JSON.parse(JSON.stringify(doc));
@@ -8258,7 +8299,7 @@ async function teamShareBoard(teamId) {
   try {
     // the project is created first so its images can be uploaded into it, then they arrive as live edits
     const items = d.items.filter(it => !linked.includes(it)).map(({asset, ...rest}) => rest);
-    const {project} = await api(`/api/teams/${teamId}/projects`, 'POST', {name, doc: {...d, items}});
+    const {project} = await api(parentId ? `/api/projects/${parentId}/boards` : `/api/teams/${teamId}/projects`, 'POST', {name, doc: {...d, items}});
     const ops = [];
     let missed = 0, videos = 0;
     for (const it of withAssets) {
@@ -8281,6 +8322,89 @@ async function teamShareBoard(teamId) {
     teamOpen(project.id);
   } catch (e) { toast(e.message, 4000); }
 }
+
+/* --- boards in a team project ---
+   A project can hold several boards, shown as tabs over the canvas. Each board is its own live room on the server,
+   with its own history, share link and roadmap, and it follows the project's people settings. A board starts
+   empty, or a board on this computer joins a project as one of its boards. */
+team.boards = null;  // {root, list: [{id, name}]} for the open project, the project's own board first
+team.cams = new Map();  // where you were on each board, to come back to it
+const boardTabs = mk('nav', {id: 'boardTabs', class: 'btabs', 'aria-label': 'Boards in this project', hidden: true});
+$('#wrap').append(boardTabs);
+async function loadBoards() {
+  const p = team.project;
+  if (!p || !board.team || team.watch) { team.boards = null; renderBoardTabs(); return; }
+  try {
+    const r = await api(`/api/projects/${p.id}/boards`);
+    if (team.project !== p) return;
+    team.boards = {root: okId(r.root) ? r.root : p.id, list: (Array.isArray(r.boards) ? r.boards : []).filter(b => b && okId(b.id)).map(b => ({id: b.id, name: txt(b.name, 80) || 'Untitled board'}))};
+  } catch (e) { if (team.project === p) team.boards = null; }  // a server from before boards: one board per project
+  renderBoardTabs();
+}
+let boardsT = 0;
+const loadBoardsSoon = () => { clearTimeout(boardsT); boardsT = setTimeout(loadBoards, 300); };
+const canEditProject = () => ROLE_RANK[team.role] >= ROLE_RANK.editor;
+function renderBoardTabs() {
+  const B = team.boards, show = !!B && !!team.project && board.team && !team.watch && (B.list.length > 1 || canEditProject());
+  boardTabs.hidden = !show;
+  if (!show) return;
+  const cur = team.project.id;
+  boardTabs.replaceChildren(...B.list.map(b => mk('button', {class: 'btab', type: 'button', 'data-board': b.id, 'aria-current': b.id === cur ? 'page' : null,
+    title: b.id === cur ? `${b.name} · right-click for more` : `Open ${b.name}`}, b.name)),
+    canEditProject() ? mk('button', {class: 'btab-add', type: 'button', 'data-bt': 'new', title: 'Add a board to this project', 'aria-label': 'Add a board'}, icon('plus')) : null);
+  const on = boardTabs.querySelector('[aria-current]');  // the open one in view, without scrolling anything else
+  if (on && (on.offsetLeft < boardTabs.scrollLeft || on.offsetLeft + on.offsetWidth > boardTabs.scrollLeft + boardTabs.clientWidth)) boardTabs.scrollLeft = Math.max(0, on.offsetLeft - 40);
+}
+const projectLabel = () => (team.project && team.project.parentId && team.boards && team.boards.list[0] ? `${team.boards.list[0].name} · ${team.project.name}` : (team.project && team.project.name) || 'Team project');
+function openTeamBoard(id) { if (id && !(team.project && team.project.id === id && board.team)) teamOpen(id); }
+// a new board in a project (the open one, or one from the Team panel), opened straight away
+async function newTeamBoard(projectId, projectName) {
+  projectId = projectId || (team.project && team.project.id);
+  if (!projectId) return;
+  if (!projectName && team.boards && team.boards.list[0]) projectName = team.boards.list[0].name;
+  const name = await askText('New board', `A new board in ${projectName || 'this project'}, with the same people. Each board has its own history, share link and roadmap.`, 'Create', {placeholder: 'e.g. Level 2, Art, Marketing', max: 80});
+  if (!name) return;
+  try {
+    const r = await api(`/api/projects/${projectId}/boards`, 'POST', {name});
+    if (team.boards && team.boards.list.some(b => b.id === projectId)) team.boards.list.push({id: r.project.id, name: txt(r.project.name, 80) || name});
+    teamOpen(r.project.id);
+  } catch (e) { toast(e.status === 404 ? "This team's server doesn't have boards inside projects yet." : e.message, 4500); }
+}
+async function renameTeamBoard(b) {
+  const name = await askText('Rename board', '', 'Rename', {value: b.name, max: 80});
+  if (!name || name === b.name) return;
+  try {
+    await api('/api/projects/' + b.id, 'PATCH', {name});
+    b.name = name;
+    if (board.team && team.project && team.project.id === b.id) { board.name = team.project.name = name; $('#boardName').value = name; }
+    renderBoardTabs(); renderTeam();
+  } catch (e) { toast(e.message, 4000); }
+}
+async function deleteTeamBoard(b) {
+  if (!(await ask('Delete this board?', `“${b.name}” and its history will be deleted for everyone in the project. This can't be undone.`, 'Delete board'))) return;
+  const B = team.boards;
+  if (B && team.project && team.project.id === b.id) teamOpen(B.root);  // off it first, so its deletion isn't news to you
+  try {
+    await api('/api/projects/' + b.id, 'DELETE');
+    if (team.boards) team.boards.list = team.boards.list.filter(x => x.id !== b.id);
+    renderBoardTabs(); toast('Board deleted');
+  } catch (e) { toast(e.message, 4000); }
+}
+boardTabs.addEventListener('click', e => {
+  const t = e.target.closest('[data-board]');
+  if (t) { openTeamBoard(t.dataset.board); return; }
+  if (e.target.closest('[data-bt="new"]')) newTeamBoard();
+});
+boardTabs.addEventListener('contextmenu', e => {
+  const t = e.target.closest('[data-board]'), B = team.boards, b = t && B && B.list.find(x => x.id === t.dataset.board);
+  if (!b) return;
+  e.preventDefault();
+  const root = b.id === B.root, here = team.project && b.id === team.project.id;
+  showMenu(e.clientX, e.clientY, [{head: root ? 'The project\'s board' : 'Board'},
+    ...(here ? [] : [{label: 'Open', run: () => openTeamBoard(b.id)}]),
+    ...(canEditProject() ? [{label: 'Rename…', run: () => renameTeamBoard(b)}, {label: 'New board', icon: 'plus', run: () => newTeamBoard()}] : []),
+    ...(ROLE_RANK[team.role] >= ROLE_RANK.admin && !root ? ['-', {label: 'Delete board', danger: true, icon: 'trash', run: () => deleteTeamBoard(b)}] : [])]);
+});
 
 /* --- other people on the canvas --- */
 function upsertPeer(p) {
@@ -11505,6 +11629,11 @@ mdLight.addEventListener('keydown', e => {
    The first time the app starts after an update (the desktop app or the web app), a screen shows what changed
    since the version you had, once. A brand new copy stays quiet; More features → What's new brings it back. */
 const WHATS_NEW = [
+  {v: '1.12.0', date: '2026-10-26', lead: 'Boards in a project', items: [
+    ['Several boards in one project.', 'A team project can hold as many boards as you need, as tabs at the top of the canvas. Press + to add one, click a tab to switch, right-click it to rename it.', 'team'],
+    ['The same people on every board.', 'Each board has its own history, share link and roadmap, and follows the project’s people settings.'],
+    ['Bring your boards in.', 'Share this board can add a board from your computer to a project as one of its boards.'],
+  ]},
   {v: '1.11.0', date: '2026-10-26', lead: 'Mood boards', items: [
     ['Mood board.', 'Shift+M opens a wall of every picture, GIF and video on the board, grouped into collections, with room of its own away from your tasks.', 'mood'],
     ['Collections.', 'Frames for references that stay out of your phases, the schedule and the public roadmap. Drop or paste pictures straight into one and they line up in neat rows on the board.'],
@@ -11530,7 +11659,7 @@ const WHATS_NEW = [
 ];
 const verNum = v => String(v || '').split('.').slice(0, 3).reduce((t, n) => t * 1000 + (parseInt(n, 10) || 0), 0);
 const WN_KEY = 'venom-board-seen-version';
-const WN_ACTS = {mood: ['Open the mood board', () => { closeWhatsNew(); openMood(); }]};
+const WN_ACTS = {mood: ['Open the mood board', () => { closeWhatsNew(); openMood(); }], team: ['Open the Team panel', () => { closeWhatsNew(); setTeamPanel(true); }]};
 const wnDate = d => new Date(d + 'T12:00:00').toLocaleDateString(undefined, {day: 'numeric', month: 'long', year: 'numeric'});
 // since: the version you had (only what came after it shows); none shows the latest few
 function openWhatsNew(since) {
