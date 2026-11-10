@@ -291,7 +291,7 @@ const SUPPORT = document.body ? (document.body.dataset.support || '') : '';  // 
       } else if (state && state.step === 'codes') {
         box.replaceChildren(
           h('p', { class: 'hint' }, 'Keep these recovery codes somewhere safe, like a password manager. Each one signs you in once if you lose your phone. They won’t be shown again.'),
-          h('pre', { css: { 'font-family': 'JetBrains Mono, monospace', 'font-size': '14px', 'line-height': '1.7', padding: '12px 16px', background: 'rgba(255,255,255,.04)', border: '1px solid var(--line)', 'border-radius': '10px', 'user-select': 'all' } }, state.codes.join('\n')),
+          h('pre', { css: { 'font-family': 'var(--font-mono)', 'font-size': '14px', 'line-height': '1.7', padding: '12px 16px', background: 'rgba(255,255,255,.04)', border: '1px solid var(--line)', 'border-radius': '10px', 'user-select': 'all' } }, state.codes.join('\n')),
           h('button', { class: 'btn small red', type: 'button', onclick: () => { state = null; refresh().catch(() => {}); } }, 'I’ve saved them'));
       } else if (sec.twoFactor) {
         box.replaceChildren(
@@ -316,7 +316,7 @@ const SUPPORT = document.body ? (document.body.dataset.support || '') : '';  // 
   function mcpPanel() {
     const box = h('div', { css: { 'margin-top': '10px' } });
     let fresh = null;
-    const mono = { 'font-family': 'JetBrains Mono, monospace', 'font-size': '12.5px', 'overflow-wrap': 'anywhere', 'user-select': 'all' };
+    const mono = { 'font-family': 'var(--font-mono)', 'font-size': '12.5px', 'overflow-wrap': 'anywhere', 'user-select': 'all' };
     const copyBtn = text => h('button', { class: 'btn small', type: 'button', onclick: () => navigator.clipboard.writeText(text).then(() => toast('Copied.'), () => toast('Select it and copy it yourself.', true)) }, 'Copy');
     const draw = async () => {
       let data = { tokens: [], endpoint: location.origin + '/mcp' };
@@ -355,7 +355,7 @@ const SUPPORT = document.body ? (document.body.dataset.support || '') : '';  // 
   // milestones, as all-day events that link back to the card. It can be replaced or turned off at any time.
   function calendarPanel() {
     const box = h('div', { css: { 'margin-top': '10px' } });
-    const mono = { 'font-family': 'JetBrains Mono, monospace', 'font-size': '12px', 'word-break': 'break-all', 'user-select': 'all' };
+    const mono = { 'font-family': 'var(--font-mono)', 'font-size': '12px', 'word-break': 'break-all', 'user-select': 'all' };
     const run = async (fn, okMsg) => { try { await fn(); if (okMsg) toast(okMsg); } catch (e) { toast(e.message, true); } draw(); };
     const draw = async () => {
       let feed = null;
@@ -388,7 +388,7 @@ const SUPPORT = document.body ? (document.body.dataset.support || '') : '';  // 
   function notifyPanel() {
     const n = S.notify || { mentions: true, due: true };
     const box = (key, field, label) => {
-      const c = h('input', { type: 'checkbox', checked: !!n[field], css: { 'accent-color': '#ff2a4f', margin: '0' } });
+      const c = h('input', { type: 'checkbox', checked: !!n[field], css: { 'accent-color': 'var(--fang)', margin: '0' } });
       c.addEventListener('change', () => act(() => api('/api/me', 'PATCH', { [key]: c.checked }), c.checked ? 'Emails on.' : 'Emails off.'));
       return h('label', { css: { display: 'flex', gap: '10px', 'align-items': 'center', 'margin-top': '10px', cursor: 'pointer', color: 'var(--bone-dim)', 'font-size': '14px' } }, c, label);
     };

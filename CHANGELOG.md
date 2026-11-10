@@ -2,6 +2,15 @@
 
 All notable changes to Venom Board are listed here. The project follows [Semantic Versioning](https://semver.org).
 
+## [Unreleased]
+
+### Changed
+- **New look**: Venom Board now wears the VenomStudios brand shared by every Venom tool. The VenomStudios skull is the app icon (window, taskbar, tray, installer, favicon) and sits in the top bar and Settings → About; the colours are void black with neon pink and cyan, ice-white titles and cyan hairlines; panels, menus and buttons have cut corners, cards carry a bracket in their colour, and the chosen tool and main buttons glow
+- **New type**: Orbitron for titles, Share Tech Mono for numbers and labels, and your system's UI font for reading. The fonts are built into the app, so nothing loads from a font service any more (the web app and the website serve them themselves)
+- **Easier to read**: faint text and hints are brighter, and text on pink buttons and tags is dark for contrast. The light skin's status colours are a little darker for the same reason
+- The screenshot tool and pinned screenshots use the same look
+- Your boards keep their colours: card, ink and phase colours are unchanged
+
 ## [1.12.0] - 2026-10-26
 
 ### Added

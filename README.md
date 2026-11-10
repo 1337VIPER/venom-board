@@ -3,18 +3,18 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/1337VIPER/venom-board/releases/latest"><img src="https://img.shields.io/github/v/release/1337VIPER/venom-board?style=for-the-badge&color=ff2a4f&labelColor=0e0e15&label=download" alt="Latest release"></a>
-  <img src="https://img.shields.io/badge/desktop-windows%20%7C%20macos%20%7C%20linux-0e0e15?style=for-the-badge&labelColor=0e0e15" alt="Windows, macOS and Linux">
-  <a href="https://venomboard.com/app"><img src="https://img.shields.io/badge/browser-chrome%20%7C%20edge%20%7C%20firefox-0e0e15?style=for-the-badge" alt="Runs in modern browsers"></a>
-  <a href="https://1337viper.itch.io/venom-board"><img src="https://img.shields.io/badge/itch.io-try%20it%20in%20your%20browser-fa5c5c?style=for-the-badge&logo=itchdotio&logoColor=white&labelColor=0e0e15" alt="Try it on itch.io"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/github/license/1337VIPER/venom-board?style=for-the-badge&color=9a3dff&labelColor=0e0e15" alt="MIT license"></a>
+  <a href="https://github.com/1337VIPER/venom-board/releases/latest"><img src="https://img.shields.io/github/v/release/1337VIPER/venom-board?style=for-the-badge&color=ff2a6d&labelColor=05060a&label=download" alt="Latest release"></a>
+  <img src="https://img.shields.io/badge/desktop-windows%20%7C%20macos%20%7C%20linux-05060a?style=for-the-badge&labelColor=05060a" alt="Windows, macOS and Linux">
+  <a href="https://venomboard.com/app"><img src="https://img.shields.io/badge/browser-chrome%20%7C%20edge%20%7C%20firefox-05060a?style=for-the-badge" alt="Runs in modern browsers"></a>
+  <a href="https://1337viper.itch.io/venom-board"><img src="https://img.shields.io/badge/itch.io-try%20it%20in%20your%20browser-fa5c5c?style=for-the-badge&logo=itchdotio&logoColor=white&labelColor=05060a" alt="Try it on itch.io"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/1337VIPER/venom-board?style=for-the-badge&color=05d9e8&labelColor=05060a" alt="MIT license"></a>
 </p>
 
 <p align="center">
-  <a href="https://bsky.app/profile/venomboard.bsky.social"><img src="https://img.shields.io/badge/bluesky-%40venomboard.bsky.social-1185fe?style=for-the-badge&logo=bluesky&logoColor=white&labelColor=0e0e15" alt="Bluesky: @venomboard.bsky.social"></a>
-  <a href="https://x.com/Venomboardapp"><img src="https://img.shields.io/badge/x-%40Venomboardapp-0e0e15?style=for-the-badge&logo=x&logoColor=white&labelColor=0e0e15" alt="X: @Venomboardapp"></a>
-  <a href="https://www.reddit.com/user/Venomboard/"><img src="https://img.shields.io/badge/reddit-u%2FVenomboard-ff4500?style=for-the-badge&logo=reddit&logoColor=white&labelColor=0e0e15" alt="Reddit: u/Venomboard"></a>
-  <a href="https://venomboard.com/discord"><img src="https://img.shields.io/badge/discord-join%20the%20community-5865f2?style=for-the-badge&logo=discord&logoColor=white&labelColor=0e0e15" alt="Discord: join the community"></a>
+  <a href="https://bsky.app/profile/venomboard.bsky.social"><img src="https://img.shields.io/badge/bluesky-%40venomboard.bsky.social-1185fe?style=for-the-badge&logo=bluesky&logoColor=white&labelColor=05060a" alt="Bluesky: @venomboard.bsky.social"></a>
+  <a href="https://x.com/Venomboardapp"><img src="https://img.shields.io/badge/x-%40Venomboardapp-05060a?style=for-the-badge&logo=x&logoColor=white&labelColor=05060a" alt="X: @Venomboardapp"></a>
+  <a href="https://www.reddit.com/user/Venomboard/"><img src="https://img.shields.io/badge/reddit-u%2FVenomboard-ff4500?style=for-the-badge&logo=reddit&logoColor=white&labelColor=05060a" alt="Reddit: u/Venomboard"></a>
+  <a href="https://venomboard.com/discord"><img src="https://img.shields.io/badge/discord-join%20the%20community-5865f2?style=for-the-badge&logo=discord&logoColor=white&labelColor=05060a" alt="Discord: join the community"></a>
 </p>
 
 <p align="center">
@@ -242,9 +242,9 @@ index.html        the entire app: UI, canvas engine, planner, timeline, template
 electron/         desktop shell: window, pin, opacity, click-through, file dialogs and signed updates
   dev/            self-test and screenshot generator used during development
 server/           the team server: accounts, live editing, MCP and more, to run yourself (AGPL-3.0)
-tools/            release checks: check-build.js and sign-update.js
+tools/            release checks (check-build.js, sign-update.js) and the brand scripts (brand-icons.py, brand-inline.py)
 .github/          the workflows that build the Linux and macOS apps and test the server
-assets/           app icon
+assets/           app icon, the VenomStudios brand pictures and the fonts (Orbitron, Share Tech Mono: SIL OFL 1.1)
 docs/             banner, screenshots and template pictures
 ```
 

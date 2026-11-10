@@ -43,7 +43,7 @@ const SHOT_TYPES = [
 ];
 const INBOX = { title: 'Playtest inbox', color: '#2fd6ff' }, BUGS = { title: 'Bug reports', color: '#ff2a4f' };
 // the form's pages load nothing from anywhere else, run only our own script, and post only back here
-const PAGE_CSP = "default-src 'none'; style-src 'self'; img-src 'self'; script-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'";
+const PAGE_CSP = "default-src 'none'; style-src 'self'; font-src 'self'; img-src 'self'; script-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'";
 const PAGE_HEADERS = { 'Content-Type': 'text/html; charset=utf-8', 'Content-Security-Policy': PAGE_CSP, 'X-Frame-Options': 'DENY', 'X-Content-Type-Options': 'nosniff',
   'Referrer-Policy': 'no-referrer', 'X-Robots-Tag': 'noindex, nofollow', 'Cache-Control': 'no-store' };
 
@@ -287,7 +287,7 @@ function intake({ db, cfg, log, route, fail, H, A, limit, needProject, live, sto
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${esc(title)}</title>
 <meta name="robots" content="noindex, nofollow">
-<meta name="theme-color" content="#060609">
+<meta name="theme-color" content="#05060a">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/web/site.css">${script ? '\n<script src="/web/feedback.js" defer></script>' : ''}
 </head>

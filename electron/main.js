@@ -22,8 +22,8 @@ const ICON = path.join(ROOT, 'assets', WIN ? 'icon.ico' : 'icon-1024.png');
 const DEFAULT_KEY = 'CommandOrControl+Shift+X';
 const DEFAULT_SNIP_KEY = 'Alt+Shift+S';
 const OVERLAY = {
-  venom: { color: '#111119', symbolColor: '#f1eef2' },
-  anti: { color: '#fdfcfd', symbolColor: '#0d0c12' },
+  venom: { color: '#0d1a25', symbolColor: '#c8d3e6' },
+  anti: { color: '#f7fafc', symbolColor: '#0a0c14' },
 };
 
 let win = null;
@@ -382,7 +382,7 @@ function createWindow() {
     minWidth: 480,
     minHeight: 400,
     title: 'Venom Board',
-    backgroundColor: '#060609',
+    backgroundColor: '#05060a',
     icon: ICON,
     // Windows and Linux draw their window buttons over the top bar's right end; macOS keeps its traffic lights top left
     titleBarStyle: MAC ? 'hiddenInset' : 'hidden',

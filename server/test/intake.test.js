@@ -167,7 +167,7 @@ test('settings: team admins turn the form on, everyone in the team sees it, nobo
 test('feedback page: plain, strict and private, with nothing from other sites', async () => {
   const r = await page(S.form);
   assert.equal(r.status, 200);
-  assert.equal(r.headers.get('content-security-policy'), "default-src 'none'; style-src 'self'; img-src 'self'; script-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'");
+  assert.equal(r.headers.get('content-security-policy'), "default-src 'none'; style-src 'self'; font-src 'self'; img-src 'self'; script-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'");
   assert.equal(r.headers.get('x-robots-tag'), 'noindex, nofollow');
   assert.equal(r.headers.get('referrer-policy'), 'no-referrer');
   assert.equal(r.headers.get('x-frame-options'), 'DENY');
