@@ -6,10 +6,11 @@ All notable changes to Venom Board are listed here. The project follows [Semanti
 
 ### Changed
 - **New look**: Venom Board now wears the VenomStudios brand shared by every Venom tool. The VenomStudios skull is the app icon (window, taskbar, tray, installer, favicon), sits in the top bar inside a softly turning halo, and its full logo is in Settings → About
-- **Modern, calmer surfaces**: layered dark panels with soft shadows and rounded corners, the pink-to-violet brand gradient as an accent (the chosen tool, main buttons, borders on hover) and cyan for info
-- **Motion**: a slow aurora behind the canvas, dialogs that scale in with their parts arriving one after another, a sheen across main buttons, and a gradient that traces round a card's border when you point at it. It runs on the graphics card, so the board stays as quick as before, and it turns off when your system asks for reduced motion
+- **Modern, calmer surfaces**: layered dark panels with soft shadows and rounded corners, and the red brand gradient (the logo's neon red to a deep red) as an accent: the chosen tool, main buttons, borders on hover. Cyan is kept for information
+- **Motion**: a slow red aurora behind the canvas, dialogs that scale in with their parts arriving one after another, a sheen across main buttons, and a gradient that traces round a card's border when you point at it. It runs on the graphics card, so the board stays as quick as before, and it turns off when your system asks for reduced motion
 - **New type**: Inter for the interface, JetBrains Mono for numbers and labels, Orbitron for the name and big numbers. The fonts are built into the app, so nothing loads from a font service any more (the web app and the website serve them themselves)
-- **Easier to read**: text on pink is white on a deeper pink for contrast, and the light skin's status colours are a little darker
+- **Errors are orange**: now that the brand is red, overdue, blocked and failed things show in orange, so red never means "wrong"
+- **Easier to read**: white text sits on a deeper red for contrast, and the light skin's status colours are a little darker
 - The screenshot tool and pinned screenshots use the same look
 - Your boards keep their colours: card, ink and phase colours are unchanged
 

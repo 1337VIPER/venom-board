@@ -3,11 +3,11 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/1337VIPER/venom-board/releases/latest"><img src="https://img.shields.io/github/v/release/1337VIPER/venom-board?style=for-the-badge&color=ff2a6d&labelColor=07080d&label=download" alt="Latest release"></a>
+  <a href="https://github.com/1337VIPER/venom-board/releases/latest"><img src="https://img.shields.io/github/v/release/1337VIPER/venom-board?style=for-the-badge&color=ff2d46&labelColor=07080d&label=download" alt="Latest release"></a>
   <img src="https://img.shields.io/badge/desktop-windows%20%7C%20macos%20%7C%20linux-07080d?style=for-the-badge&labelColor=07080d" alt="Windows, macOS and Linux">
   <a href="https://venomboard.com/app"><img src="https://img.shields.io/badge/browser-chrome%20%7C%20edge%20%7C%20firefox-07080d?style=for-the-badge" alt="Runs in modern browsers"></a>
   <a href="https://1337viper.itch.io/venom-board"><img src="https://img.shields.io/badge/itch.io-try%20it%20in%20your%20browser-fa5c5c?style=for-the-badge&logo=itchdotio&logoColor=white&labelColor=07080d" alt="Try it on itch.io"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/github/license/1337VIPER/venom-board?style=for-the-badge&color=b83bff&labelColor=07080d" alt="MIT license"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/1337VIPER/venom-board?style=for-the-badge&color=8a0f1f&labelColor=07080d" alt="MIT license"></a>
 </p>
 
 <p align="center">

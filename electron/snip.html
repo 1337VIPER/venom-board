@@ -9,7 +9,7 @@
   /* The screenshot overlay: a frozen copy of one screen at its full resolution. First pick the area (drag it, F for the
      whole screen, W for a window, L for the last area), with a magnifier that reads the colour under the pointer; then
      it's an editor: move or resize the area, draw on it, and choose where the picture goes. */
-  :root { --fang: #ff2a6d; --fang-2: #b83bff; --grad: linear-gradient(120deg, #e0185d, #9a2bdc); --sheen: #22d3ee; --hide: rgba(14, 16, 25, .9); --bone: #c9cfdf; --dim: #8b93aa; --line: rgba(255, 255, 255, .1);
+  :root { --venom: #ff2d46; --venom2: #8a0f1f; --venom-btn: #f12941; --fang: var(--venom); --fang-2: var(--venom2); --grad: linear-gradient(120deg, var(--venom-btn), var(--venom2)); --sheen: #22d3ee; --hide: rgba(14, 16, 25, .9); --bone: #c9cfdf; --dim: #8b93aa; --line: rgba(255, 255, 255, .1);
     --ease: cubic-bezier(.33, 1, .68, 1); --ease-x: cubic-bezier(.16, 1, .3, 1); --mono: 'JetBrains Mono', ui-monospace, Consolas, monospace; }
   html, body { margin: 0; height: 100%; overflow: hidden; background: #000; cursor: crosshair; user-select: none; font: 600 13px/1.3 "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif; color: var(--bone); }
   #bg, #ink { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
@@ -23,7 +23,7 @@
   .h[data-h=nw] { left: 0; top: 0; cursor: nwse-resize; } .h[data-h=n] { left: 50%; top: 0; cursor: ns-resize; } .h[data-h=ne] { left: 100%; top: 0; cursor: nesw-resize; }
   .h[data-h=e] { left: 100%; top: 50%; cursor: ew-resize; } .h[data-h=se] { left: 100%; top: 100%; cursor: nwse-resize; } .h[data-h=s] { left: 50%; top: 100%; cursor: ns-resize; }
   .h[data-h=sw] { left: 0; top: 100%; cursor: nesw-resize; } .h[data-h=w] { left: 0; top: 50%; cursor: ew-resize; }
-  #gx, #gy { position: fixed; z-index: 4; display: none; background: rgba(255, 42, 109, .55); pointer-events: none; }
+  #gx, #gy { position: fixed; z-index: 4; display: none; background: rgba(255, 45, 70, .55); pointer-events: none; }
   #gx { left: 0; right: 0; height: 1px; } #gy { top: 0; bottom: 0; width: 1px; }
   body[data-mode=select].ptr #gx, body[data-mode=select].ptr #gy { display: block; }
   #size { position: fixed; z-index: 5; display: none; padding: 3px 7px; border-radius: 6px; background: var(--fang); color: #fff; font: 600 12px/1.2 var(--mono); pointer-events: none; }
@@ -66,12 +66,12 @@
   #wins span { display: block; margin-top: 7px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
   #txt { position: fixed; z-index: 9; display: none; min-width: 20px; margin: 0; padding: 0; border: 1px dashed rgba(255, 255, 255, .75); outline: none; resize: none; overflow: hidden; background: rgba(0, 0, 0, .18); font-weight: 700; font-family: "Segoe UI", system-ui, sans-serif; line-height: 1.25; white-space: pre; cursor: text; }
   #flash { position: fixed; top: 64px; left: 50%; z-index: 10; display: none; transform: translateX(-50%); padding: 7px 13px; border-radius: 10px; background: var(--fang); color: #fff; font-weight: 700; pointer-events: none; }
-  /* Venom Pro (VenomUI/STYLE.md): glass bars, the brand gradient on what's chosen, eased entrances */
+  /* Venom Pro (VenomUI/STYLE.md): glass bars, the red brand gradient on what's chosen, eased entrances */
   .bar, #hint, #wins button, #lp { backdrop-filter: blur(16px); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .06), 0 10px 30px rgba(0, 0, 0, .45); }
   .bar button { transition: background-color .14s var(--ease), transform .14s var(--ease); }
   .bar button:active { transform: scale(.94); }
   .bar button[aria-pressed=true], .bar button.act.main, #size, #flash { background: var(--grad); color: #fff; }
-  .bar button.sw[aria-pressed=true] { background: var(--c); box-shadow: 0 0 0 2px var(--fang), 0 0 0 4px rgba(184, 59, 255, .45); }
+  .bar button.sw[aria-pressed=true] { background: var(--c); box-shadow: 0 0 0 2px var(--fang), 0 0 0 4px rgba(138, 15, 31, .6); }
   body[data-mode=edit] .bar { animation: vb-up .45s var(--ease-x) both; }
   body[data-mode=edit] #acts { animation-delay: 45ms; }
   #hint { animation: vb-up .5s var(--ease-x) both; }

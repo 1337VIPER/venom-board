@@ -11,7 +11,8 @@
 /* Layout: full-bleed infinite canvas. A tool spine on the left edge, a thin top rail for board + file actions,
    a context strip floating at the bottom and the planner sliding in from the right.
    Look: "Venom Pro", the VenomStudios design language shared by every Venom tool (Documents/Venom/VenomUI/STYLE.md):
-   layered dark surfaces with soft shadows, the venom-to-violet brand gradient as an accent, cyan for info, motion
+   layered dark surfaces with soft shadows, the red brand gradient (the logo's neon red to a deep red) as an accent,
+   cyan for info only, orange for errors (the brand is red, so red can't mean "wrong"), motion
    that eases in and settles. Inter for the interface, JetBrains Mono for data, Orbitron for the wordmark and numbers. */
 :root{
   --void:#07080d;        /* canvas ground */
@@ -23,14 +24,21 @@
   --bone-dim:#8b93aa;    /* secondary text */
   --bone-faint:#666e87;  /* meta, placeholders */
   --ice:#f1f4ff;         /* titles, strong text */
-  --fang:#ff2a6d;        /* venom: primary, brand gradient start */
-  --fang-2:#b83bff;      /* violet: brand gradient end */
-  --fang-deep:#e0185d;   /* venom behind white text */
+  --venom:#ff2d46;       /* the logo's neon red: primary, brand gradient start, lines, glows, focus */
+  --venom2:#8a0f1f;      /* deep red: brand gradient end, depth in the aurora */
+  --venom-mid:#c41e32;   /* where a gradient on text ends */
+  --venom-btn:#f12941;   /* where a filled button's gradient starts (white label 4.5:1) */
+  --venom-rgb:255,45,70; --venom2-rgb:138,15,31;
+  --fang:var(--venom);   /* the app's older names for the same tokens */
+  --fang-2:var(--venom2);
+  --fang-mid:var(--venom-mid);
+  --fang-deep:#dc1f38;   /* a solid red behind white text (4.9:1) */
   --on-fang:#ffffff;
-  --sheen:#22d3ee;       /* cyan: info, links */
-  --sheen-2:#b83bff;
-  --grad:linear-gradient(120deg,var(--fang),var(--fang-2));
-  --grad-deep:linear-gradient(120deg,#e0185d,#9a2bdc);
+  --sheen:#22d3ee;       /* cyan: information only (links, info, running) */
+  --sheen-2:var(--venom2);
+  --grad:linear-gradient(120deg,var(--venom),var(--venom2));          /* borders, markers, thin lines */
+  --grad-deep:linear-gradient(120deg,var(--venom-btn),var(--venom2)); /* filled buttons */
+  --grad-text:linear-gradient(90deg,var(--venom),var(--venom-mid));   /* wordmark and big numbers */
   --line:rgba(255,255,255,.07);
   --line-2:rgba(255,255,255,.12);
   --card:#0e1019;
@@ -41,10 +49,10 @@
   --shadow:rgba(0,0,0,.55);
   --lift:0 10px 30px rgba(0,0,0,.45);
   --lift-2:0 18px 44px rgba(0,0,0,.55);
-  --aurora-a:.16;
+  --aurora-a:1;
   --ease:cubic-bezier(.33,1,.68,1);       /* ease-out cubic: hover, press, state */
   --ease-x:cubic-bezier(.16,1,.3,1);      /* ease-out expo: entrances */
-  --ok:#34d399; --run:#22d3ee; --warn:#fbbf24; --bad:#f43f5e; --bad-deep:#d1284a;
+  --ok:#34d399; --run:#22d3ee; --warn:#fbbf24; --bad:#ff7a2f; --bad-deep:#c2410c;  /* errors are orange */
   --hl-blend:screen; --hl-op:.62;
   --font-display:"Inter","Segoe UI Variable Display","Segoe UI",system-ui,sans-serif;
   --font-ui:"Inter","Segoe UI Variable Text","Segoe UI",system-ui,-apple-system,sans-serif;
@@ -57,14 +65,14 @@
   --void:#eef1f7; --void-2:#e5e9f2;
   --hide:#ffffff; --hide-2:#f6f7fb; --hide-3:#eceff6;
   --bone:#151827; --bone-dim:#4b5268; --bone-faint:#666d82; --ice:#07080d;
-  --fang:#d6125a; --fang-2:#8b2bd9; --fang-deep:#c8104f; --on-fang:#ffffff; --sheen:#0e7490; --sheen-2:#8b2bd9;
-  --grad:linear-gradient(120deg,#d6125a,#8b2bd9); --grad-deep:linear-gradient(120deg,#c8104f,#7d22c8);
+  --venom:#d3132e; --venom2:#8a0f1f; --venom-mid:#a8172a; --venom-btn:#c8102b; --venom-rgb:211,19,46;
+  --fang-deep:#c8102b; --on-fang:#ffffff; --sheen:#0e7490;
   --line:rgba(12,14,30,.09); --line-2:rgba(12,14,30,.16);
   --card:#ffffff; --card-hi:#ffffff; --gloss:rgba(255,255,255,.9);
   --grid:rgba(12,14,30,.1); --grid-major:rgba(12,14,30,.17);
   --shadow:rgba(30,35,70,.18); --lift:0 10px 30px rgba(30,35,70,.12); --lift-2:0 18px 44px rgba(30,35,70,.18);
-  --aurora-a:.10;
-  --ok:#0a7d42; --run:#0e7490; --warn:#8a5d00; --bad:#c81b3c; --bad-deep:#c81b3c;
+  --aurora-a:.5;
+  --ok:#0a7d42; --run:#0e7490; --warn:#8a5d00; --bad:#b4410f; --bad-deep:#b4410f;
   --hl-blend:multiply; --hl-op:.55;
   color-scheme:light;
 }
@@ -1354,7 +1362,7 @@ body:has(#mood:not([hidden])) .menu{z-index:97}
 .md-tile.gray img,.md-tile.gray video,.lb-pic.gray img,.lb-pic.gray video{filter:grayscale(1)}
 .md-play{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:rgba(0,0,0,.55);color:#fff;pointer-events:none}
 .md-play .tm-ico svg{width:18px;height:18px}
-.md-emb{position:absolute;inset:0;display:flex;align-items:flex-end;justify-content:flex-start;padding:9px 11px;background:linear-gradient(160deg,#26123d,#0e1019);color:#fff;font:800 10.5px var(--font-display);letter-spacing:.1em;text-transform:uppercase}
+.md-emb{position:absolute;inset:0;display:flex;align-items:flex-end;justify-content:flex-start;padding:9px 11px;background:linear-gradient(160deg,#2a0d15,#0e1019);color:#fff;font:800 10.5px var(--font-display);letter-spacing:.1em;text-transform:uppercase}
 .md-info{position:absolute;left:6px;right:6px;bottom:6px;display:flex;gap:4px;align-items:center;flex-wrap:wrap;opacity:0;transition:opacity .15s;pointer-events:none}
 .md-tile:hover .md-info,.md-tile:focus-visible .md-info{opacity:1}
 .md-info i{font:700 10px var(--font-mono);font-style:normal;color:#fff;background:rgba(0,0,0,.62);border-radius:99px;padding:2px 7px}
@@ -1403,7 +1411,7 @@ body:has(#mood:not([hidden])) .menu{z-index:97}
 .lb-sw:hover{color:var(--bone)}
 .lb-acts{display:flex;flex-direction:column;gap:6px;margin-top:auto}
 .lb-acts .tm-btn{justify-content:flex-start}
-.lb-emb{width:100%;height:100%;border:0;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;background:linear-gradient(160deg,#26123d,#0e1019);color:#fff;font:600 12px var(--font-ui)}
+.lb-emb{width:100%;height:100%;border:0;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;background:linear-gradient(160deg,#2a0d15,#0e1019);color:#fff;font:600 12px var(--font-ui)}
 .lb-emb b{font:800 13px var(--font-display);letter-spacing:.1em;text-transform:uppercase}
 .lb-emb .tm-ico svg{width:36px;height:36px}
 .md-light:fullscreen{background:#000}
@@ -1415,7 +1423,7 @@ body:has(#mood:not([hidden])) .menu{z-index:97}
 /* what's new, after an update */
 .modal#whatsNew{z-index:85}
 .wn-sheet{width:min(620px,100%);padding:0;display:flex;flex-direction:column;overflow:hidden}
-.wn-hero{padding:28px 30px 18px;background:radial-gradient(120% 140% at 0% 0%,color-mix(in srgb,var(--fang) 22%,transparent),transparent 60%),radial-gradient(90% 120% at 100% 0%,color-mix(in srgb,#9a3dff 18%,transparent),transparent 60%);border-bottom:1px solid var(--line)}
+.wn-hero{padding:28px 30px 18px;background:radial-gradient(120% 140% at 0% 0%,color-mix(in srgb,var(--fang) 22%,transparent),transparent 60%),radial-gradient(90% 120% at 100% 0%,color-mix(in srgb,var(--venom2) 45%,transparent),transparent 60%);border-bottom:1px solid var(--line)}
 .wn-tag{display:inline-block;font:800 10px var(--font-mono);letter-spacing:.14em;text-transform:uppercase;color:var(--fang);border:1px solid color-mix(in srgb,var(--fang) 45%,transparent);border-radius:99px;padding:4px 10px}
 .wn-hero h2{margin:12px 0 6px}
 .wn-hero p{margin:0;color:var(--bone-dim);line-height:1.5}
@@ -1446,19 +1454,19 @@ body:has(#mood:not([hidden])) .menu{z-index:97}
 .tm-row.tm-sub{margin-left:20px}
 .tm-row.tm-sub .tm-row-main b::before{content:"";display:inline-block;width:8px;height:8px;margin-right:7px;border-left:1.5px solid var(--bone-faint);border-bottom:1.5px solid var(--bone-faint);border-radius:0 0 0 3px;vertical-align:2px}
 
-/* ---------- Venom Pro layer (VenomUI/STYLE.md): depth, the brand gradient as an accent, and motion ----------
+/* ---------- Venom Pro layer (VenomUI/STYLE.md): depth, the red brand gradient as an accent, and motion ----------
    Ambient motion only animates transform and opacity, so it runs on the compositor and costs the board nothing;
    it stops with prefers-reduced-motion (or Windows "Show animations" off). */
 @property --vb-t{syntax:'<percentage>';inherits:false;initial-value:0%}
 ::selection{background:color-mix(in srgb,var(--fang) 65%,transparent);color:#fff}
 *{scrollbar-color:var(--hide-3) transparent}
-:focus-visible{outline:2px solid color-mix(in srgb,var(--sheen) 85%,transparent);outline-offset:2px}
+:focus-visible{outline:2px solid color-mix(in srgb,var(--venom) 85%,transparent);outline-offset:2px}
 body{font-feature-settings:"cv11","ss01"}
 
-/* aurora behind the canvas: three soft blobs drifting on their own layer */
+/* aurora behind the canvas: three soft red blobs drifting on their own layer, embers in the dark (not a red sky) */
 #wrap{background:var(--void);isolation:isolate}
 #wrap::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;opacity:var(--aurora-a);will-change:transform;
-  background:radial-gradient(34% 40% at 18% 24%,var(--fang),transparent 70%),radial-gradient(30% 38% at 84% 18%,var(--fang-2),transparent 70%),radial-gradient(38% 42% at 66% 92%,var(--sheen),transparent 72%);
+  background:radial-gradient(34% 40% at 18% 24%,rgba(var(--venom-rgb),.13),transparent 70%),radial-gradient(32% 40% at 84% 16%,rgba(var(--venom2-rgb),.22),transparent 70%),radial-gradient(40% 44% at 70% 96%,rgba(var(--venom2-rgb),.17),transparent 72%);
   animation:vb-aurora 34s ease-in-out infinite alternate}
 #stage{background-color:transparent;
   background-image:radial-gradient(circle,var(--grid) 1px,transparent 1.5px),radial-gradient(circle,var(--grid-major) 1.4px,transparent 2px);
@@ -1466,15 +1474,15 @@ body{font-feature-settings:"cv11","ss01"}
 
 /* top rail, logo halo and wordmark */
 #top{background:linear-gradient(180deg,color-mix(in srgb,var(--hide-2) 100%,#fff 2%),var(--hide));box-shadow:0 1px 0 var(--line),0 10px 30px -18px rgba(0,0,0,.6)}
-#top::after{background:linear-gradient(90deg,transparent 4%,var(--fang) 32%,var(--fang-2) 64%,transparent 96%);opacity:.4}
+#top::after{background:linear-gradient(90deg,transparent 4%,var(--venom) 32%,var(--venom2) 64%,transparent 96%);opacity:.45}
 .halo{position:relative;display:grid;place-items:center;width:32px;height:32px;flex:none;border-radius:50%;animation:vb-pop .9s var(--ease-x) both}
 .halo::before{content:"";position:absolute;inset:-3px;border-radius:50%;padding:1.5px;pointer-events:none;
-  background:conic-gradient(transparent 0 58%,color-mix(in srgb,var(--fang) 70%,transparent) 76%,var(--fang-2) 90%,transparent 100%);
+  background:conic-gradient(transparent 0 56%,rgba(255,255,255,.55) 74%,var(--venom) 90%,transparent 100%);
   -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;animation:vb-spin 18s linear infinite}
 .halo::after{content:"";position:absolute;inset:1px;border-radius:50%;pointer-events:none;box-shadow:0 0 16px 3px color-mix(in srgb,var(--fang) 60%,transparent);opacity:.25;animation:vb-breathe 5.5s ease-in-out infinite}
 .mark{width:30px;height:30px;border-radius:50%;position:relative;z-index:1;display:block}
 .word{font:900 14px/1 var(--font-brand);letter-spacing:.16em;color:var(--ice);animation:vb-up .9s .12s var(--ease-x) both}
-.word em{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.word em{background:var(--grad-text);-webkit-background-clip:text;background-clip:text;color:transparent}
 
 /* buttons: hover lights the border with the brand gradient, press settles */
 .tb,.tm-btn,.ib,.tool,.zoomchip,.st-tab,.pl-row,.pl-msrow{transition:background-color .14s var(--ease),border-color .14s var(--ease),box-shadow .16s var(--ease),color .14s var(--ease),transform .14s var(--ease)}
@@ -1483,7 +1491,7 @@ body{font-feature-settings:"cv11","ss01"}
 .tb:active,.tm-btn:active,.ib:active,.tool:active{transform:translateY(1px) scale(.97)}
 .ib[aria-pressed=true]{color:var(--fang)}
 .tm-btn.ok,.tb.danger{position:relative;overflow:hidden;background:var(--grad-deep);border-color:transparent;color:#fff;box-shadow:0 8px 22px -10px color-mix(in srgb,var(--fang) 85%,transparent)}
-.tm-btn.ok:hover,.tb.danger:hover{background:var(--grad-deep);color:#fff;filter:brightness(1.08);box-shadow:0 10px 26px -10px color-mix(in srgb,var(--fang-2) 90%,transparent)}
+.tm-btn.ok:hover,.tb.danger:hover{background:var(--grad-deep);color:#fff;filter:brightness(1.08);box-shadow:0 10px 26px -8px color-mix(in srgb,var(--venom) 70%,transparent)}
 .tm-btn.ok::after,.tb.danger::after{content:"";position:absolute;top:0;bottom:0;left:-50%;width:40%;pointer-events:none;opacity:0;transform:skewX(-18deg);
   background:linear-gradient(100deg,transparent,rgba(255,255,255,.38),transparent)}
 .tm-btn.ok:hover::after,.tb.danger:hover::after{animation:vb-sheen .75s var(--ease) both}
@@ -1501,7 +1509,7 @@ body{font-feature-settings:"cv11","ss01"}
 .sheet>*{animation:vb-up .55s var(--ease-x) both}
 .sheet>:nth-child(2){animation-delay:45ms}.sheet>:nth-child(3){animation-delay:90ms}.sheet>:nth-child(4){animation-delay:135ms}.sheet>:nth-child(5){animation-delay:180ms}.sheet>:nth-child(n+6){animation-delay:225ms}
 .sheet h2{font:700 20px/1.2 var(--font-display);letter-spacing:-.01em;text-transform:none;color:var(--ice)}
-.sheet h2 em{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.sheet h2 em{background:var(--grad-text);-webkit-background-clip:text;background-clip:text;color:transparent}
 .st-group h3{font:650 11.5px var(--font-ui);letter-spacing:.06em;color:var(--bone-dim)}
 .st-tab[aria-selected=true]{background:linear-gradient(90deg,color-mix(in srgb,var(--fang) 16%,transparent),color-mix(in srgb,var(--fang-2) 6%,transparent));box-shadow:inset 2px 0 0 var(--fang)}
 .menu,.picker{background:color-mix(in srgb,var(--hide-2) 94%,transparent);backdrop-filter:blur(16px);box-shadow:inset 0 1px 0 var(--gloss),var(--lift-2);animation:vb-menu .22s var(--ease) both;transform-origin:top left}
@@ -1509,13 +1517,13 @@ body{font-feature-settings:"cv11","ss01"}
 .tm-in:focus{border-color:transparent;background:linear-gradient(var(--void-2),var(--void-2)) padding-box,var(--grad) border-box}
 .st-about .logo{width:104px;height:104px;flex:none;border-radius:16px;box-shadow:0 0 0 1px var(--line-2),0 14px 34px -10px color-mix(in srgb,var(--fang) 55%,transparent);animation:vb-pop .9s var(--ease-x) both}
 .st-about .st-txt b{font:900 18px var(--font-brand);letter-spacing:.12em;text-transform:uppercase;color:var(--ice)}
-.pl-big b{font:900 30px/1 var(--font-brand);letter-spacing:.02em;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.pl-big b{font:900 30px/1 var(--font-brand);letter-spacing:.02em;background:var(--grad-text);-webkit-background-clip:text;background-clip:text;color:transparent}
 #planner{background:linear-gradient(180deg,color-mix(in srgb,var(--hide) 100%,#fff 2%),var(--hide));box-shadow:-24px 0 40px -24px var(--shadow);animation:vb-right .5s var(--ease-x) both}
 
 /* cards: depth at rest; on hover the brand gradient traces round the border and the shadow grows */
 .node{box-shadow:inset 0 1px 0 var(--gloss),0 10px 26px -14px var(--shadow);transition:box-shadow .16s var(--ease)}
 .node::before{content:"";position:absolute;inset:-1px;border-radius:inherit;padding:1.5px;pointer-events:none;--vb-t:0%;
-  background:conic-gradient(from 200deg,var(--fang) 0%,var(--fang-2) calc(var(--vb-t)*.5),var(--sheen) var(--vb-t),transparent var(--vb-t));
+  background:conic-gradient(from 200deg,var(--venom) 0%,var(--venom-mid) calc(var(--vb-t)*.55),var(--venom2) var(--vb-t),transparent var(--vb-t));
   -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;transition:--vb-t .55s var(--ease-x)}
 .node:hover::before{--vb-t:100%}
 .node:hover{box-shadow:inset 0 1px 0 var(--gloss),0 16px 34px -12px var(--shadow)}
@@ -9780,7 +9788,7 @@ async function sendPreview(manual) {
 // canvas is drawn, so no picture, note or estimate can slip out. Always in the dark skin, like the public page.
 async function roadmapPreviewImage(rm) {
   const W = 1200, H = 630, {F} = drawTokens();
-  const pal = {'--void': '#07080d', '--bone': '#c9cfdf', '--bone-dim': '#8b93aa', '--fang': '#ff2a6d', '--run': '#22d3ee', '--ok': '#34d399', '--warn': '#fbbf24'}, tok = n => pal[n] || '#c9cfdf';
+  const pal = {'--void': '#07080d', '--bone': '#c9cfdf', '--bone-dim': '#8b93aa', '--fang': '#ff2d46', '--run': '#22d3ee', '--ok': '#34d399', '--warn': '#fbbf24'}, tok = n => pal[n] || '#c9cfdf';
   const shown = doc.items.filter(c => c.type === 'node' && !c.nopub && c.prio !== 'wont' && (c.kind === 'task' || c.kind === 'milestone' || (c.kind === 'bug' && rm.showBugs) || (c.kind === 'idea' && rm.showIdeas)));
   const work = shown.filter(c => c.kind !== 'idea' && c.kind !== 'milestone');
   const counts = [['Planned', work.filter(c => c.status === 'todo' || c.status === 'blocked').length, tok('--bone')], ['In progress', work.filter(c => c.status === 'doing').length, tok('--run')], ['Done', work.filter(c => c.status === 'done').length, tok('--ok')]];
@@ -9790,7 +9798,7 @@ async function roadmapPreviewImage(rm) {
   const g = cv.getContext('2d'), L = 64;
   g.fillStyle = tok('--void'); g.fillRect(0, 0, W, H);
   const glow = g.createRadialGradient(W * 0.86, -80, 10, W * 0.86, -80, 760);
-  glow.addColorStop(0, 'rgba(154,61,255,.30)'); glow.addColorStop(1, 'rgba(154,61,255,0)');
+  glow.addColorStop(0, 'rgba(196,30,50,.32)'); glow.addColorStop(1, 'rgba(138,15,31,0)');
   g.fillStyle = glow; g.fillRect(0, 0, W, H);
   g.fillStyle = 'rgba(241,238,242,.07)';
   for (let x = 12; x < W; x += 24) for (let y = 12; y < H; y += 24) g.fillRect(x - 0.75, y - 0.75, 1.5, 1.5);
