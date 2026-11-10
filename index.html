@@ -1478,15 +1478,15 @@ body{font-feature-settings:"cv11","ss01"}
 
 /* buttons: hover lights the border with the brand gradient, press settles */
 .tb,.tm-btn,.ib,.tool,.zoomchip,.st-tab,.pl-row,.pl-msrow{transition:background-color .14s var(--ease),border-color .14s var(--ease),box-shadow .16s var(--ease),color .14s var(--ease),transform .14s var(--ease)}
-.tb:hover,.tm-btn:hover{border-color:transparent;background:linear-gradient(var(--hide-3),var(--hide-3)) padding-box,var(--grad) border-box}
+.tb:not(.danger):hover,.tm-btn:not(.ok):not(.bad):hover{border-color:transparent;background:linear-gradient(var(--hide-3),var(--hide-3)) padding-box,var(--grad) border-box}
 .tb[aria-pressed=true]{border-color:transparent;background:linear-gradient(color-mix(in srgb,var(--fang) 13%,var(--hide-2)),color-mix(in srgb,var(--fang) 13%,var(--hide-2))) padding-box,var(--grad) border-box}
 .tb:active,.tm-btn:active,.ib:active,.tool:active{transform:translateY(1px) scale(.97)}
 .ib[aria-pressed=true]{color:var(--fang)}
-.tm-btn.ok{position:relative;overflow:hidden;background:var(--grad-deep);border-color:transparent;color:#fff;box-shadow:0 8px 22px -10px color-mix(in srgb,var(--fang) 85%,transparent)}
-.tm-btn.ok:hover{background:var(--grad-deep);filter:brightness(1.08);box-shadow:0 10px 26px -10px color-mix(in srgb,var(--fang-2) 90%,transparent)}
-.tm-btn.ok::after{content:"";position:absolute;top:0;bottom:0;left:-50%;width:40%;pointer-events:none;opacity:0;transform:skewX(-18deg);
+.tm-btn.ok,.tb.danger{position:relative;overflow:hidden;background:var(--grad-deep);border-color:transparent;color:#fff;box-shadow:0 8px 22px -10px color-mix(in srgb,var(--fang) 85%,transparent)}
+.tm-btn.ok:hover,.tb.danger:hover{background:var(--grad-deep);color:#fff;filter:brightness(1.08);box-shadow:0 10px 26px -10px color-mix(in srgb,var(--fang-2) 90%,transparent)}
+.tm-btn.ok::after,.tb.danger::after{content:"";position:absolute;top:0;bottom:0;left:-50%;width:40%;pointer-events:none;opacity:0;transform:skewX(-18deg);
   background:linear-gradient(100deg,transparent,rgba(255,255,255,.38),transparent)}
-.tm-btn.ok:hover::after{animation:vb-sheen .75s var(--ease) both}
+.tm-btn.ok:hover::after,.tb.danger:hover::after{animation:vb-sheen .75s var(--ease) both}
 
 /* tool spine */
 #tools{background:linear-gradient(180deg,color-mix(in srgb,var(--hide-2) 100%,#fff 2%),var(--hide) 70%);border-color:var(--line-2);box-shadow:inset 0 1px 0 var(--gloss),var(--lift);animation:vb-left .7s .2s var(--ease-x) both}
@@ -1539,7 +1539,7 @@ body{font-feature-settings:"cv11","ss01"}
   #wrap::before,.halo::before,.halo::after{animation:none}
   .halo,.word,#tools,.sheet,.sheet>*,.menu,.picker,#toast,#planner,.st-about .logo{animation:vb-fade .2s both}
   #ctx{animation:none}
-  .tm-btn.ok:hover::after{animation:none}
+  .tm-btn.ok:hover::after,.tb.danger:hover::after{animation:none}
   .node::before{transition:none}
   .vw-tile:hover{transform:none}
 }
