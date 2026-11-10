@@ -3,8 +3,8 @@
     python -s tools/brand-inline.py
 
 Fills in, from assets/: the favicon (brand/mark-32.png), the mark in the top bar (brand/mark-128.webp), the logo
-in Settings > About (brand/logo-288.webp) and the fonts (fonts/*.woff2: Orbitron for titles, Share Tech Mono for
-data; SIL Open Font License, see fonts/OFL-*.txt). Run tools/brand-icons.py first to remake the pictures.
+in Settings > About (brand/logo-288.webp) and the fonts (fonts/*.woff2: Inter for the interface, JetBrains Mono for
+data, Orbitron for the wordmark and big numbers; SIL Open Font License, see fonts/OFL-*.txt). Run tools/brand-icons.py first to remake the pictures.
 Running it again replaces what an earlier run put in.
 """
 import base64, os, re
@@ -14,9 +14,8 @@ A = os.path.join(ROOT, 'assets')
 PATH = os.path.join(ROOT, 'index.html')
 b64 = lambda *p: base64.b64encode(open(os.path.join(A, *p), 'rb').read()).decode()
 
-FONTS = [('Orbitron', 500, 'orbitron-latin-500-normal.woff2'), ('Orbitron', 700, 'orbitron-latin-700-normal.woff2'),
-         ('Orbitron', 800, 'orbitron-latin-800-normal.woff2'), ('Orbitron', 900, 'orbitron-latin-900-normal.woff2'),
-         ('Share Tech Mono', 400, 'share-tech-mono-latin-400-normal.woff2')]
+FONTS = [('Inter', '100 900', 'inter-latin-wght-normal.woff2'), ('JetBrains Mono', '100 800', 'jetbrains-mono-latin-wght-normal.woff2'),
+         ('Orbitron', '700', 'orbitron-latin-700-normal.woff2'), ('Orbitron', '900', 'orbitron-latin-900-normal.woff2')]
 faces = ''.join(f"@font-face{{font-family:'{fam}';font-style:normal;font-weight:{w};font-display:swap;"
                 f"src:url(data:font/woff2;base64,{b64('fonts', f)}) format('woff2')}}" for fam, w, f in FONTS)
 
