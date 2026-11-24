@@ -2,6 +2,23 @@
 
 All notable changes to Venom Board are listed here. The project follows [Semantic Versioning](https://semver.org).
 
+## [Unreleased]
+
+### Added
+- **Relates to connectors**: a second kind of connector that only shows that two things belong together, for mind maps, related ideas and notes. It's a softer dashed line with no arrowhead, and it never touches the schedule, the Timeline, the critical path, *waits on*, *Ready to start*, Trace or Tidy layout. Hold `Alt` while you drag from a card's pin (or with the connector tool) to draw one, or switch any connector between *Waits on* and *Relates to (no schedule)* from its right-click menu or its toolbar. You can still change its colour, style, arrowheads and label like any other connector
+- **GDD mind map template**: a design doc that grows in every direction. The game sits in the middle with its pitch, twelve branches around it (pillars, core loop, mechanics, progression, levels, world and story, characters, art, audio, UI and controls, tech, scope and cuts), and each branch's details further out the same way, each branch in its own colour. Everything is an idea joined by *relates to* connectors, so it stays out of your schedule. When a branch gets big, give it its own board and keep a summary card on the map
+- **MCP**: `add_connectors`, `link_cards` and `update_connectors` take `kind` (`waits_on` or `relates_to`), connectors in `get_items` say which kind they are, and `get_board` lists the cards a card `relates_to` apart from what it `waits_on`. `get_schedule`, `trace_card` and the ready list leave *relates to* connectors out. `apply_template` and `create_project` can use the new `gddmap` template
+
+### Changed
+- **New look**: Venom Board now wears the VenomStudios brand shared by every Venom tool. The VenomStudios skull is the app icon (window, taskbar, tray, installer, favicon), sits in the top bar inside a softly turning halo, and its full logo is in Settings → About
+- **Modern, calmer surfaces**: layered dark panels with soft shadows and rounded corners, and the red brand gradient (the logo's neon red to a deep red) as an accent: the chosen tool, main buttons, borders on hover. Cyan is kept for information
+- **Motion**: a slow red aurora behind the canvas, dialogs that scale in with their parts arriving one after another, a sheen across main buttons, and a gradient that traces round a card's border when you point at it. It runs on the graphics card, so the board stays as quick as before, and it turns off when your system asks for reduced motion
+- **New type**: Inter for the interface, JetBrains Mono for numbers and labels, Orbitron for the name and big numbers. The fonts are built into the app, so nothing loads from a font service any more (the web app and the website serve them themselves)
+- **Errors are orange**: now that the brand is red, overdue, blocked and failed things show in orange, so red never means "wrong"
+- **Easier to read**: white text sits on a deeper red for contrast, and the light skin's status colours are a little darker
+- The screenshot tool and pinned screenshots use the same look
+- Your boards keep their colours: card, ink and phase colours are unchanged
+
 ## [1.12.0] - 2026-10-26
 
 ### Added

@@ -58,7 +58,7 @@ function cookie(name, value, { maxAge, secure, path = '/' }) {
 const MIME = {
   '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
   '.json': 'application/json', '.png': 'image/png', '.jpg': 'image/jpeg', '.svg': 'image/svg+xml', '.ico': 'image/x-icon',
-  '.webp': 'image/webp', '.txt': 'text/plain; charset=utf-8',
+  '.webp': 'image/webp', '.txt': 'text/plain; charset=utf-8', '.woff2': 'font/woff2',
 };
 
 // Serve a file from inside `root` only; anything resolving outside it is a 404. Given the request, a single

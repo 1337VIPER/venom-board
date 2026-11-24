@@ -950,9 +950,9 @@ async function start(overrides = {}, hooks = {}) {
 
   /* ---------- request handling ---------- */
   const ROOT = cfg.ROOT;
-  const SITE_CSP = "default-src 'self'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'";
+  const SITE_CSP = "default-src 'self'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; font-src 'self'; script-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'";
   // the app may play videos from this server or the visitor's own files, and YouTube or Vimeo players when clicked
-  const APP_CSP = "default-src 'self'; img-src 'self' data: blob: https: http:; media-src 'self' data: blob:; frame-src https://www.youtube-nocookie.com https://player.vimeo.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'self' 'unsafe-inline'; connect-src 'self' https: wss: ws:; frame-ancestors 'none'; base-uri 'none'";
+  const APP_CSP = "default-src 'self'; img-src 'self' data: blob: https: http:; media-src 'self' data: blob:; frame-src https://www.youtube-nocookie.com https://player.vimeo.com; style-src 'self' 'unsafe-inline'; font-src 'self' data:; script-src 'self' 'unsafe-inline'; connect-src 'self' https: wss: ws:; frame-ancestors 'none'; base-uri 'none'";
   const pageHeaders = csp => ({ 'Content-Security-Policy': csp, 'X-Frame-Options': 'DENY', 'Referrer-Policy': 'strict-origin-when-cross-origin', 'Cache-Control': 'no-cache' });
   const WEB = cfg.WEB_DIR, APP = cfg.APP_DIR;
   const PAGES = { '/': [WEB, 'index.html', SITE_CSP], '/account': [WEB, 'account.html', SITE_CSP], '/app': [APP, 'index.html', APP_CSP] };

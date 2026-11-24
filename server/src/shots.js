@@ -32,7 +32,7 @@ const TYPES = [
 ];
 const EXT = Object.fromEntries(TYPES.map(t => [t.mime, t.ext]));
 // the page loads only its own picture and the site's stylesheet, runs no script, and posts only back here
-const PAGE_CSP = "default-src 'none'; img-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; form-action 'self'; frame-ancestors 'none'; base-uri 'none'";
+const PAGE_CSP = "default-src 'none'; img-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'";
 const PAGE_HEADERS = { 'Content-Security-Policy': PAGE_CSP, 'X-Frame-Options': 'DENY', 'Referrer-Policy': 'no-referrer', 'X-Robots-Tag': 'noindex, nofollow', 'Cache-Control': 'no-cache' };
 // control characters, and the ones that flip the direction of text (which could disguise a name), go
 const CTRL = /[\u0000-\u001f\u007f-\u009f‎‏‪-‮⁦-⁩]/g;
@@ -248,9 +248,8 @@ function shots({ db, cfg, log, route, fail, H, limit, mail, plain, secret, diskF
 <meta property="og:image:height" content="${s.height}">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="${esc(imageUrl(s))}">
-<meta name="theme-color" content="#060609">
+<meta name="theme-color" content="#05060a">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@800&family=Manrope:wght@600;800&display=swap">
 <link rel="stylesheet" href="/web/site.css">
 <style>
   body{min-height:100vh;display:flex;flex-direction:column}

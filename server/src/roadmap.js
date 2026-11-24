@@ -110,7 +110,6 @@ function embed(o) {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${esc(name)} roadmap</title>
 <meta name="robots" content="noindex">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@700;800;900&family=Manrope:wght@500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap">
 <link rel="stylesheet" href="/web/site.css">
 <script src="/web/roadmap.js" defer></script>
 </head>

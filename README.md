@@ -3,18 +3,18 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/1337VIPER/venom-board/releases/latest"><img src="https://img.shields.io/github/v/release/1337VIPER/venom-board?style=for-the-badge&color=ff2a4f&labelColor=0e0e15&label=download" alt="Latest release"></a>
-  <img src="https://img.shields.io/badge/desktop-windows%20%7C%20macos%20%7C%20linux-0e0e15?style=for-the-badge&labelColor=0e0e15" alt="Windows, macOS and Linux">
-  <a href="https://venomboard.com/app"><img src="https://img.shields.io/badge/browser-chrome%20%7C%20edge%20%7C%20firefox-0e0e15?style=for-the-badge" alt="Runs in modern browsers"></a>
-  <a href="https://1337viper.itch.io/venom-board"><img src="https://img.shields.io/badge/itch.io-try%20it%20in%20your%20browser-fa5c5c?style=for-the-badge&logo=itchdotio&logoColor=white&labelColor=0e0e15" alt="Try it on itch.io"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/github/license/1337VIPER/venom-board?style=for-the-badge&color=9a3dff&labelColor=0e0e15" alt="MIT license"></a>
+  <a href="https://github.com/1337VIPER/venom-board/releases/latest"><img src="https://img.shields.io/github/v/release/1337VIPER/venom-board?style=for-the-badge&color=ff2d46&labelColor=07080d&label=download" alt="Latest release"></a>
+  <img src="https://img.shields.io/badge/desktop-windows%20%7C%20macos%20%7C%20linux-07080d?style=for-the-badge&labelColor=07080d" alt="Windows, macOS and Linux">
+  <a href="https://venomboard.com/app"><img src="https://img.shields.io/badge/browser-chrome%20%7C%20edge%20%7C%20firefox-07080d?style=for-the-badge" alt="Runs in modern browsers"></a>
+  <a href="https://1337viper.itch.io/venom-board"><img src="https://img.shields.io/badge/itch.io-try%20it%20in%20your%20browser-fa5c5c?style=for-the-badge&logo=itchdotio&logoColor=white&labelColor=07080d" alt="Try it on itch.io"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/1337VIPER/venom-board?style=for-the-badge&color=8a0f1f&labelColor=07080d" alt="MIT license"></a>
 </p>
 
 <p align="center">
-  <a href="https://bsky.app/profile/venomboard.bsky.social"><img src="https://img.shields.io/badge/bluesky-%40venomboard.bsky.social-1185fe?style=for-the-badge&logo=bluesky&logoColor=white&labelColor=0e0e15" alt="Bluesky: @venomboard.bsky.social"></a>
-  <a href="https://x.com/Venomboardapp"><img src="https://img.shields.io/badge/x-%40Venomboardapp-0e0e15?style=for-the-badge&logo=x&logoColor=white&labelColor=0e0e15" alt="X: @Venomboardapp"></a>
-  <a href="https://www.reddit.com/user/Venomboard/"><img src="https://img.shields.io/badge/reddit-u%2FVenomboard-ff4500?style=for-the-badge&logo=reddit&logoColor=white&labelColor=0e0e15" alt="Reddit: u/Venomboard"></a>
-  <a href="https://venomboard.com/discord"><img src="https://img.shields.io/badge/discord-join%20the%20community-5865f2?style=for-the-badge&logo=discord&logoColor=white&labelColor=0e0e15" alt="Discord: join the community"></a>
+  <a href="https://bsky.app/profile/venomboard.bsky.social"><img src="https://img.shields.io/badge/bluesky-%40venomboard.bsky.social-1185fe?style=for-the-badge&logo=bluesky&logoColor=white&labelColor=07080d" alt="Bluesky: @venomboard.bsky.social"></a>
+  <a href="https://x.com/Venomboardapp"><img src="https://img.shields.io/badge/x-%40Venomboardapp-07080d?style=for-the-badge&logo=x&logoColor=white&labelColor=07080d" alt="X: @Venomboardapp"></a>
+  <a href="https://www.reddit.com/user/Venomboard/"><img src="https://img.shields.io/badge/reddit-u%2FVenomboard-ff4500?style=for-the-badge&logo=reddit&logoColor=white&labelColor=07080d" alt="Reddit: u/Venomboard"></a>
+  <a href="https://venomboard.com/discord"><img src="https://img.shields.io/badge/discord-join%20the%20community-5865f2?style=for-the-badge&logo=discord&logoColor=white&labelColor=07080d" alt="Discord: join the community"></a>
 </p>
 
 <p align="center">
@@ -87,6 +87,7 @@ Solo boards need no account, no subscription and no telemetry. They work offline
 - Status, **discipline** (Code, Art, Design, Level, Audio, UI/UX, VFX, Narrative, QA, Tech/build, Marketing), **MoSCoW priority** for scope cuts, **estimates** (`4h`, `2d`, `1w`) and **due dates** that turn red when overdue
 - Checklists inside notes: any line starting with `[ ]` becomes a clickable checkbox, with progress on the card
 - **Tendril connectors**: curved, straight, elbow or **circuit** (straight runs with 45° bends, like Electric Nodes in Unreal), with arrowheads, dashes, labels and an animated flow. Right-click a wire to add **reroute points** and drag them to route your noodles tidily (they snap into line with their neighbours); double-click one to remove it. Right-click the board → *Style every connector* switches every wire at once. Wires that share a side or a corridor **spread apart** so none hides another, and **card pins** let you drag a connection from either edge of a card, Blueprint-style
+- **Relates to** connectors: hold `Alt` while you drag a connection (or pick *Relates to* in the connector's toolbar or right-click menu) for a dashed line that only shows that two things belong together, like the branches of a mind map. It never touches the schedule, the Timeline, *waits on*, Trace or Tidy layout
 - **Tidy layout**: lay cards out left to right by what they wait on, with fewer crossings, for the selection, one phase or the whole board
 - **Place next**: drag a connector out of a card into empty space and choose what comes next, Blueprint-style. `Tab` adds the next connected task instantly
 - **Dependency awareness**: cards show *waits on N* while anything feeding into them is unfinished, the *Ready to start* filter lists what you can pick up today, and **Trace** highlights a card's whole chain of dependencies
@@ -100,7 +101,7 @@ Solo boards need no account, no subscription and no telemetry. They work offline
 - **Tags and saved filters**: tag cards, filter the Planner by tag, and save sets of filters to pick again
 - **Import** from **Trello** (JSON export), **Jira** (CSV export) or any spreadsheet saved as CSV: lists, sprints or statuses become phases, with statuses, priorities, estimates, due dates and checklists carried over
 - **Search everything** (`Ctrl+Shift+F`): every board on this computer and every team project you're in, at once
-- **12 game-dev templates**: game roadmap, feature, level and character pipelines, vertical slice, weekly sprint board, bug triage, playtest loop, 48-hour game jam, Steam launch, a design-doc outline and an art moodboard. Browse them at [venomboard.com/templates](https://venomboard.com/templates) and open one in a click
+- **13 game-dev templates**: game roadmap, feature, level and character pipelines, vertical slice, weekly sprint board, bug triage, playtest loop, 48-hour game jam, Steam launch, a design-doc outline, a **GDD mind map** (the game in the middle, a branch per area, details growing outward in every direction) and an art moodboard. Browse them at [venomboard.com/templates](https://venomboard.com/templates) and open one in a click
 - **Game jam clock**: the deadline counting down on the board and in the top bar, the theme (or when it's revealed), a scope check of the work left against the time you have, and **Cut scope** to drop the lowest-priority work until it fits, with reminders as the deadline nears
 - **Export to Markdown** (GitHub, Notion, Discord) and **CSV** (Sheets, Jira, Trello)
 - **Board lock**: a view-only mode for reviews and sharing, so nothing gets nudged by accident
@@ -154,7 +155,7 @@ Solo boards need no account, no subscription and no telemetry. They work offline
 | ![The Timeline with arrows between tasks, tracked time in the bars and a task's editor open](docs/screenshots/timeline.png) | ![The Hours view: a week of tracked and planned time, with a new block being planned](docs/screenshots/hours.png) |
 | **Timeline** · every task scheduled from its estimate and what it waits on, with the critical path. Click a task to change it, drag a bar to give it a start date | **Hours** · the week hour by hour: drag across it to plan time or log what you worked. Striped is planned, solid is tracked |
 | ![Game jam clock](docs/screenshots/jam.png) | ![Template gallery](docs/screenshots/templates.png) |
-| **Game jam clock** · the countdown, the theme, a scope check and Cut scope | **Templates** · twelve ready-made game production structures |
+| **Game jam clock** · the countdown, the theme, a scope check and Cut scope | **Templates** · ready-made game production structures |
 | ![Close-up of task cards](docs/screenshots/cards.png) | ![Place next picker](docs/screenshots/place-next.png) |
 | **Cards** · discipline, priority, estimates, due dates, checklists and dependencies | **Place next** · drag a tendril into empty space to choose the next card |
 | ![The sample game roadmap](docs/screenshots/board.png) | ![Window menu](docs/screenshots/window-menu.png) |
@@ -242,9 +243,9 @@ index.html        the entire app: UI, canvas engine, planner, timeline, template
 electron/         desktop shell: window, pin, opacity, click-through, file dialogs and signed updates
   dev/            self-test and screenshot generator used during development
 server/           the team server: accounts, live editing, MCP and more, to run yourself (AGPL-3.0)
-tools/            release checks: check-build.js and sign-update.js
+tools/            release checks (check-build.js, sign-update.js) and the brand scripts (brand-icons.py, brand-inline.py)
 .github/          the workflows that build the Linux and macOS apps and test the server
-assets/           app icon
+assets/           app icon, the VenomStudios brand pictures and the fonts (Inter, JetBrains Mono, Orbitron: SIL OFL 1.1)
 docs/             banner, screenshots and template pictures
 ```
 
