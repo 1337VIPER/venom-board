@@ -249,6 +249,7 @@ html.board-locked .frame:not(.collapsed) .f-fold{display:none}
 .ink.hl{opacity:var(--hl-op);stroke-linecap:square}
 .l-dim{opacity:.12}
 .l-path{fill:none;stroke-linecap:round;stroke-linejoin:round}
+.l-rel .l-path,.l-rel .l-head{opacity:.7}  /* "relates to": softer than a dependency */
 .l-glow{fill:none;stroke:var(--fang);opacity:.3;stroke-linecap:round;stroke-linejoin:round}
 .l-flow{fill:none;stroke-dasharray:1.5 15;stroke-linecap:round;animation:flow 1.1s linear infinite}
 @keyframes flow{to{stroke-dashoffset:-16.5}}
@@ -1737,6 +1738,7 @@ body{font-feature-settings:"cv11","ss01"}
         <dt><kbd>Red dot</kbd></dt><dd>Drag it out: drop on a card to connect, or on empty space to choose what comes next</dd>
         <dt><kbd>Card pins</kbd></dt><dd>Drag the dot on a card's right edge to connect what comes next, or the left one to connect what it waits on</dd>
         <dt><kbd>Phase pins</kbd></dt><dd>Phases have the same dots: drag from one phase to the next, and everything in the next phase waits on this one</dd>
+        <dt><kbd>Alt</kbd> + drag a pin</dt><dd>A <i>relates to</i> connector: a dashed line that links ideas without changing the schedule. Right-click any connector to switch between waits on and relates to</dd>
         <dt><kbd>Collapse</kbd></dt><dd>Right-click a phase to fold it to its title bar. Double-click the bar to open it</dd>
         <dt><kbd>Tidy</kbd></dt><dd>Right-click the board or a phase, or use Arrange, to lay cards out by what they wait on</dd>
         <dt><kbd>PgDn</kbd> <kbd>PgUp</kbd></dt><dd>Fly to the next or previous phase</dd>
@@ -2021,7 +2023,7 @@ const opts = {
   pen: {color: '#ff2a4f', size: 4},
   hl: {color: '#fff23d', size: 26},
   eraser: {size: 30},
-  link: {color: BONE, style: 'curve', head: 'end', dash: false, flow: false},
+  link: {color: BONE, style: 'curve', head: 'end', dash: false, flow: false, rel: false},
   node: {color: '#ff2a4f', kind: 'task'},
   text: {color: BONE, size: 32},
   frame: {color: '#a66bff'},
@@ -2179,6 +2181,9 @@ function matches(n) {
   if (filt.q && !((n.title || '') + '\n' + (n.body || '')).toLowerCase().includes(filt.q.toLowerCase())) return false;
   return true;
 }
+// A connector means "waits on" unless it's a "relates to" one (rel): that kind only shows that two things belong
+// together, and the schedule, Timeline, critical path, waits-on counts, Trace and Tidy layout leave it out.
+const isDep = l => !l.rel;
 // What a wire joins, as cards. A card is itself; a phase stands for the cards inside it, so a wire from one phase to
 // the next means every card in the second waits on the work in the first. `cache` keeps each phase's cards for one pass.
 function wireCards(end, cache) {
@@ -2199,7 +2204,7 @@ function traceSet(id) {
     while (q.length) {
       const cur = q.shift(), ends = new Set([cur, ...phasesOf(idx.get(cur))]);  // a card is also wired through its phases
       for (const l of doc.links) {
-        const s = l[a].id, t = l[b].id; if (!ends.has(s) || !t || seen.has(t)) continue;
+        const s = l[a].id, t = l[b].id; if (!isDep(l) || !ends.has(s) || !t || seen.has(t)) continue;
         seen.add(t); keep.add(t); q.push(t);
         for (const c of wireCards(l[b], fc)) if (c.id !== t && !seen.has(c.id)) { seen.add(c.id); keep.add(c.id); q.push(c.id); }
       }
@@ -2214,7 +2219,7 @@ function computeDerived() {
   openDeps = new Map();
   const fc = new Map();
   for (const l of doc.links) {
-    if (!l.from.id || !l.to.id) continue;
+    if (!isDep(l) || !l.from.id || !l.to.id) continue;
     // each wire counts once: a phase that still has work in it holds up everything the wire leads to
     const A = wireCards(l.from, fc).filter(a => a.kind !== 'idea' && a.prio !== 'wont');
     if (!A.some(a => a.status !== 'done')) continue;
@@ -2823,15 +2828,17 @@ function renderLinks() {
     const g = G.get(l.id); if (!g) continue;
     geom.set(l.id, g);
     const c = col(l.color), w = g.w;
-    const dim = dimSet && !((l.from.id && dimSet.has(l.from.id)) && (l.to.id && dimSet.has(l.to.id)));
-    s += dim ? '<g class="l-dim">' : '<g>';
+    // tracing a card dims every "relates to" wire too, since those aren't part of its chain
+    const dim = dimSet && ((trace && !isDep(l)) || !((l.from.id && dimSet.has(l.from.id)) && (l.to.id && dimSet.has(l.to.id))));
+    const cls = [dim ? 'l-dim' : '', isDep(l) ? '' : 'l-rel'].filter(Boolean).join(' ');
+    s += cls ? `<g class="${cls}">` : '<g>';
     if (sel.has(l.id)) s += `<path d="${g.d}" class="l-glow" stroke-width="${w + 10}"/>`;
     const dash = l.dash ? ` stroke-dasharray="${rd(w * 3)} ${rd(w * 2.6)}"` : '';
     const grow = l.id === grown && !l.dash ? ' grow" pathLength="1' : '';
     s += `<path d="${g.d}" class="l-path${grow}" stroke="${c}" stroke-width="${w}"${dash}/>`;
     if (l.flow) s += `<path d="${g.d}" class="l-flow" stroke="${l.color === BONE ? 'var(--fang)' : 'var(--bone)'}" stroke-width="${w + 1.6}"/>`;
-    if (l.head === 'end' || l.head === 'both') s += `<path d="${headPath(g.p1, g.dir1, w)}" fill="${c}"/>`;
-    if (l.head === 'both') s += `<path d="${headPath(g.p0, g.dir0, w)}" fill="${c}"/>`;
+    if (l.head === 'end' || l.head === 'both') s += `<path class="l-head" d="${headPath(g.p1, g.dir1, w)}" fill="${c}"/>`;
+    if (l.head === 'both') s += `<path class="l-head" d="${headPath(g.p0, g.dir0, w)}" fill="${c}"/>`;
     for (const k of g.via) s += `<circle class="l-knot" cx="${rd(k.x)}" cy="${rd(k.y)}" r="${rd(w + 2.5)}" fill="${c}"/>`;
     if (l.label) {
       const tw = mctx.measureText(l.label).width, pw = tw + 18, ph = 22;
@@ -3263,6 +3270,7 @@ function cleanLink(l) {
   const out = {id: l.id, type: 'link', from, to, color: colorOr(l.color, BONE), style: oneOf(l.style, ['curve', 'straight', 'elbow', 'circuit'], 'curve'),
     head: oneOf(l.head, ['end', 'both', 'none'], 'end'), dash: !!l.dash, flow: !!l.flow, label: txt(l.label, 60)};
   if (l.width !== undefined) out.width = clamp(num(l.width, 2.5), 1, 12);
+  if (l.rel === true || l.rel === false) out.rel = l.rel;  // "relates to", not "waits on" (false: made a dependency again)
   const via = (Array.isArray(l.via) ? l.via : []).slice(0, 24).filter(k => k && isFinite(k.x) && isFinite(k.y) && Math.abs(k.x) < 1e7 && Math.abs(k.y) < 1e7).map(k => ({x: num(k.x), y: num(k.y)}));
   if (via.length) out.via = via;  // reroute points the wire runs through
   return out;
@@ -4502,11 +4510,28 @@ function updateToolDots() {
   $('#penDot').style.setProperty('--c', col(opts.pen.color));
   $('#hlDot').style.setProperty('--c', opts.hl.color);
 }
-// `rev`: dragged out of a card's input pin, so the wire runs from wherever it's dropped into that card
-function startLink(from, w, fromPort, rev) {
+// `rev`: dragged out of a card's input pin, so the wire runs from wherever it's dropped into that card.
+// `rel`: a "relates to" wire (Alt held, or the connector tool set to it)
+function startLink(from, w, fromPort, rev, rel) {
   const o = opts.link, end = {x: w.x, y: w.y};
   drag = {type: 'link', fromPort, rev: !!rev, start: w, cur: w, target: null,
     temp: {id: '__temp', type: 'link', from: rev ? end : from, to: rev ? from : end, color: o.color, style: o.style, head: o.head, dash: o.dash, flow: false, label: ''}};
+  if (rel || (o.rel && tool === 'link')) relLook(drag.temp, true);  // the connector tool can be set to make them
+}
+// A connector's kind: "relates to" looks it (dashed, no arrowhead, a little softer) and "waits on" gets its arrow back.
+// Off is kept as false, so a copy of the app that doesn't know the kind can't turn it into a dependency.
+function relLook(l, on) {
+  if (on) Object.assign(l, {rel: true, dash: true, head: 'none'});
+  else { if (l.rel !== undefined) l.rel = false; Object.assign(l, {dash: false, head: 'end'}); }
+  return l;
+}
+let relTip = false;
+function setLinkKind(list, on) {
+  if (blocked()) return;
+  list = list.filter(l => isDep(l) === on); if (!list.length) return;
+  list.forEach(l => relLook(l, on));
+  refresh(); commit();
+  toast(on ? 'Relates to: a dashed line that leaves the schedule alone' : 'Waits on: the card at the arrow waits for the other one');
 }
 
 /* ---------- pins on cards ---------- */
@@ -4618,17 +4643,17 @@ stage.addEventListener('pointerdown', e => {
     case 'node': setTool('select'); newNode(w); break;
     case 'text': setTool('select'); newText(w); break;
     case 'frame': { const f = newFrame(w); drag = {type: 'frame', id: f.id, a: w}; render(); break; }
-    case 'link': { const h = itemAt(w, true); startLink(h ? {id: h.id} : {x: rd(w.x), y: rd(w.y)}, w, false); break; }
+    case 'link': { const h = itemAt(w, true); startLink(h ? {id: h.id} : {x: rd(w.x), y: rd(w.y)}, w, false, false, e.altKey); break; }
   }
 });
 function downSelect(e, p, w) {
   if (cropping && cropDown(e, p, w)) return;
   const h = viewOnly() ? null : hitHandle(p);
   if (h) {
-    if (h.kind === 'pin') { startLink({id: h.id}, w, true, h.rev); return; }
+    if (h.kind === 'pin') { startLink({id: h.id}, w, true, h.rev, e.altKey); return; }  // Alt: a "relates to" wire
     const it = selObjs()[0]; if (!it) return;
     if (h.kind === 'resize') { drag = {type: 'resize', id: it.id, corner: h.corner, o: {...it}}; return; }
-    if (h.kind === 'port') { startLink({id: it.id}, w, true); return; }
+    if (h.kind === 'port') { startLink({id: it.id}, w, true, false, e.altKey); return; }
     if (h.kind === 'end') { drag = {type: 'relink', id: it.id, end: h.end, target: null}; return; }
     if (h.kind === 'knot') { drag = {type: 'knot', id: it.id, i: h.i}; return; }
   }
@@ -4713,6 +4738,7 @@ stage.addEventListener('pointermove', e => {
       const h = itemAt(w, true); let t = h && h.id !== fixed.id ? h : null;
       if (from && from.type === 'frame' && drag.fromPort && t && t.type !== 'frame') t = phaseAt(w, from.id) || t;
       drag.target = t; drag.cur = w; drag.temp[drag.rev ? 'from' : 'to'] = t ? {id: t.id} : {x: rd(w.x), y: rd(w.y)};
+      if (e.altKey && !drag.temp.rel) relLook(drag.temp, true);  // Alt pressed on the way: it becomes a "relates to" wire
       renderLinks(); renderUI(); break;
     }
     case 'knot': {
@@ -4774,6 +4800,7 @@ function onUp(e) {
     case 'erase': if (d.n) commit(); break;
     case 'link': {
       const moved = dist(toScreen(d.start.x, d.start.y), toScreen(d.cur.x, d.cur.y)) > 8;
+      if (d.temp.rel && moved && !relTip && tool !== 'link') { relTip = true; toast('Relates to: a dashed line that leaves the schedule alone. Right-click it to make it a dependency.', 4500); }
       if (d.target) {
         const l = {...d.temp, id: uid()};
         doc.links.push(l); sel.clear(); sel.add(l.id); grown = l.id;
@@ -5314,7 +5341,7 @@ function tidyBlock(cards) {
   const N = cards.length, at = new Map(cards.map((c, i) => [c.id, i])), succ = cards.map(() => []), pred = cards.map(() => []), seen = new Set();
   for (const l of doc.links) {
     const a = at.get(l.from.id), b = at.get(l.to.id);
-    if (a === undefined || b === undefined || a === b || seen.has(a * N + b)) continue;
+    if (!isDep(l) || a === undefined || b === undefined || a === b || seen.has(a * N + b)) continue;
     seen.add(a * N + b); succ[a].push(b); pred[b].push(a);
   }
   const up = cards.map((_, i) => i), root = i => { while (up[i] !== i) i = up[i] = up[up[i]]; return i; };
@@ -5449,13 +5476,14 @@ const cbtn = (act, title, icon, danger, pressed) => `<button class="cb${danger ?
 const ddbtn = (act, title, inner) => `<button class="dd" data-act="${act}" title="${title}">${inner}<svg class="chev" viewBox="0 0 20 20" aria-hidden="true">${ICON.chev}</svg></button>`;
 const STYLE_OPTS = [['curve', 'Tendril'], ['straight', 'Straight'], ['elbow', 'Elbow'], ['circuit', 'Circuit']];
 const HEAD_OPTS = [['end', '→'], ['both', '↔'], ['none', '—']];
+const LKIND_OPTS = [['dep', 'Waits on'], ['rel', 'Relates to']];  // what a connector means (see isDep)
 function toolCtx(t) {
   const o = opts[t];
   switch (t) {
     case 'pen': return `<span class="cl">Marker</span>${swatches(PEN, o.color)}${vsep}${range(1, 40, o.size)}`;
     case 'hl': return `<span class="cl">Highlighter</span>${swatches(HLC, o.color)}${vsep}${range(8, 80, o.size)}`;
     case 'eraser': return `<span class="cl">Eraser</span><span class="hint">Drag over ink to remove strokes</span>${vsep}${range(8, 120, o.size)}`;
-    case 'link': return `<span class="cl">Connector</span><span class="hint">Release on empty space to choose what comes next</span>${vsep}${swatches(PEN, o.color, false)}${vsep}${seg('lstyle', STYLE_OPTS, o.style, 'Line style')}${seg('head', HEAD_OPTS, o.head, 'Arrowheads')}${chip('dash', 'Dashed', o.dash)}`;
+    case 'link': return `<span class="cl">Connector</span><span class="hint">Release on empty space to choose what comes next · hold Alt for relates to</span>${vsep}${seg('lkind', LKIND_OPTS, o.rel ? 'rel' : 'dep', 'What it means')}${vsep}${swatches(PEN, o.color, false)}${vsep}${seg('lstyle', STYLE_OPTS, o.style, 'Line style')}${seg('head', HEAD_OPTS, o.head, 'Arrowheads')}${chip('dash', 'Dashed', o.dash)}`;
     case 'node': return `<span class="cl">Card</span>${seg('nkind', KINDS, o.kind, 'Card type')}${o.kind === 'task' ? vsep + swatches(PEN.slice(0, 7), o.color) : ''}<span class="hint">Click to place</span>`;
     case 'text': return `<span class="cl">Text</span>${swatches(PEN, o.color)}${vsep}${range(12, 120, o.size)}`;
     case 'frame': return `<span class="cl">Phase</span><span class="hint">Drag to draw a zone</span>${swatches(PEN.slice(0, 7), o.color)}`;
@@ -5498,7 +5526,7 @@ function selCtx(list) {
     }
     if (only('stroke')) h += vsep + range(1, list.every(s => s.kind === 'hl') ? 80 : 40, list[0].size * cam.z);
     if (only('text')) h += vsep + range(8, 200, list[0].size * cam.z);
-    if (only('link')) h += vsep + seg('lstyle', STYLE_OPTS, common(list.map(o => o.style)), 'Line style') + seg('head', HEAD_OPTS, common(list.map(o => o.head)), 'Arrowheads') + chip('dash', 'Dashed', list.every(o => o.dash)) + chip('flow', 'Flow', list.every(o => o.flow)) + (one ? cbtn('label', 'Edit label', 'label') + cbtn('reverse', 'Reverse direction', 'swap') + cbtn('knot', 'Add a reroute point', 'plus') : '') + (list.some(o => o.via) ? chip('unknot', 'Straighten', false) : '');
+    if (only('link')) h += vsep + seg('lkind', LKIND_OPTS, common(list.map(o => (isDep(o) ? 'dep' : 'rel'))), 'What it means: waits on drives the schedule, relates to only connects') + vsep + seg('lstyle', STYLE_OPTS, common(list.map(o => o.style)), 'Line style') + seg('head', HEAD_OPTS, common(list.map(o => o.head)), 'Arrowheads') + chip('dash', 'Dashed', list.every(o => o.dash)) + chip('flow', 'Flow', list.every(o => o.flow)) + (one ? cbtn('label', 'Edit label', 'label') + cbtn('reverse', 'Reverse direction', 'swap') + cbtn('knot', 'Add a reroute point', 'plus') : '') + (list.some(o => o.via) ? chip('unknot', 'Straighten', false) : '');
     if (only('frame')) { const shut = list.every(f => f.collapsed); h += vsep + chip('fold', shut ? 'Expand' : 'Collapse', shut) + (one ? cbtn('tidyPhase', 'Tidy this phase', 'trace') : ''); }
     if (one && one.type === 'jam') h += vsep + cbtn('jamedit', 'Edit the jam', 'clock') + cbtn('jamcut', 'Cut scope', 'trash');
     if (one && one.type === 'frame') h += vsep + chip('sprint', one.sprint ? 'Sprint…' : 'Make a sprint…', !!one.sprint);
@@ -5575,6 +5603,10 @@ function act(a, v, btn) {
       links.forEach(o => { o[key] = v; }); opts.link[key] = v;
       refresh(); if (has) commit(); break;
     }
+    case 'lkind':
+      if (has) setLinkKind(links, v === 'rel');
+      else { opts.link.rel = v === 'rel'; updateCtx(); }
+      break;
     case 'dash': case 'flow': {
       if (has) { const on = !links.every(o => o[a]); links.forEach(o => { o[a] = on; }); if (a === 'dash') opts.link.dash = on; commit(); }
       else opts.link[a] = !opts.link[a];
@@ -5705,6 +5737,8 @@ function contextEntries(hit, w) {
       E.push({label: 'Zoom to video', run: () => fitTo([hit])}, ...mediaEntries(hit), ...replaceEntries(hit), '-');
     } else if (hit.type === 'link') {
       const near = (hit.via || []).findIndex(k => dist(k, w) <= 10 / cam.z);
+      const kindOf = () => (sel.has(hit.id) ? selObjs().filter(o => o.type === 'link') : [hit]);
+      E.push({head: 'Means'}, {label: 'Waits on', icon: 'arrow', cur: isDep(hit), run: () => setLinkKind(kindOf(), false)}, {label: 'Relates to (no schedule)', icon: 'link', cur: !isDep(hit), run: () => setLinkKind(kindOf(), true)}, '-');
       E.push({label: hit.label ? 'Edit label' : 'Add label', run: () => editLinkLabel(hit)}, {label: 'Reverse direction', run: () => reverseLink(hit)},
         near >= 0 ? {label: 'Remove this reroute point', run: () => removeKnot(hit, near)} : {label: 'Add a reroute point here', icon: 'plus', run: () => addKnot(hit, w)},
         ...(hit.via ? [{label: 'Straighten (remove reroute points)', run: () => clearKnots([hit])}] : []), {head: 'Style'},
@@ -6814,7 +6848,7 @@ function drawInfo(d) {
   for (const l of d.links) { const gm = g2.get(l.id); if (gm && l.label) { const pw = mctx.measureText(l.label).width + 18; gm.lab = {x: gm.mid.x - pw / 2, y: gm.mid.y - 11, w: pw, h: 22}; } }
   for (const l of d.links) {
     const a = l.from.id && index.get(l.from.id), b = l.to.id && index.get(l.to.id);
-    if (a && b && a.type === 'node' && b.type === 'node' && a.kind !== 'idea' && a.prio !== 'wont' && a.status !== 'done') od.set(b.id, (od.get(b.id) || 0) + 1);
+    if (isDep(l) && a && b && a.type === 'node' && b.type === 'node' && a.kind !== 'idea' && a.prio !== 'wont' && a.status !== 'done') od.set(b.id, (od.get(b.id) || 0) + 1);
   }
   mctx.font = `700 15px ${drawTokens().F.display}`;
   for (const f of d.items) {
@@ -6881,9 +6915,11 @@ function paintBoard(g, d, info, ids, imgs, tok, F, area) {
     const gm = info.geom.get(l.id); if (!gm) continue;
     const c = col(l.color);
     g.strokeStyle = c; g.fillStyle = c; g.lineWidth = gm.w; g.lineCap = 'round'; g.lineJoin = 'round';
+    if (!isDep(l)) g.globalAlpha = 0.7;  // "relates to", softer as on screen
     g.setLineDash(l.dash ? [gm.w * 3, gm.w * 2.6] : []); g.stroke(new Path2D(gm.d)); g.setLineDash([]);
     if (l.head === 'end' || l.head === 'both') g.fill(new Path2D(headPath(gm.p1, gm.dir1, gm.w)));
     if (l.head === 'both') g.fill(new Path2D(headPath(gm.p0, gm.dir0, gm.w)));
+    g.globalAlpha = 1;
     if (l.label && gm.lab) {
       rrect(g, gm.lab.x, gm.lab.y, gm.lab.w, gm.lab.h, 11); g.fillStyle = tok('--hide-2'); g.fill();
       g.globalAlpha = 0.55; g.strokeStyle = c; g.lineWidth = 1; g.stroke(); g.globalAlpha = 1;
@@ -7007,6 +7043,7 @@ const TEMPLATES = [
   ['jam', 'Game jam · 48 h', 'Day one prototype, day two content, then submit on time.'],
   ['steam', 'Steam launch', 'Store page, capsule, trailer, Next Fest, wishlists, release day.'],
   ['gdd', 'Design doc outline', 'Idea notes for pitch, pillars, core loop, scope and cuts.'],
+  ['gddmap', 'GDD mind map', 'A design doc that grows in every direction: the game, a branch per area, details on the leaves.'],
   ['moodboard', 'Art moodboard', 'Mood board collections for character, environment, palette, UI and VFX references.'],
 ];
 function tplBuild(key) {
@@ -7096,6 +7133,42 @@ function tplBuild(key) {
       const notes = [['Pitch', 'One sentence anyone gets'], ['Pillars', 'Three max. Every feature serves one.'], ['Core loop', 'What the player does every 30 seconds'], ['Mechanics', 'Verbs, rules, systems'], ['Progression', 'How the player grows'], ['Art direction', 'Three reference images + palette'], ['Audio direction', 'Mood, references, adaptive music?'], ['Controls', 'Pad + keyboard layout'], ['Scope + cuts', 'What we are NOT making']];
       const cs = notes.map(([t, b], i) => card((i % 3) * 260, Math.floor(i / 3) * 170, t, {kind: 'idea', body: b, color: PEN[(i % 6) + 1][1]}));
       wrap(cs, 'Game design doc', '#ffd23d'); break;
+    }
+    case 'gddmap': {
+      // The game in the middle, a branch per area in a ring around it, and each branch's details further out the same
+      // way, fanned across it. Every other branch sits further out, so neighbours' details never meet. The wires are
+      // "relates to" ones and the cards are ideas, so none of it touches the schedule.
+      const hub = card(-160, -95, 'Your game', {kind: 'idea', w: 320, color: BONE, body: 'Pitch: one sentence anyone gets\nGenre · platform · who it’s for\nWhy this game, why now?'});
+      const areas = [
+        ['Pillars', 'Three max. Every feature serves one.', [['Pillar one', 'A promise, like “every fight is a puzzle”'], ['Pillar two', 'Short enough to say in a meeting'], ['Not this game', 'What the pillars rule out']]],
+        ['Core loop', 'What the player does every 30 seconds', [['Second to second', 'The verbs: move, aim, dodge'], ['Minute to minute', 'Fight, loot, upgrade, repeat'], ['Session to session', 'Why come back tomorrow?']]],
+        ['Mechanics', 'Verbs, rules and the systems behind them', [['Player verbs', 'Each one needs a reason to use it'], ['Systems', 'Rules that combine: fire spreads, oil burns'], ['Enemies', 'Each type tests one skill']]],
+        ['Progression', 'How the player grows, and how the game pushes back', [['Unlocks', 'Skills, gear, new places'], ['Difficulty curve', 'Teach, test, twist, combine'], ['Economy', 'Where currency comes from and goes'], ['Rewards', 'What feels good to earn']]],
+        ['Levels', 'Where the loop gets tested', [['Level list', 'Name, goal and one new idea each'], ['Pacing', 'Tension, rest, set pieces'], ['Metrics', 'Jump height, door width, cover height']]],
+        ['World + story', 'Setting, tone and what happens', [['Setting', 'Where and when, in one line'], ['Story beats', 'Start, midpoint twist, ending']]],
+        ['Characters', 'Who the player is and who they meet', [['Hero', 'Wants, needs, flaw'], ['Villain', 'Why they think they’re right'], ['Cast', 'Allies, rivals, shopkeepers']]],
+        ['Art direction', 'Three reference images and a palette', [['References', 'Pin them on a mood board'], ['Palette + light', 'Five colours, time of day'], ['Shape language', 'Round is friendly, spiky is danger']]],
+        ['Audio', 'Mood, references, adaptive music?', [['Music', 'Themes, and when they change'], ['Sound effects', 'Feedback for every action'], ['Voice', 'Barks, full voice-over or none']]],
+        ['UI + controls', 'What the player sees and presses', [['Controls', 'Pad + keyboard layout'], ['HUD', 'Only what matters right now'], ['Menus', 'Boot to gameplay in few clicks'], ['Accessibility', 'Remapping, subtitles, colour-blind modes']]],
+        ['Tech', 'Engine, platforms and budgets', [['Engine + tools', 'Version, plugins, source control'], ['Platforms', 'Targets and the frame rate to hit'], ['Save + data', 'What’s saved, where and when']]],
+        ['Scope + cuts', 'What we are NOT making', [['Must have', 'The smallest game that’s still fun'], ['Cut list', 'Ideas parked for the sequel']]],
+      ];
+      const rel = {rel: true, dash: true, head: 'none'};
+      areas.forEach(([title, body, leaves], i) => {
+        const t = -Math.PI / 2 + i * Math.PI / 6, far = i % 2 ? 1.6 : 1, color = PEN[1 + i % 6][1];  // opposite branches share a colour
+        const bx = Math.cos(t) * 800 * far, by = Math.sin(t) * 440 * far, b = card(rd(bx - 125), rd(by - 62), title, {kind: 'idea', w: 250, body, color});
+        link(hub, b, rel);
+        // outward from the middle, clear of the branch card, then the details side by side across that line, in
+        // reading order (top to bottom, or left to right above and below the game)
+        const L = Math.hypot(bx, by), ux = bx / L, uy = by / L, flip = ux > 0.01 || (Math.abs(ux) <= 0.01 && uy < 0) ? 1 : -1, tx = -uy * flip, ty = ux * flip;
+        const clear = 1 / Math.max(Math.abs(ux) / 271, Math.abs(uy) / 153), step = 1 / Math.max(Math.abs(tx) / 256, Math.abs(ty) / 153);
+        const fx = bx + ux * (clear + 140), fy = by + uy * (clear + 140);
+        leaves.forEach(([lt, lb], j) => { const o = (j - (leaves.length - 1) / 2) * step; link(b, card(rd(fx + tx * o - 110), rd(fy + ty * o - 62), lt, {kind: 'idea', body: lb, color}), rel); });
+      });
+      const all = unionBox(items.map(c => ({x: c.x, y: c.y, w: c.w, h: 125})));
+      items.push({id: uid(), type: 'text', x: rd(all.x), y: rd(all.y + all.h - 110), w: 500, h: 110, size: 20, color: BONE,
+        text: 'Grow it in every direction: add details to a branch,\nor a new branch off the game. When a branch gets big,\ngive it its own board and keep a summary card here.'});
+      break;
     }
     default: return null;
   }
@@ -7529,7 +7602,7 @@ const TIPS = {
   eraser: ['Eraser', 'E', 'Drag over ink to rub it out.'],
   node: ['Card', 'N', 'Click to add a task, milestone, bug or idea. Double-clicking empty space works too.'],
   text: ['Text', 'T', 'Click to add a label or a heading.'],
-  link: ['Connector', 'A · C', 'Drag from a card or a phase to another one to show what waits on what.'],
+  link: ['Connector', 'A · C', 'Drag from a card or a phase to another one to show what waits on what. Hold Alt for a dashed relates to line that leaves the schedule alone.'],
   frame: ['Phase', 'F', 'Drag out a phase to group cards. Drag the dots on its sides to connect it to the next phase.'],
   image: ['Picture or video', 'I', 'Add a picture or a video from a file. Pasting and dropping work too.'],
   snip: ['Screenshot', () => (desk ? deskState.snipLabel : 'Alt+Shift+S'), () => (desk ? 'Grab any part of any screen, mark it up, then put it on the board, copy it, save it or share a link.' : 'Grab part of a screen, a window or a tab and put it on the board.')],
@@ -10251,7 +10324,7 @@ function schedule() {
   const byId = new Map(nodes.map(n => [n.id, n])), preds = new Map(nodes.map(n => [n.id, []])), succs = new Map(nodes.map(n => [n.id, []]));
   const fc = new Map();
   for (const l of doc.links) {
-    if (!l.from.id || !l.to.id || l.from.id === l.to.id) continue;
+    if (!isDep(l) || !l.from.id || !l.to.id || l.from.id === l.to.id) continue;
     const A = wireCards(l.from, fc).filter(a => byId.has(a.id)), B = wireCards(l.to, fc).filter(b => byId.has(b.id));
     for (const b of B) for (const a of A) if (a.id !== b.id && !preds.get(b.id).includes(a.id)) { preds.get(b.id).push(a.id); succs.get(a.id).push(b.id); }
   }
@@ -10370,7 +10443,7 @@ function renderTimeline() {
   // arrows for what waits on what (card to card), red along the critical path
   let arrows = '';
   for (const l of doc.links) {
-    const a = S.get(l.from.id), b = S.get(l.to.id);
+    const a = isDep(l) && S.get(l.from.id), b = isDep(l) && S.get(l.to.id);
     if (!a || !b || !rowY.has(a.n.id) || !rowY.has(b.n.id) || a.ef === null || a.ef === undefined || b.es === null || b.es === undefined) continue;
     const x1 = x(a.ef) - 1, y1 = rowY.get(a.n.id), x2 = x(b.es), y2 = rowY.get(b.n.id);
     const d = x2 - 10 >= x1 + 6 ? `M${x1} ${y1}H${x2 - 10}V${y2}H${x2 - 2}` : `M${x1} ${y1}h6V${(y1 + y2) / 2}H${x2 - 10}V${y2}H${x2 - 2}`;

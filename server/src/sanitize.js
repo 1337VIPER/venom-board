@@ -176,6 +176,9 @@ function cleanLink(l) {
   const out = { id: l.id, type: 'link', from, to, color: colorOr(l.color, BONE), style: oneOf(l.style, ['curve', 'straight', 'elbow', 'circuit'], 'curve'),
     head: oneOf(l.head, ['end', 'both', 'none'], 'end'), dash: !!l.dash, flow: !!l.flow, label: txt(l.label, 60) };
   if (l.width !== undefined) out.width = clamp(num(l.width, 2.5), 1, 12);
+  // "relates to": it only connects, and leaves the schedule alone. Left out, it means "waits on"; false is one made
+  // "waits on" again, sent rather than left out so the live path doesn't keep the old value (see KEEP in realtime.js)
+  if (l.rel === true || l.rel === false) out.rel = l.rel;
   // reroute points the wire runs through
   const via = (Array.isArray(l.via) ? l.via : []).slice(0, 24).filter(k => k && Number.isFinite(Number(k.x)) && Number.isFinite(Number(k.y)) && Math.abs(k.x) < 1e7 && Math.abs(k.y) < 1e7).map(k => ({ x: num(k.x), y: num(k.y) }));
   if (via.length) out.via = via;

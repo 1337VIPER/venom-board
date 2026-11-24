@@ -15,8 +15,8 @@ const PRESENT_GAP_MS = 10000;
 const MAX_CLIENTS_PER_ROOM = 64;
 const MAX_WATCHERS_PER_ROOM = 200;  // people watching through a share link
 const MAX_WATCHERS_PER_IP = 10;
-// fields newer apps added to pictures, videos and frames: an edit without one comes from an app that doesn't know it (see allowedOp)
-const KEEP = { image: ['tags', 'note', 'source'], video: ['tags', 'note', 'source'], frame: ['mood'] };
+// fields newer apps added to pictures, videos, frames and connectors: an edit without one comes from an app that doesn't know it (see allowedOp)
+const KEEP = { image: ['tags', 'note', 'source'], video: ['tags', 'note', 'source'], frame: ['mood'], link: ['rel'] };
 
 // hooks (all optional), supplied by the API:
 //   members(teamId)                  -> [{id, name, username, color, role}] shown with the board
@@ -299,11 +299,12 @@ function realtime({ server, db, sessions, cfg, log, hooks = {} }) {
       }
       return { ...op, obj, echo };
     }
-    // the same for a picture's or video's tags, note and source, and a frame being a mood board collection: an older app
-    // can move or resize a picture without wiping its tags, and can't turn a collection back into a phase
-    const keep = op.k === 'items' && op.op === 'put' && editor ? KEEP[op.obj.type] : null;
+    // the same for a picture's or video's tags, note and source, a frame being a mood board collection and a connector
+    // being "relates to": an older app can move or resize a picture without wiping its tags, can't turn a collection
+    // back into a phase, and can't turn a "relates to" connector into a dependency by restyling it
+    const keep = (op.k === 'items' || op.k === 'links') && op.op === 'put' && editor ? KEEP[op.obj.type] : null;
     if (keep) {
-      const old = getObj(room, 'items', op.obj.id), was = old && old.type === op.obj.type ? old : null, obj = { ...op.obj };
+      const old = getObj(room, op.k, op.obj.id), was = old && old.type === op.obj.type ? old : null, obj = { ...op.obj };
       for (const f of keep) if (obj[f] === undefined && was && was[f] !== undefined) obj[f] = was[f];
       return { ...op, obj };
     }

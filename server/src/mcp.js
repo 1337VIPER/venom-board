@@ -218,8 +218,12 @@ function mcp({ db, cfg, log, route, fail, H, A, limit, RANK, live, roleOf, proje
   function describe(doc, all, projectId) {
     const frames = doc.items.filter(i => i.type === 'frame' && !i.mood), cards = doc.items.filter(i => i.type === 'node'), name = nameOf(all), ref = refsFor(projectId, doc);
     const phaseOf = c => { const f = frames.find(fr => inside(c, fr)); return f ? f.id : null; };
-    const incoming = new Map();
-    for (const l of doc.links) if (l.from.id && l.to.id) { if (!incoming.has(l.to.id)) incoming.set(l.to.id, []); incoming.get(l.to.id).push(l.from.id); }
+    const incoming = new Map(), related = new Map(), add = (m, k, v) => { if (!m.has(k)) m.set(k, []); if (!m.get(k).includes(v)) m.get(k).push(v); };
+    for (const l of doc.links) {
+      if (!l.from.id || !l.to.id || l.from.id === l.to.id) continue;
+      if (isDep(l)) add(incoming, l.to.id, l.from.id);
+      else { add(related, l.from.id, l.to.id); add(related, l.to.id, l.from.id); }  // "relates to" goes both ways and doesn't hold anything up
+    }
     const byId = new Map(cards.map(c => [c.id, c]));
     const card = c => {
       const o = { id: c.id, kind: c.kind || 'task', title: c.title, status: c.status };
@@ -235,6 +239,8 @@ function mcp({ db, cfg, log, route, fail, H, A, limit, RANK, live, roleOf, proje
       if (ref(c.id)) o.reference = ref(c.id);
       const w = incoming.get(c.id);
       if (w && w.length) o.waits_on = w;
+      const r = related.get(c.id);
+      if (r && r.length) o.relates_to = r;
       const n = doc.comments.filter(m => m.card === c.id).length;
       if (n) o.comments = n;
       return o;
@@ -349,7 +355,8 @@ function mcp({ db, cfg, log, route, fail, H, A, limit, RANK, live, roleOf, proje
     }
     return o;
   }
-  const linkOut = l => ({ id: l.id, from: l.from.id ? l.from.id : { x: l.from.x, y: l.from.y }, to: l.to.id ? l.to.id : { x: l.to.x, y: l.to.y }, style: l.style, head: l.head, color: l.color,
+  const isDep = l => !l.rel;  // a connector means "waits on" unless it's a "relates to" one
+  const linkOut = l => ({ id: l.id, from: l.from.id ? l.from.id : { x: l.from.x, y: l.from.y }, to: l.to.id ? l.to.id : { x: l.to.x, y: l.to.y }, kind: isDep(l) ? 'waits_on' : 'relates_to', style: l.style, head: l.head, color: l.color,
     ...(l.label ? { label: l.label } : {}), ...(l.dash ? { dashed: true } : {}), ...(l.flow ? { flow: true } : {}), ...(l.width ? { width: l.width } : {}), ...(l.via ? { via: l.via } : {}) });
   // the timeline: working days from today, each card after what it waits on, the chain with no slack is critical
   function schedule(doc) {
@@ -361,7 +368,7 @@ function mcp({ db, cfg, log, route, fail, H, A, limit, RANK, live, roleOf, proje
     const ends = e => { const o = e && e.id ? all.get(e.id) : null; if (!o) return []; if (o.type === 'node') return byId.has(o.id) ? [o] : [];
       if (o.type !== 'frame' || o.mood) return []; if (!inPhase.has(o.id)) inPhase.set(o.id, nodes.filter(n => inside(n, o))); return inPhase.get(o.id); };
     for (const l of doc.links) {
-      if (!l.from.id || !l.to.id || l.from.id === l.to.id) continue;
+      if (!isDep(l) || !l.from.id || !l.to.id || l.from.id === l.to.id) continue;
       for (const b of ends(l.to)) for (const a of ends(l.from)) if (a.id !== b.id && !preds.get(b.id).includes(a.id)) { preds.get(b.id).push(a.id); succs.get(a.id).push(b.id); }
     }
     // working days from today to a date (its start date): the schedule doesn't start a card before it
@@ -396,7 +403,7 @@ function mcp({ db, cfg, log, route, fail, H, A, limit, RANK, live, roleOf, proje
       ...(isDate(s.n.due) ? { due: s.n.due, late: workday(Math.max(s.es, Math.ceil(s.ef) - 1)) > s.n.due } : {}) }));
     return { working_days_left: Math.ceil(end), finishes_around: liveS.length ? workday(Math.max(0, Math.ceil(end) - 1)) : null,
       critical_path: rows.filter(r => r.critical && r.kind !== 'milestone').map(r => r.title), late: rows.filter(r => r.late).map(r => r.title), tasks: rows.slice(0, 300),
-      note: 'Working days only. Estimates in days; a card with no estimate counts as one day. Arrows mean "waits on", and an arrow between phases makes everything in the second wait on the first. A card with a start date doesn\'t start before it.' };
+      note: 'Working days only. Estimates in days; a card with no estimate counts as one day. Arrows mean "waits on", and an arrow between phases makes everything in the second wait on the first; "relates to" connectors are left out. A card with a start date doesn\'t start before it.' };
   }
   // a card built the way the app builds one
   function cardFrom(input, x, y, existing, teamId) {
@@ -452,8 +459,17 @@ function mcp({ db, cfg, log, route, fail, H, A, limit, RANK, live, roleOf, proje
   }
   const STYLE = { curved: 'curve', curve: 'curve', tendril: 'curve', straight: 'straight', elbow: 'elbow', circuit: 'circuit' };
   const HEAD = { end: 'end', both: 'both', none: 'none' };
+  // what a connector means: "waits on" (the default) or "relates to", which only connects and leaves the schedule alone
+  const KIND = { waits_on: false, 'waits on': false, depends_on: false, dependency: false, relates_to: true, 'relates to': true, relates: true, related: true };
   function linkFrom(input, from, to, existing) {
     const l = existing ? { ...existing } : { id: newId(), type: 'link', from, to, color: BONE, style: 'curve', head: 'end', dash: false, flow: false, label: '' };
+    if (input.kind !== undefined && input.kind !== null) {
+      const rel = KIND[String(input.kind).toLowerCase()];
+      if (rel === undefined) oops(`A connector's kind is waits_on or relates_to, not "${input.kind}".`);
+      // each kind has its look, as in the app: "relates to" is dashed with no arrowhead (arrowheads and dashed below still win)
+      if (rel) Object.assign(l, { rel: true, dash: true, head: 'none' });
+      else if (l.rel) Object.assign(l, { rel: false, dash: false, head: 'end' });
+    }
     if (input.style !== undefined) l.style = STYLE[input.style] || oops(`Connector styles are curved, straight, elbow or circuit, not "${input.style}".`);
     if (input.via !== undefined) {
       const via = (Array.isArray(input.via) ? input.via : oops('via is a list of points like {"x": 100, "y": 200}.')).slice(0, 24).map(k => (k && fin(k.x) && fin(k.y) ? { x: rd(k.x), y: rd(k.y) } : oops('Each reroute point looks like {"x": 100, "y": 200}.')));
@@ -656,7 +672,8 @@ function mcp({ db, cfg, log, route, fail, H, A, limit, RANK, live, roleOf, proje
   const MOOD = 'true makes it a mood board collection for reference pictures instead of a project phase (kept out of the schedule)';
   const linkProps = { style: { type: 'string', enum: ['curved', 'straight', 'elbow', 'circuit'], description: 'curved (the default tendril), straight, elbow (right angles) or circuit (straight runs with 45° bends, like Electric Nodes in Unreal).' },
     via: { type: 'array', items: POINT, maxItems: 24, description: 'Reroute points the wire runs through, in order, to route it tidily. An empty list removes them.' }, arrowheads: { type: 'string', enum: ['end', 'both', 'none'] }, dashed: B('Dashed line.'),
-    flow: B('Animated flow along the line.'), label: S('Short label on the line.'), color: COLOR, width: N('Line width, 1 to 12 (default 2.5).') };
+    flow: B('Animated flow along the line.'), label: S('Short label on the line.'), color: COLOR, width: N('Line width, 1 to 12 (default 2.5).'),
+    kind: { type: 'string', enum: ['waits_on', 'relates_to'], description: 'What the connector means. waits_on (the default): between cards or phases, the "to" end waits on the "from" end, for the schedule, critical path and Trace. relates_to: it only shows that two things belong together (a mind map, related ideas) and leaves the schedule alone; it\'s dashed with no arrowhead unless you say otherwise.' } };
   const geo = { x: N('Left edge on the board (x grows to the right).'), y: N('Top edge on the board (y grows downward).') };
   const TOOLS = [
     /* reading */
@@ -671,7 +688,7 @@ function mcp({ db, cfg, log, route, fail, H, A, limit, RANK, live, roleOf, proje
           }) }));
         return teams.length ? { teams } : { teams, note: 'You are not in a team yet, and tools work on team boards. Create a team in the Venom Board app (the Team panel) or accept an invite, then call list_projects again.' };
       } },
-    { name: 'get_board', title: 'Read a board (planning)', description: 'Reads a project board for planning: phases (frames, not mood board collections) in order with the cards inside each, cards outside any phase, and progress: percent done, what is ready to start, overdue cards and milestones. Cards list kind, status, priority, discipline, estimate, due date, notes, assignees and the ids of cards they wait on. Use get_items for positions, sizes and every other kind of object.',
+    { name: 'get_board', title: 'Read a board (planning)', description: 'Reads a project board for planning: phases (frames, not mood board collections) in order with the cards inside each, cards outside any phase, and progress: percent done, what is ready to start, overdue cards and milestones. Cards list kind, status, priority, discipline, estimate, due date, notes, assignees, the ids of cards they wait on, and the ids of cards they only relate to ("relates to" connectors, which leave the schedule alone). Use get_items for positions, sizes and every other kind of object.',
       inputSchema: obj({ project_id: PID }, ['project_id']), annotations: { readOnlyHint: true },
       run: (user, a) => { const { p, role, doc } = project(user, a.project_id, 'viewer'); return { project_id: p.id, name: p.name, your_role: role, ...describe(doc, members(p.team_id), p.id) }; } },
     { name: 'get_items', title: 'Read every object (layout)', description: 'Lists the objects on a board with their positions and sizes: cards, text, frames, pictures, GIFs, videos, jam clocks, connectors and ink strokes, plus the area the board covers. Filter by type, by ids or by an area. Board units: x grows right, y grows down; a card is about 240×100. A frame with mood: true is a mood board collection; pictures and videos show their tags, note and the address they came from (source, or source_link on a video, whose source is where it plays from).',
@@ -698,7 +715,7 @@ function mcp({ db, cfg, log, route, fail, H, A, limit, RANK, live, roleOf, proje
       inputSchema: obj({ project_id: PID, card_id: S('Card id or exact title.') }, ['project_id', 'card_id']), annotations: { readOnlyHint: true },
       run: (user, a) => {
         const { doc } = project(user, a.project_id, 'viewer'), id = resolveCard(doc, a.card_id), byId = new Map(doc.items.filter(i => i.type === 'node').map(c => [c.id, c]));
-        const walk = (start, dir) => { const seen = new Set(), out = [], todo = [start]; while (todo.length) { const cur = todo.shift(); for (const l of doc.links) { const [f, t] = dir === 'up' ? [l.to.id, l.from.id] : [l.from.id, l.to.id]; if (f === cur && t && byId.has(t) && !seen.has(t) && t !== start) { seen.add(t); out.push(t); todo.push(t); } } } return out; };
+        const walk = (start, dir) => { const seen = new Set(), out = [], todo = [start]; while (todo.length) { const cur = todo.shift(); for (const l of doc.links) { if (!isDep(l)) continue; const [f, t] = dir === 'up' ? [l.to.id, l.from.id] : [l.from.id, l.to.id]; if (f === cur && t && byId.has(t) && !seen.has(t) && t !== start) { seen.add(t); out.push(t); todo.push(t); } } } return out; };
         const row = i => { const c = byId.get(i); return { id: i, title: c.title, kind: c.kind || 'task', status: c.status }; };
         const up = walk(id, 'up').map(row), down = walk(id, 'down').map(row);
         return { card: row(id), waits_on: up, unfinished_before_it: up.filter(r => r.status !== 'done').length, waiting_on_it: down };
@@ -812,11 +829,11 @@ function mcp({ db, cfg, log, route, fail, H, A, limit, RANK, live, roleOf, proje
         apply(user, role, p.id, ops);
         return { updated: ops.map(o => ({ id: o.obj.id, title: o.obj.title, status: o.obj.status })) };
       } },
-    { name: 'link_cards', title: 'Link cards', description: 'Draws dependency arrows: each link means the "to" card waits on the "from" card. Use card ids or exact titles. add_connectors draws any other kind of line.',
-      inputSchema: obj({ project_id: PID, links: { type: 'array', minItems: 1, maxItems: 200, items: obj({ from: S('The card that comes first.'), to: S('The card that waits on it.'), label: S('Optional short label.') }, ['from', 'to']) } }, ['project_id', 'links']),
+    { name: 'link_cards', title: 'Link cards', description: 'Draws dependency arrows: each link means the "to" card waits on the "from" card. Use card ids or exact titles. With kind relates_to a link only connects the two cards (a dashed line, no effect on the schedule). add_connectors draws any other kind of line.',
+      inputSchema: obj({ project_id: PID, links: { type: 'array', minItems: 1, maxItems: 200, items: obj({ from: S('The card that comes first.'), to: S('The card that waits on it.'), label: S('Optional short label.'), kind: linkProps.kind }, ['from', 'to']) } }, ['project_id', 'links']),
       run: (user, a) => {
         const { p, role, doc } = project(user, a.project_id, 'editor');
-        const ops = (Array.isArray(a.links) ? a.links.slice(0, 200) : oops('links must be a list.')).map(l => put('links', linkFrom({ label: l.label }, { id: resolveCard(doc, l.from) }, { id: resolveCard(doc, l.to) })));
+        const ops = (Array.isArray(a.links) ? a.links.slice(0, 200) : oops('links must be a list.')).map(l => put('links', linkFrom({ label: l.label, kind: l.kind }, { id: resolveCard(doc, l.from) }, { id: resolveCard(doc, l.to) })));
         apply(user, role, p.id, ops);
         return { linked: ops.length };
       } },
@@ -964,7 +981,7 @@ function mcp({ db, cfg, log, route, fail, H, A, limit, RANK, live, roleOf, proje
         apply(user, role, p.id, made.map(o => put('strokes', o)));
         return { drawn: made.length, ids: made.map(o => o.id) };
       } },
-    { name: 'add_connectors', title: 'Add connectors', description: 'Draws connector lines between objects (cards, pictures, text, frames…) or free points, with a style (curved, straight, elbow, or circuit: straight runs with 45° bends), reroute points to route them tidily, arrowheads, dashes, an animated flow and a label. Between cards, an arrow means "waits on" for the schedule.',
+    { name: 'add_connectors', title: 'Add connectors', description: 'Draws connector lines between objects (cards, pictures, text, frames…) or free points, with a style (curved, straight, elbow, or circuit: straight runs with 45° bends), reroute points to route them tidily, arrowheads, dashes, an animated flow and a label. Between cards (or phases) a connector means "waits on" for the schedule, unless kind is relates_to: then it only connects them, like the branches of a mind map.',
       inputSchema: obj({ project_id: PID, connectors: { type: 'array', minItems: 1, maxItems: 200, items: obj({ from: ENDREF, to: ENDREF, ...linkProps }, ['from', 'to']) } }, ['project_id', 'connectors']),
       run: (user, a) => {
         const { p, role, doc } = project(user, a.project_id, 'editor');
@@ -1026,7 +1043,7 @@ function mcp({ db, cfg, log, route, fail, H, A, limit, RANK, live, roleOf, proje
         apply(user, role, p.id, ops);
         return { updated: ops.length };
       } },
-    { name: 'update_connectors', title: 'Change connectors', description: 'Changes connector lines by id: style (curved, straight, elbow or circuit), reroute points, arrowheads, dashes, flow, label, colour, width, or what they join.',
+    { name: 'update_connectors', title: 'Change connectors', description: 'Changes connector lines by id: what they mean (kind: waits_on or relates_to), style (curved, straight, elbow or circuit), reroute points, arrowheads, dashes, flow, label, colour, width, or what they join.',
       inputSchema: obj({ project_id: PID, updates: { type: 'array', minItems: 1, maxItems: 200, items: obj({ id: S('Connector id.'), from: ENDREF, to: ENDREF, ...linkProps }, ['id']) } }, ['project_id', 'updates']),
       run: (user, a) => {
         const { p, role, doc } = project(user, a.project_id, 'editor');
@@ -1178,7 +1195,7 @@ function mcp({ db, cfg, log, route, fail, H, A, limit, RANK, live, roleOf, proje
   const listed = TOOLS.map(({ run, ...t }) => t);
 
   /* ---------- the endpoint ---------- */
-  const INSTRUCTIONS = 'Venom Board is a planning board and reference board for game development, on an infinite canvas. A team has projects; a project board holds cards (tasks, bugs, milestones, ideas with status, MoSCoW priority, discipline, estimate, due date, assignees), phases (frames, ordered left to right, that hold cards), text, pictures and GIFs, YouTube/Vimeo videos, ink (marker and highlighter), connectors and a game jam clock. Arrows between cards mean "waits on" and drive the schedule and critical path. Board units: x grows right, y grows down; a card is about 240×100 and a phase 600 wide. Start with list_projects. A project can have several boards (tabs in the app); each board is listed as its own project, with board_of naming the project it belongs to. Use get_board to plan and get_items to see the layout before placing things; new things without a position go in free space to the right. For pictures on the user\'s computer, use get_upload_url and send the file with curl; replace_media swaps a picture or video for another. Templates (list_templates) give a quick start. Cards can carry tags, tracked time and linked pull requests (their reference, VB-…, in a commit message links them); phases can be sprints or collapsed; a frame can instead be a mood board collection of references, kept out of the phases and schedule; pictures can be cropped and turned, and pictures and videos can carry tags, a note and the web address they came from; comments have replies, reactions, resolved threads and feedback pins on pictures; my_tasks lists what is assigned to you everywhere. Everything you change appears live to the team, and the board is kept in version history before a burst of changes, so save_version before big changes and restore_version undoes them.';
+  const INSTRUCTIONS = 'Venom Board is a planning board and reference board for game development, on an infinite canvas. A team has projects; a project board holds cards (tasks, bugs, milestones, ideas with status, MoSCoW priority, discipline, estimate, due date, assignees), phases (frames, ordered left to right, that hold cards), text, pictures and GIFs, YouTube/Vimeo videos, ink (marker and highlighter), connectors and a game jam clock. Arrows between cards mean "waits on" and drive the schedule and critical path; "relates to" connectors (kind relates_to, dashed) only show that things belong together. Board units: x grows right, y grows down; a card is about 240×100 and a phase 600 wide. Start with list_projects. A project can have several boards (tabs in the app); each board is listed as its own project, with board_of naming the project it belongs to. Use get_board to plan and get_items to see the layout before placing things; new things without a position go in free space to the right. For pictures on the user\'s computer, use get_upload_url and send the file with curl; replace_media swaps a picture or video for another. Templates (list_templates) give a quick start. Cards can carry tags, tracked time and linked pull requests (their reference, VB-…, in a commit message links them); phases can be sprints or collapsed; a frame can instead be a mood board collection of references, kept out of the phases and schedule; pictures can be cropped and turned, and pictures and videos can carry tags, a note and the web address they came from; comments have replies, reactions, resolved threads and feedback pins on pictures; my_tasks lists what is assigned to you everywhere. Everything you change appears live to the team, and the board is kept in version history before a burst of changes, so save_version before big changes and restore_version undoes them.';
   function userFor(req) {
     const h = String(req.headers.authorization || ''), token = h.startsWith('Bearer ') ? h.slice(7).trim() : '';
     if (!/^vbt_[\w-]{20,80}$/.test(token)) return null;

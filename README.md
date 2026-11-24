@@ -87,6 +87,7 @@ Solo boards need no account, no subscription and no telemetry. They work offline
 - Status, **discipline** (Code, Art, Design, Level, Audio, UI/UX, VFX, Narrative, QA, Tech/build, Marketing), **MoSCoW priority** for scope cuts, **estimates** (`4h`, `2d`, `1w`) and **due dates** that turn red when overdue
 - Checklists inside notes: any line starting with `[ ]` becomes a clickable checkbox, with progress on the card
 - **Tendril connectors**: curved, straight, elbow or **circuit** (straight runs with 45° bends, like Electric Nodes in Unreal), with arrowheads, dashes, labels and an animated flow. Right-click a wire to add **reroute points** and drag them to route your noodles tidily (they snap into line with their neighbours); double-click one to remove it. Right-click the board → *Style every connector* switches every wire at once. Wires that share a side or a corridor **spread apart** so none hides another, and **card pins** let you drag a connection from either edge of a card, Blueprint-style
+- **Relates to** connectors: hold `Alt` while you drag a connection (or pick *Relates to* in the connector's toolbar or right-click menu) for a dashed line that only shows that two things belong together, like the branches of a mind map. It never touches the schedule, the Timeline, *waits on*, Trace or Tidy layout
 - **Tidy layout**: lay cards out left to right by what they wait on, with fewer crossings, for the selection, one phase or the whole board
 - **Place next**: drag a connector out of a card into empty space and choose what comes next, Blueprint-style. `Tab` adds the next connected task instantly
 - **Dependency awareness**: cards show *waits on N* while anything feeding into them is unfinished, the *Ready to start* filter lists what you can pick up today, and **Trace** highlights a card's whole chain of dependencies
@@ -100,7 +101,7 @@ Solo boards need no account, no subscription and no telemetry. They work offline
 - **Tags and saved filters**: tag cards, filter the Planner by tag, and save sets of filters to pick again
 - **Import** from **Trello** (JSON export), **Jira** (CSV export) or any spreadsheet saved as CSV: lists, sprints or statuses become phases, with statuses, priorities, estimates, due dates and checklists carried over
 - **Search everything** (`Ctrl+Shift+F`): every board on this computer and every team project you're in, at once
-- **12 game-dev templates**: game roadmap, feature, level and character pipelines, vertical slice, weekly sprint board, bug triage, playtest loop, 48-hour game jam, Steam launch, a design-doc outline and an art moodboard. Browse them at [venomboard.com/templates](https://venomboard.com/templates) and open one in a click
+- **13 game-dev templates**: game roadmap, feature, level and character pipelines, vertical slice, weekly sprint board, bug triage, playtest loop, 48-hour game jam, Steam launch, a design-doc outline, a **GDD mind map** (the game in the middle, a branch per area, details growing outward in every direction) and an art moodboard. Browse them at [venomboard.com/templates](https://venomboard.com/templates) and open one in a click
 - **Game jam clock**: the deadline counting down on the board and in the top bar, the theme (or when it's revealed), a scope check of the work left against the time you have, and **Cut scope** to drop the lowest-priority work until it fits, with reminders as the deadline nears
 - **Export to Markdown** (GitHub, Notion, Discord) and **CSV** (Sheets, Jira, Trello)
 - **Board lock**: a view-only mode for reviews and sharing, so nothing gets nudged by accident
@@ -154,7 +155,7 @@ Solo boards need no account, no subscription and no telemetry. They work offline
 | ![The Timeline with arrows between tasks, tracked time in the bars and a task's editor open](docs/screenshots/timeline.png) | ![The Hours view: a week of tracked and planned time, with a new block being planned](docs/screenshots/hours.png) |
 | **Timeline** · every task scheduled from its estimate and what it waits on, with the critical path. Click a task to change it, drag a bar to give it a start date | **Hours** · the week hour by hour: drag across it to plan time or log what you worked. Striped is planned, solid is tracked |
 | ![Game jam clock](docs/screenshots/jam.png) | ![Template gallery](docs/screenshots/templates.png) |
-| **Game jam clock** · the countdown, the theme, a scope check and Cut scope | **Templates** · twelve ready-made game production structures |
+| **Game jam clock** · the countdown, the theme, a scope check and Cut scope | **Templates** · ready-made game production structures |
 | ![Close-up of task cards](docs/screenshots/cards.png) | ![Place next picker](docs/screenshots/place-next.png) |
 | **Cards** · discipline, priority, estimates, due dates, checklists and dependencies | **Place next** · drag a tendril into empty space to choose the next card |
 | ![The sample game roadmap](docs/screenshots/board.png) | ![Window menu](docs/screenshots/window-menu.png) |
