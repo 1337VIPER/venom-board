@@ -4,6 +4,8 @@ All notable changes to Venom Board are listed here. The project follows [Semanti
 
 ## [Unreleased]
 
+## [1.13.0] - 2026-11-24
+
 ### Added
 - **Relates to connectors**: a second kind of connector that only shows that two things belong together, for mind maps, related ideas and notes. It's a softer dashed line with no arrowhead, and it never touches the schedule, the Timeline, the critical path, *waits on*, *Ready to start*, Trace or Tidy layout. Hold `Alt` while you drag from a card's pin (or with the connector tool) to draw one, or switch any connector between *Waits on* and *Relates to (no schedule)* from its right-click menu or its toolbar. You can still change its colour, style, arrowheads and label like any other connector
 - **GDD mind map template**: a design doc that grows in every direction. The game sits in the middle with its pitch, twelve branches around it (pillars, core loop, mechanics, progression, levels, world and story, characters, art, audio, UI and controls, tech, scope and cuts), and each branch's details further out the same way, each branch in its own colour. Everything is an idea joined by *relates to* connectors, so it stays out of your schedule. When a branch gets big, give it its own board and keep a summary card on the map
